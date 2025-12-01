@@ -23,7 +23,7 @@ const config: runtime.GetPrismaClientConfig = {
       "value": "prisma-client"
     },
     "output": {
-      "value": "/Users/antonio-s/Desktop/orbit/generated/prisma",
+      "value": "/Users/antonio-s/Desktop/orbit/app/generated/client",
       "fromEnvVar": null
     },
     "config": {
@@ -40,7 +40,7 @@ const config: runtime.GetPrismaClientConfig = {
     "sourceFilePath": "/Users/antonio-s/Desktop/orbit/prisma/schema.prisma",
     "isCustomOutput": true
   },
-  "relativePath": "../../prisma",
+  "relativePath": "../../../prisma",
   "clientVersion": "6.19.0",
   "engineVersion": "2ba551f319ab1df4bc874a89965d8b3641056773",
   "datasourceNames": [
@@ -56,8 +56,8 @@ const config: runtime.GetPrismaClientConfig = {
       }
     }
   },
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nenum Role {\n  OWNER\n  ADMIN\n  MEMBER\n}\n\nenum Status {\n  ACTIVE\n  INACTIVE\n  PAST_DUE\n}\n\nmodel Tenant {\n  id        String   @id @default(uuid())\n  name      String\n  slug      String   @unique\n  status    Status   @default(ACTIVE)\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  users User[]\n\n  @@map(\"tenants\")\n}\n\nmodel User {\n  id        String   @id @default(uuid())\n  email     String   @unique\n  name      String?\n  role      Role     @default(MEMBER)\n  tenantId  String\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  tenant Tenant @relation(fields: [tenantId], references: [id])\n\n  @@map(\"users\")\n}\n",
-  "inlineSchemaHash": "a9b310e626431a1c139f0abfef1af3bc0c93cf203925a69d83cd14c9c1a5a4ed",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../app/generated/client\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nenum Role {\n  OWNER\n  ADMIN\n  MEMBER\n}\n\nenum Status {\n  ACTIVE\n  INACTIVE\n  PAST_DUE\n}\n\nmodel Tenant {\n  id        String   @id @default(uuid())\n  name      String\n  slug      String   @unique\n  status    Status   @default(ACTIVE)\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  users User[]\n\n  @@map(\"tenants\")\n}\n\nmodel User {\n  id        String   @id @default(uuid())\n  email     String   @unique\n  name      String?\n  role      Role     @default(MEMBER)\n  tenantId  String\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  tenant Tenant @relation(fields: [tenantId], references: [id])\n\n  @@map(\"users\")\n}\n",
+  "inlineSchemaHash": "e31746c14c572cd66c99042cf004745d14ee58fd7ceb22706cd0427e55e9b6fc",
   "copyEngine": true,
   "runtimeDataModel": {
     "models": {},
