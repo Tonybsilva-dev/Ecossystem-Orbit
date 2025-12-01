@@ -5,6 +5,8 @@ import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import { useForm } from "@conform-to/react";
 import { TenantService } from "../core/domain/tenant/tenant.service";
 import { CreateTenantSchema } from "../core/domain/tenant/tenant.schema";
+import { slugify } from "../core/utils/string";
+import { useState } from "react";
 
 export const meta: Route.MetaFunction = () => {
   return [{ title: "Register | Orbit" }];
@@ -25,6 +27,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     // Handle unique constraint violations (e.g., slug or email already exists)
     // For simplicity, we'll just return a generic error for now, but in a real app
     // we should check error codes.
+    console.error("Registration error:", error);
     return submission.reply({
       formErrors: ["Something went wrong. Please try again."],
     });
@@ -46,6 +49,21 @@ export default function Register() {
     shouldRevalidate: "onInput",
   });
 
+  // Auto-slug logic
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const name = e.target.value;
+    const slug = slugify(name);
+
+    // Update the slug field directly via DOM if possible, or let Conform handle it if we were using controlled inputs.
+    // Since Conform uses uncontrolled inputs by default, we can just set the value of the slug input.
+    const slugInput = document.getElementById(fields.slug.id) as HTMLInputElement;
+    if (slugInput) {
+      slugInput.value = slug;
+      // Trigger input event for Conform to validate if needed
+      slugInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col justify-center px-6 py-12 lg:px-8 bg-gray-50">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
@@ -62,7 +80,10 @@ export default function Register() {
             </label>
             <div className="mt-2">
               <input
-                {...fields.name} // Conform handles name, id, required, etc.
+                id={fields.name.id}
+                name={fields.name.name}
+                defaultValue={fields.name.initialValue}
+                onChange={handleNameChange}
                 className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 px-3"
               />
               <div className="text-red-500 text-sm mt-1">{fields.name.errors}</div>
@@ -75,8 +96,11 @@ export default function Register() {
             </label>
             <div className="mt-2">
               <input
-                {...fields.slug}
-                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 px-3"
+                id={fields.slug.id}
+                name={fields.slug.name}
+                defaultValue={fields.slug.initialValue}
+                readOnly
+                className="block w-full rounded-md border-0 py-1.5 text-gray-500 bg-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 px-3 cursor-not-allowed"
               />
               <div className="text-red-500 text-sm mt-1">{fields.slug.errors}</div>
             </div>
@@ -91,7 +115,9 @@ export default function Register() {
               </label>
               <div className="mt-2">
                 <input
-                  {...fields.user.getFieldset().name}
+                  id={fields.user.getFieldset().name.id}
+                  name={fields.user.getFieldset().name.name}
+                  defaultValue={fields.user.getFieldset().name.initialValue}
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 px-3"
                 />
                 <div className="text-red-500 text-sm mt-1">{fields.user.getFieldset().name.errors}</div>
@@ -104,7 +130,9 @@ export default function Register() {
               </label>
               <div className="mt-2">
                 <input
-                  {...fields.user.getFieldset().email}
+                  id={fields.user.getFieldset().email.id}
+                  name={fields.user.getFieldset().email.name}
+                  defaultValue={fields.user.getFieldset().email.initialValue}
                   type="email"
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 px-3"
                 />
