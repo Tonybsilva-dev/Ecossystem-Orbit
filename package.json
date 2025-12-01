@@ -11,6 +11,8 @@
   "dependencies": {
     "@ai-sdk/google": "^2.0.44",
     "@ai-sdk/openai": "^2.0.75",
+    "@conform-to/react": "^1.13.3",
+    "@conform-to/zod": "^1.13.3",
     "@prisma/client": "^6.19.0",
     "@react-router/node": "^7.9.2",
     "@react-router/serve": "^7.9.2",

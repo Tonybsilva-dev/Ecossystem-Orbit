@@ -5,8 +5,19 @@ export class TenantService {
   static async create(data: CreateTenantInput) {
     return prisma.tenant.create({
       data: {
-        ...data,
+        name: data.name,
+        slug: data.slug,
         status: "ACTIVE",
+        users: {
+          create: {
+            email: data.user.email,
+            name: data.user.name,
+            role: "OWNER",
+          },
+        },
+      },
+      include: {
+        users: true,
       },
     });
   }
