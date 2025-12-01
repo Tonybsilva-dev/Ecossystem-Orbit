@@ -12,6 +12,6 @@ i18next.init({
 });
 
 // Set the global error map
-z.setErrorMap(zodI18nMap);
+z.config({ localeError: zodI18nMap });
 
 export { z };
