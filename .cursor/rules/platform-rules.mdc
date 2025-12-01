@@ -1,0 +1,465 @@
+---
+description: Platform Rules - Unified guidelines for architecture, UX, security, validations, SEO, performance, and state management
+globs: src/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# Platform Rules - Diretrizes Unificadas
+
+Este documento unifica todas as diretrizes de desenvolvimento da plataforma, incluindo arquitetura, UX, segurança, validações, SEO, performance, gerenciamento de estado, geolocalização, integrações unificadas, otimização para IA e experiência de busca.
+
+---
+
+## 📐 Arquitetura - Zustand + React Query
+
+### Objetivo
+
+Separar responsabilidades: **Zustand** para estado de UI/componentes, **React Query (TanStack Query)** para requisições HTTP e cache de dados do servidor.
+
+### Princípios
+
+- **Zustand**: Estado de UI, preferências do usuário, estado local de componentes, formulários (não persistido)
+- **React Query**: Cache de dados do servidor, sincronização, refetch automático, background updates, paginação
+- **Services**: Apenas funções puras que retornam Promises (sem gerenciar estado)
+
+### Estrutura de Diretórios
+
+```
+domains/[domain]/[subdomain]/
+├── components/
+├── hooks/
+│   ├── use-[entity].hook.ts          # React Query hooks
+│   └── index.ts
+├── services/
+│   └── [entity].service.ts          # Funções puras (apenas API calls)
+├── stores/
+│   └── [entity]-ui.store.ts         # Zustand apenas para UI state
+├── types/
+└── validations/
+```
+
+### Quando Usar Cada Um
+
+#### Use Zustand para
+
+- ✅ Estado de UI (modais abertos, tabs ativas, filtros locais)
+- ✅ Preferências do usuário (tema, idioma, layout)
+- ✅ Estado de formulários não relacionados ao servidor
+- ✅ Estado temporário que não precisa persistir
+
+#### Use React Query para
+
+- ✅ Dados do servidor (perfil, listas, dashboards)
+- ✅ Cache e sincronização automática
+- ✅ Background refetch
+- ✅ Paginação e infinite scroll
+- ✅ Otimistic updates
+- ✅ Deduplicação de requisições
+
+**Referência completa:** [Architecture Guidelines](architecture.mdc)
+
+---
+
+## 🎨 Nielsen's Heuristics - UX Guidelines
+
+### Visão Geral
+
+Aplicar as 10 Heurísticas de Nielsen para melhorar a experiência do usuário, com foco especial em feedback visual, estados de carregamento e comunicação de erros.
+
+### Heurísticas Principais
+
+1. **Visibilidade do Status do Sistema** - Feedback apropriado e em tempo razoável
+2. **Correspondência Sistema-Mundo Real** - Linguagem natural e familiar
+3. **Controle e Liberdade do Usuário** - Ações reversíveis e cancelamento
+4. **Consistência e Padrões** - Componentes e mensagens consistentes
+5. **Prevenção de Erros** - Validação em tempo real
+6. **Reconhecimento em vez de Lembrança** - Informações visuais claras
+7. **Flexibilidade e Eficiência** - Atalhos e ações rápidas
+8. **Estética e Design Minimalista** - Interface limpa e focada
+9. **Ajudar Usuários a Reconhecer e Recuperar de Erros** - Mensagens claras
+10. **Ajuda e Documentação** - Tooltips e ajuda contextual
+
+### Componentes de Estado Padrão
+
+- Skeleton Components para loading
+- Empty States acionáveis
+- Toast Notifications (Sonner)
+- Error States com retry
+
+### Acessibilidade (WCAG 2.1 AA)
+
+- Estrutura semântica (header, main, footer, sections)
+- Skip link funcional
+- Aria-labels descritivos
+- Navegação por teclado
+- Z-index hierarquia clara
+
+**Referência completa:** [Nielsen's Heuristics Guidelines](nielsen-heuristics.mdc)
+
+---
+
+## 🔒 Security Guidelines
+
+### Autenticação e Tokens
+
+- Preferir cookies httpOnly (backend) para tokens
+- Nunca logar tokens no console/Sentry
+- Rotacionar tokens via refresh
+- Cookies: `secure` em produção, `sameSite: 'lax'` ou `strict`
+
+### Headers de Segurança
+
+- Content-Security-Policy configurado
+- `X-Frame-Options: DENY`
+- `X-Content-Type-Options: nosniff`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- HSTS em HTTPS
+
+### XSS
+
+- Não usar `dangerouslySetInnerHTML`
+- Se necessário, sanitizar com DOMPurify
+- Validar e normalizar inputs
+
+### Storage
+
+- Sincronizar Zustand ↔ cookies/localStorage com parcimônia
+- Limpar todas as chaves no signOut
+
+**Referência completa:** [Security Guidelines](security.mdc)
+
+---
+
+## ✅ Validations (Zod + React Hook Form)
+
+### Objetivo
+
+Padronizar validações com Zod, promovendo reuso por composição usando `.merge()` e `.extend()`.
+
+### Princípios
+
+- Reusar schemas por domínio via composição (merge/extend), nunca duplicar
+- Mensagens em PT-BR, curtas e orientadas à ação
+- Validação oportuna: `mode: onChange` em formulários de edição; `onSubmit` em fluxos críticos
+- Mapear erros para UI com `FormMessage` e atributos ARIA
+
+### Padrões
+
+```ts
+// Schemas atômicos e composição
+export const nameSchema = z
+  .string({ required_error: "Nome é obrigatório" })
+  .min(3, "Mínimo de 3 caracteres")
+  .max(120, "Máximo de 120 caracteres");
+
+export const entityBaseSchema = z.object({
+  name: nameSchema,
+  description: descriptionSchema,
+});
+
+// Update = base + campos opcionais
+export const entityUpdateSchema = entityBaseSchema
+  .extend({
+    status: z.enum(["active", "inactive"]),
+  })
+  .strict();
+```
+
+**Referência completa:** [Validations Guidelines](validations.mdc)
+
+---
+
+## 🗄️ Zustand State Management
+
+### Visão Geral
+
+Zustand é o padrão obrigatório para gerenciamento de estado global. Use Zustand para qualquer estado que precise ser compartilhado entre componentes ou persistido.
+
+### Padrões Obrigatórios
+
+- Um store por domínio
+- Interfaces bem definidas
+- Persist middleware quando necessário
+- Selectors para performance
+- DevTools em desenvolvimento
+
+### Estrutura
+
+```
+src/lib/stores/
+├── auth.store.ts      // Autenticação e usuário
+├── ui.store.ts        // Estado de UI global
+├── [domain].store.ts  // Stores específicos por domínio
+└── index.ts          // Barrel exports
+```
+
+**Referência completa:** [Zustand Guidelines](zustand.mdc)
+
+---
+
+## 🔍 SEO Guidelines
+
+### Meta Tags Essenciais
+
+- Title tag (50-60 caracteres, único)
+- Meta description (120-160 caracteres)
+- Canonical URL
+- Meta robots
+- Open Graph completo
+- Twitter Cards
+
+### Otimização de Imagens
+
+- Todas as imagens têm `alt` e `title`
+- Nomes de arquivo descritivos
+- Formatos modernos (WebP, AVIF)
+- Lazy loading
+
+### Estrutura
+
+- Um único H1 por página
+- Hierarquia H1 → H2 → H3 (sem pular níveis)
+- Links com title attribute
+- Schema.org markup (JSON-LD)
+
+**Referência completa:** [SEO Guidelines](seo.mdc)
+
+---
+
+## ⚡ Performance Guidelines
+
+### Core Web Vitals
+
+- **LCP (Largest Contentful Paint)**: < 2.5 segundos
+- **FCP (First Contentful Paint)**: < 1.8 segundos
+- **CLS (Cumulative Layout Shift)**: < 0.1
+- **INP (Interaction to Next Paint)**: < 200 milissegundos
+- **TBT (Total Blocking Time)**: < 200 milissegundos
+
+### Otimizações
+
+- Imagens: formatos modernos, lazy loading, dimensões explícitas
+- Code splitting: lazy loading de rotas e componentes pesados
+- Cache: React Query com `staleTime` apropriado, memoização
+- Bundle: tree shaking, imports específicos, dynamic imports
+
+**Referência completa:** [Performance Guidelines](performance.mdc)
+
+---
+
+## 🗺️ GEO Guidelines - Geolocalização
+
+### Visão Geral
+
+Diretrizes para implementação de funcionalidades baseadas em geolocalização, incluindo mapas interativos, busca por localização, cálculo de distâncias, e integração com serviços de geocodificação.
+
+### Funcionalidades Principais
+
+- **Mapas**: Leaflet, Mapbox, Google Maps
+- **Geolocalização**: Obter e rastrear posição do usuário
+- **Geocodificação**: Endereço → Coordenadas
+- **Reverse Geocoding**: Coordenadas → Endereço
+- **Cálculo de Distâncias**: Fórmula de Haversine
+- **Autocomplete**: Busca de endereços com debounce
+
+### Boas Práticas
+
+- Solicitar permissão de localização com feedback claro
+- Tratamento de erros (permissão negada, timeout, indisponível)
+- Cache de resultados de geocodificação
+- Lazy loading de bibliotecas de mapas
+- Privacidade: consentimento e política clara
+
+**Referência completa:** [GEO Guidelines](geo.mdc)
+
+---
+
+## 🔌 AIO Guidelines - All In One
+
+### Visão Geral
+
+Diretrizes para implementação de sistemas integrados e unificados, incluindo integrações com múltiplas APIs, gerenciamento de configurações centralizadas, e padrões para sistemas que agregam múltiplas funcionalidades.
+
+### Funcionalidades Principais
+
+- **Configuração Centralizada**: APIs, feature flags, ambiente
+- **Service Layer Unificado**: Cliente HTTP, interceptors, retry logic
+- **Estado Global**: Configurações, preferências, tema
+- **Cache Unificado**: Memory e localStorage com TTL
+- **Analytics Centralizado**: Múltiplos providers, tracking unificado
+- **Notificações Unificadas**: Múltiplos canais (toast, email, push, sms)
+- **Permissões**: Sistema centralizado de autorização
+
+### Boas Práticas
+
+- Configuração centralizada de APIs e endpoints
+- Feature flags para controle de funcionalidades
+- Sistema de cache eficiente com estratégias múltiplas
+- Analytics com suporte a múltiplos providers
+- Notificações configuráveis por canal
+- Permissões e autorização centralizadas
+
+**Referência completa:** [AIO Guidelines](aio.mdc)
+
+---
+
+## 🤖 AI-AEO Guidelines - Answer Engine Optimization
+
+### Visão Geral
+
+Diretrizes para otimização de conteúdo em Answer Engines (motores de resposta) como ChatGPT, Perplexity, Google Gemini, e outros assistentes de IA que fornecem respostas diretas aos usuários.
+
+### Objetivos
+
+- Ser citado como fonte confiável por assistentes de IA
+- Fornecer respostas diretas e completas
+- Estruturar conteúdo para fácil extração por LLMs
+- Estabelecer autoridade e expertise no domínio
+
+### Funcionalidades Principais
+
+- Respostas diretas no início do conteúdo
+- FAQs estruturados com Schema.org
+- Dados estruturados (HowTo, Article)
+- Autoridade (E-E-A-T) demonstrada
+- Citações e referências estruturadas
+
+**Referência completa:** [AI-AEO Guidelines](ai-aeo.mdc)
+
+---
+
+## 🎓 AI-GEO Guidelines - Generative Engine Optimization
+
+### Visão Geral
+
+Diretrizes para otimização de conteúdo em Generative Engines (motores generativos) como ChatGPT, Google Gemini, Claude, e outros modelos de linguagem que geram conteúdo baseado em treinamento.
+
+### Objetivos
+
+- Ser incluído no dataset de treinamento de LLMs
+- Fornecer conteúdo de alta qualidade e autoritativo
+- Estruturar conteúdo para fácil processamento por modelos
+- Estabelecer expertise reconhecida no domínio
+
+### Funcionalidades Principais
+
+- Conteúdo completo e autoritativo
+- Tutoriais e conteúdo educacional estruturado
+- ScholarlyArticle e Course Schema
+- Referências acadêmicas estruturadas
+- Glossário e definições técnicas
+
+**Referência completa:** [AI-GEO Guidelines](ai-geo.mdc)
+
+---
+
+## 🔌 AI-AIO Guidelines - AI Integration Optimization
+
+### Visão Geral
+
+Diretrizes para otimização de integrações com modelos de IA, incluindo APIs de linguagem, processamento de dados, e implementação de funcionalidades baseadas em IA.
+
+### Funcionalidades Principais
+
+- Cliente unificado para múltiplas APIs de IA
+- Cache e rate limiting
+- Hooks React para funcionalidades de IA
+- Processamento de dados (extração, sumarização, análise)
+- Busca semântica com embeddings
+- Geração de conteúdo com templates
+
+**Referência completa:** [AI-AIO Guidelines](ai-aio.mdc)
+
+---
+
+## 🔍 SXO Guidelines - Search Experience Optimization
+
+### Visão Geral
+
+Diretrizes para otimização da experiência de busca, focando na interface, funcionalidade e usabilidade de sistemas de busca, além da otimização para resultados de busca tradicionais.
+
+### Funcionalidades Principais
+
+- Busca com autocomplete e debounce
+- Resultados otimizados com destaque de termos
+- Filtros e refinamento de busca
+- Busca mobile-first
+- Busca em tempo real
+- Analytics de busca
+
+**Referência completa:** [SXO Guidelines](sxo.mdc)
+
+---
+
+## 📚 Referências
+
+### Arquitetura
+
+- [TanStack Query Docs](https://tanstack.com/query/latest)
+- [Zustand Best Practices](https://github.com/pmndrs/zustand/blob/main/docs/guides/practice-with-no-store-actions.md)
+- [Separating Server State from UI State](https://kentcdodds.com/blog/separation-of-concerns)
+
+### UX e Acessibilidade
+
+- [Nielsen's 10 Usability Heuristics](https://www.nngroup.com/articles/ten-usability-heuristics/)
+- [WCAG 2.1 AA Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
+- [HTML Landmarks](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/ARIA_Techniques#landmark_roles)
+
+### Segurança
+
+- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
+- [CSP Evaluator](https://csp-evaluator.withgoogle.com/)
+- [Security Headers Check](https://securityheaders.com/)
+
+### Validações
+
+- [Zod Documentation](https://zod.dev/)
+- [React Hook Form](https://react-hook-form.com/)
+
+### Zustand
+
+- [Zustand Documentation](https://zustand-demo.pmnd.rs/)
+
+### SEO
+
+- [Google Search Central](https://developers.google.com/search)
+- [Open Graph Protocol](https://ogp.me/)
+- [Schema.org](https://schema.org/)
+
+### Performance
+
+- [Web Vitals](https://web.dev/vitals/)
+- [Lighthouse](https://developers.google.com/web/tools/lighthouse)
+- [React Performance Optimization](https://react.dev/learn/render-and-commit)
+
+### Geolocalização
+
+- [Leaflet Documentation](https://leafletjs.com/)
+- [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/)
+- [Google Maps Platform](https://developers.google.com/maps)
+- [Geolocation API (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Geolocation_API)
+
+### Integrações
+
+- [Axios Documentation](https://axios-http.com/)
+- [Feature Flags Best Practices](https://www.atlassian.com/continuous-delivery/principles/feature-flags)
+- [Analytics Best Practices](https://segment.com/academy/)
+
+### Otimização para IA
+
+- [Answer Engine Optimization](https://www.searchenginejournal.com/answer-engine-optimization/)
+- [Generative Engine Optimization](https://www.searchenginejournal.com/generative-engine-optimization/)
+- [OpenAI API Documentation](https://platform.openai.com/docs)
+- [Google Gemini API](https://ai.google.dev/docs)
+- [Embeddings Guide](https://platform.openai.com/docs/guides/embeddings)
+
+### Experiência de Busca
+
+- [Search Experience Optimization](https://www.searchenginejournal.com/search-experience-optimization/)
+- [Autocomplete Best Practices](https://www.nngroup.com/articles/autocomplete/)
+- [Search UX Patterns](https://baymard.com/lists/ecommerce-search-ux)
+
+---
+
+**Última atualização**: 2024  
+**Versão**: 1.0.0

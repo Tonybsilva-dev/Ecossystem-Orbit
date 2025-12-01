@@ -1,0 +1,370 @@
+# Repository Planning Graph (RPG) - Orbit PRD
+
+## Overview
+
+### Problem Statement
+Gerenciar múltiplas instâncias isoladas de aplicações SaaS (como o *Carioca Lanches*) é manual, propenso a erros e difícil de escalar. Não há um controle centralizado para pagamentos, feature flags e validação de licença, e a busca por clientes é lenta e pouco intuitiva.
+
+### Target Users
+1. **Super Admin**: Precisa de controle total, busca rápida (SXO) e automação via IA.
+2. **External Applications**: Consomem a API para validar se podem operar ("Phone Home").
+3. **AI Agents**: Consomem a documentação estruturada (AEO) para realizar tarefas autônomas.
+
+### Success Metrics
+- Zero intervenção manual para bloqueio de inadimplentes.
+- Latência de validação de licença < 200ms.
+- Tempo de resposta da busca (SXO) < 100ms.
+- 100% de conformidade com schemas AEO/GEO.
+
+---
+
+## Functional Decomposition
+
+### Capability Tree
+
+### Capability: Core Tenant Management
+Gerenciamento do ciclo de vida dos clientes (Tenants) e seus dados fundamentais.
+
+#### Feature: Tenant CRUD
+- **Description**: Criação, leitura, atualização e exclusão de Tenants com validação rigorosa.
+- **Inputs**: Nome, Slug, Domínio, Plano Base.
+- **Outputs**: Registro no banco de dados, ID do Tenant.
+- **Behavior**: Valida unicidade de slug e domínio usando Zod. Implementa sanitização de inputs.
+
+#### Feature: Global Search (SXO)
+- **Description**: Busca onipresente (Command Palette) para navegação rápida.
+- **Inputs**: Termo de busca (parcial).
+- **Outputs**: Lista de Tenants ou configurações correspondentes.
+- **Behavior**: Utiliza debounce de 300ms, suporta navegação por teclado e exibe estados vazios amigáveis.
+
+### Capability: Licensing Engine
+O sistema de segurança que valida permissões e assinaturas.
+
+#### Feature: License Validation
+- **Description**: Endpoint de API para verificar se uma instância pode rodar.
+- **Inputs**: LicenseKey, Origin Header.
+- **Outputs**: Boolean (valid/invalid) + Lista de Capabilities.
+- **Behavior**: Verifica assinatura ativa e corresponde o domínio de origem (CORS security).
+
+#### Feature: Feature Flag Resolution
+- **Description**: Calcula os módulos disponíveis para um tenant.
+- **Inputs**: TenantID.
+- **Outputs**: Array de strings (ex: `['COUPONS', 'WHATSAPP']`).
+- **Behavior**: Combina features do plano base com overrides específicos do tenant (upsell).
+
+### Capability: AI Orchestration (AIO)
+Interface unificada para comunicação com LLMs e Agentes.
+
+#### Feature: AI Client Gateway
+- **Description**: Cliente HTTP resiliente para chamadas de IA.
+- **Inputs**: Prompt, Contexto.
+- **Outputs**: Resposta estruturada do LLM.
+- **Behavior**: Implementa Retry logic, Fallback entre providers e sanitização de logs.
+
+---
+
+## Structural Decomposition
+
+## Repository Structure
+
+```text
+orbit-root/
+├── app/
+│   ├── domains/
+│   │   ├── tenant/          # Maps to: Core Tenant Management
+│   │   │   ├── tenant.service.ts
+│   │   │   ├── tenant.schema.ts
+│   │   │   └── index.ts
+│   │   ├── license/         # Maps to: Licensing Engine
+│   │   │   ├── license.engine.ts
+│   │   │   └── index.ts
+│   │   └── ai/              # Maps to: AI Orchestration
+│   │       ├── ai.client.ts
+│   │       └── index.ts
+│   ├── routes/
+│   │   ├── api.validate.ts
+│   │   └── admin/
+│   └── utils/
+│       ├── security.server.ts
+│       └── db.server.ts
+└── prisma/
+    └── schema.prisma
+```
+
+Module Definitions
+Module: tenant-domain
+Maps to capability: Core Tenant Management
+
+Responsibility: Gerenciar a persistência e regras de dados dos clientes.
+
+File structure:
+
+```
+domains/tenant/
+├── tenant.service.ts
+├── tenant.schema.ts
+└── index.ts
+```
+
+Exports:
+
+createTenant(data) - Cria novo cliente validado.
+
+findTenantBySlug(slug) - Busca otimizada para resolvers.
+
+searchTenants(query) - Busca full-text para SXO.
+
+Module: license-domain
+Maps to capability: Licensing Engine
+
+Responsibility: Decidir se um acesso é permitido ou negado.
+
+File structure:
+
+```text
+domains/license/
+├── license.engine.ts
+├── license.types.ts
+└── index.ts
+```
+
+Exports:
+
+validateAccess(key, origin) - Validação criptográfica e de domínio.
+
+resolvePermissions(tenantId) - Cálculo de feature flags.
+
+Module: ai-domain
+Maps to capability: AI Orchestration (AIO)
+
+Responsibility: Abstração de chamadas LLM com resiliência.
+
+File structure:
+
+```
+domains/ai/
+├── ai.client.ts
+└── index.task
+```
+
+Exports:
+
+completion(prompt) - Chamada unificada com retry/fallback.
+
+Dependency Graph
+Dependency Chain
+Foundation Layer (Phase 0)
+No dependencies.
+
+infra-setup: Setup do Remix, Tailwind e Prisma.
+
+security-core: Headers de segurança e sanitização.
+
+validation-core: Schemas Zod base e mensagens PT-BR.
+
+ai-core: Cliente HTTP base para IA com tratamento de erros.
+
+Domain Layer (Phase 1)
+tenant-domain: Depends on [infra-setup, validation-core].
+
+doc-engine: Depends on [infra-setup] (Schemas AEO/GEO).
+
+Logic Layer (Phase 2)
+license-domain: Depends on [tenant-domain, security-core].
+
+search-logic: Depends on [tenant-domain] (Otimização SXO).
+
+Presentation Layer (Phase 3)
+api-routes: Depends on [license-domain, security-core].
+
+admin-ui: Depends on [tenant-domain, search-logic, ai-core].
+
+Implementation Roadmap
+Development Phases
+Phase 0: Orbital Foundation
+Goal: Estabelecer infraestrutura segura e resiliente.
+
+Entry Criteria: Repositório git limpo.
+
+Tasks:
+
+[ ] Setup inicial Remix + Prisma + Tailwind (depends on: [none])
+
+[ ] Implementar Security Headers e CSP (depends on: [infra-setup])
+
+[ ] Criar AI Client com Retry/Fallback Pattern (depends on: [infra-setup])
+
+Acceptance criteria: Cliente troca de provider automaticamente em caso de timeout.
+
+[ ] Configurar Zod com mensagens PT-BR (depends on: [none])
+
+Exit Criteria: "Hello World" seguro rodando e testes de infra passando.
+
+Delivers: Base técnica pronta para desenvolvimento de features.
+
+Phase 1: Data & Content
+Goal: Estrutura de dados e Documentação Otimizada (AEO/GEO).
+
+Entry Criteria: Phase 0 completa.
+
+Tasks:
+
+[ ] Modelagem Prisma e Migrations (depends on: [infra-setup])
+
+[ ] Implementar Tenant Service CRUD (depends on: [validation-core, prisma-setup])
+
+[ ] Criar estrutura de Docs com Schema.org (depends on: [infra-setup])
+
+Acceptance criteria: Validador do Google não aponta erros no JSON-LD.
+
+Exit Criteria: Possível criar tenants via script e docs visíveis.
+
+Delivers: Núcleo de dados e documentação acessível por IAs.
+
+Phase 2: Business Logic
+Goal: Regras de negócio, segurança e busca.
+
+Entry Criteria: Phase 1 completa.
+
+Tasks:
+
+[ ] Implementar Feature Flag Resolution (depends on: [tenant-domain])
+
+[ ] Criar endpoint de Validação de Licença (depends on: [feature-flag-logic, security-core])
+
+[ ] Implementar lógica de Busca com Debounce no backend (depends on: [tenant-domain])
+
+Exit Criteria: API respondendo corretamente a requests de validação simulados.
+
+Delivers: O "cérebro" do sistema funcional.
+
+Phase 3: Control Plane UI
+Goal: Interface visual para o Super Admin.
+
+Entry Criteria: Phase 2 completa.
+
+Tasks:
+
+[ ] Criar Dashboard com métricas vitais (depends on: [tenant-domain])
+
+[ ] Implementar Command Palette (Cmd+K) (depends on: [search-logic])
+
+Acceptance criteria: Navegação via teclado funcional.
+
+[ ] Aplicar UX Heuristics (Loading states, Feedback) (depends on: [admin-ui-setup])
+
+Exit Criteria: Dashboard navegável e gerenciamento de features funcional via UI.
+
+Delivers: Produto MVP completo (Orbit).
+
+Test Strategy
+Test Pyramid
+
+```text
+        /\
+       /E2E\       ← 10% (Fluxos críticos de validação e pagamento)
+      /------\
+     /Integration\ ← 30% (Interação API <-> DB <-> AI Client)
+    /------------\
+   /  Unit Tests  \ ← 60% (Regras de licença, Validadores Zod)
+  /----------------\
+```
+
+Coverage Requirements
+Line coverage: 80% minimum
+
+Branch coverage: 75% minimum
+
+Critical path (License Validation): 100%
+
+Critical Test Scenarios
+Module: license-domain
+Happy path:
+
+Tenant ativo, chave correta, domínio correto -> Retorna 200 + Features.
+
+Expected: JSON contendo array de capabilities.
+
+Edge cases:
+
+Tenant com pagamento atrasado (PAST_DUE).
+
+Expected: Retorna 403 ou JSON com flag valid: false.
+
+Security cases:
+
+Chave correta, mas Origin Header não autorizado (Tentativa de clonagem).
+
+Expected: 403 Forbidden imediato.
+
+Module: ai-domain
+Error cases:
+
+Provider primário (OpenAI) timeout.
+
+Expected: Sistema tenta provider secundário (Gemini) transparente para o usuário.
+
+Test Generation Guidelines
+Utilizar Vitest. Focar em testes de unidade para license.engine.ts cobrindo todas as combinações de Plano x Features Customizadas.
+
+Architecture
+System Components
+Remix App Server: Renderização UI e API Routes.
+
+PostgreSQL: Banco de dados relacional (Tenants, Logs, Licenses).
+
+Prisma ORM: Camada de acesso a dados.
+
+AI Gateway: Cliente interno para orquestração.
+
+Data Models
+Tenant: Entidade raiz.
+
+Plan: Define features base.
+
+TenantFeature: Overrides/Add-ons (Muitos-para-Muitos).
+
+Technology Stack
+Framework: Remix.js (Fullstack)
+
+Language: TypeScript
+
+Styling: Tailwind CSS
+
+State: Zustand (UI) + Remix Loaders (Server).
+
+Decision: Remix over Next.js
+
+Rationale: Melhor modelo de mutação (Actions) e gerenciamento de estado de servidor nativo, reduzindo necessidade de API complexa no frontend.
+
+Trade-offs: Ecossistema de plugins menor que Next.js.
+
+Risks
+Technical Risks
+Risk: Latência na validação de licença afetar performance dos clientes.
+
+Impact: Alto. Pode deixar o "Carioca Lanches" lento.
+
+Mitigation: Cache agressivo no endpoint de validação (HTTP Stale-While-Revalidate).
+
+Fallback: Modo "Offline Grace" no cliente (se API falhar, permite acesso por X horas).
+
+Scope Risks
+Risk: Complexidade da integração com múltiplos AI Providers.
+
+Impact: Médio.
+
+Mitigation: Iniciar apenas com OpenAI, implementar interface de Adapter para facilitar expansão futura.
+
+Appendix
+References
+PROCESS_07_Arquitetura.md
+PROCESS_08_UX_Heuristics.md
+PROCESS_09_Performance.md
+PROCESS_10_Seguranca.md
+PROCESS_12_Validacoes.md
+PROCESS_13_Zustand.md
+PROCESS_16_AI_AEO.md
+PROCESS_17_AI_GEO.md
+PROCESS_18_AI_AIO.md
+PROCESS_19_SXO.md

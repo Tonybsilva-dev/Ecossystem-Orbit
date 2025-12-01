@@ -1,0 +1,437 @@
+---
+description: SXO Guidelines - Search Experience Optimization - Diretrizes para otimização da experiência de busca
+globs: src/**/*.{ts,tsx,html}
+alwaysApply: true
+---
+
+# SXO Guidelines - Search Experience Optimization
+
+## **Visão Geral**
+
+Diretrizes para otimização da experiência de busca, focando na interface, funcionalidade e usabilidade de sistemas de busca, além da otimização para resultados de busca tradicionais.
+
+---
+
+## 🔍 Funcionalidade de Busca
+
+### **✅ DO: Busca com Debounce e Autocomplete**
+
+```typescript
+// ✅ DO: Hook para busca com autocomplete
+import { useState, useEffect } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
+
+export function useSearchAutocomplete() {
+  const [query, setQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const searchSuggestions = useDebouncedCallback(async (searchQuery: string) => {
+    if (searchQuery.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `/api/search/suggestions?q=${encodeURIComponent(searchQuery)}`
+      );
+      const data = await response.json();
+      setSuggestions(data.suggestions || []);
+    } catch (error) {
+      console.error('Erro ao buscar sugestões:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, 300);
+
+  useEffect(() => {
+    searchSuggestions(query);
+  }, [query, searchSuggestions]);
+
+  return { query, setQuery, suggestions, loading };
+}
+```
+
+### **✅ DO: Componente de Busca Completo**
+
+```tsx
+// ✅ DO: Componente de busca com autocomplete
+export function SearchBox() {
+  const { query, setQuery, suggestions, loading } = useSearchAutocomplete();
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  return (
+    <div className="search-box">
+      <div className="search-input-wrapper">
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setShowSuggestions(true)}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+          placeholder="Buscar..."
+          aria-label="Buscar"
+          aria-autocomplete="list"
+          aria-expanded={showSuggestions && suggestions.length > 0}
+        />
+        {loading && <Spinner />}
+      </div>
+
+      {showSuggestions && suggestions.length > 0 && (
+        <ul className="suggestions" role="listbox">
+          {suggestions.map((suggestion, index) => (
+            <li
+              key={index}
+              role="option"
+              onClick={() => {
+                setQuery(suggestion.text);
+                setShowSuggestions(false);
+                // Navegar para resultado
+              }}
+            >
+              {suggestion.text}
+              {suggestion.category && (
+                <span className="category">{suggestion.category}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+```
+
+---
+
+## 📊 Resultados de Busca
+
+### **✅ DO: Exibição de Resultados Otimizada**
+
+```tsx
+// ✅ DO: Componente de resultados de busca
+export function SearchResults({ results, query }: SearchResultsProps) {
+  if (results.length === 0) {
+    return <EmptySearchState query={query} />;
+  }
+
+  return (
+    <div className="search-results">
+      <div className="results-header">
+        <p>
+          {results.length} resultado{results.length !== 1 ? 's' : ''} para "
+          {query}"
+        </p>
+      </div>
+
+      <ul className="results-list">
+        {results.map((result, index) => (
+          <li key={result.id || index}>
+            <SearchResultItem result={result} query={query} />
+          </li>
+        ))}
+      </ul>
+
+      {results.length >= 10 && <Pagination />}
+    </div>
+  );
+}
+
+// ✅ DO: Item de resultado individual
+export function SearchResultItem({ result, query }: SearchResultItemProps) {
+  const highlightedTitle = highlightText(result.title, query);
+  const highlightedSnippet = highlightText(result.snippet, query);
+
+  return (
+    <article className="search-result">
+      <h3>
+        <a href={result.url} title={result.title}>
+          {highlightedTitle}
+        </a>
+      </h3>
+      <p className="url">{result.url}</p>
+      <p className="snippet">{highlightedSnippet}</p>
+      {result.meta && (
+        <div className="meta">
+          {result.meta.date && <span>{result.meta.date}</span>}
+          {result.meta.category && <span>{result.meta.category}</span>}
+        </div>
+      )}
+    </article>
+  );
+}
+```
+
+### **✅ DO: Destaque de Termos de Busca**
+
+```typescript
+// ✅ DO: Função para destacar termos de busca
+export function highlightText(text: string, query: string): React.ReactNode {
+  if (!query || !text) return text;
+
+  const terms = query.toLowerCase().split(/\s+/);
+  let highlightedText = text;
+  const parts: (string | React.ReactNode)[] = [];
+
+  terms.forEach((term) => {
+    const regex = new RegExp(`(${term})`, 'gi');
+    highlightedText = highlightedText.replace(regex, (match) => {
+      return `<mark>${match}</mark>`;
+    });
+  });
+
+  return <span dangerouslySetInnerHTML={{ __html: highlightedText }} />;
+}
+```
+
+---
+
+## 🎯 Filtros e Refinamento
+
+### **✅ DO: Sistema de Filtros**
+
+```tsx
+// ✅ DO: Componente de filtros de busca
+export function SearchFilters({
+  filters,
+  onFilterChange,
+}: SearchFiltersProps) {
+  return (
+    <aside className="search-filters" aria-label="Filtros de busca">
+      <h2>Filtrar Resultados</h2>
+
+      {/* Filtro por categoria */}
+      <div className="filter-group">
+        <h3>Categoria</h3>
+        <ul>
+          {categories.map((category) => (
+            <li key={category.id}>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={filters.categories.includes(category.id)}
+                  onChange={(e) => {
+                    const newCategories = e.target.checked
+                      ? [...filters.categories, category.id]
+                      : filters.categories.filter((id) => id !== category.id);
+                    onFilterChange({ ...filters, categories: newCategories });
+                  }}
+                />
+                {category.name} ({category.count})
+              </label>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Filtro por data */}
+      <div className="filter-group">
+        <h3>Data</h3>
+        <select
+          value={filters.dateRange}
+          onChange={(e) =>
+            onFilterChange({ ...filters, dateRange: e.target.value })
+          }
+        >
+          <option value="all">Todas as datas</option>
+          <option value="day">Últimas 24 horas</option>
+          <option value="week">Última semana</option>
+          <option value="month">Último mês</option>
+          <option value="year">Último ano</option>
+        </select>
+      </div>
+
+      {/* Botão de limpar filtros */}
+      <button
+        onClick={() => onFilterChange({ categories: [], dateRange: 'all' })}
+        className="clear-filters"
+      >
+        Limpar Filtros
+      </button>
+    </aside>
+  );
+}
+```
+
+---
+
+## 📱 Busca Mobile
+
+### **✅ DO: Busca Otimizada para Mobile**
+
+```tsx
+// ✅ DO: Busca mobile-first
+export function MobileSearch() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        onClick={() => setIsOpen(true)}
+        className="mobile-search-trigger"
+        aria-label="Abrir busca"
+      >
+        <SearchIcon />
+      </button>
+
+      {isOpen && (
+        <Dialog onClose={() => setIsOpen(false)}>
+          <DialogContent className="mobile-search-dialog">
+            <SearchBox />
+            <SearchResults />
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
+  );
+}
+```
+
+---
+
+## 🔄 Busca em Tempo Real
+
+### **✅ DO: Busca com Resultados em Tempo Real**
+
+```typescript
+// ✅ DO: Hook para busca em tempo real
+export function useRealtimeSearch() {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const performSearch = useDebouncedCallback(async (searchQuery: string) => {
+    if (searchQuery.length < 2) {
+      setResults([]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `/api/search?q=${encodeURIComponent(searchQuery)}`
+      );
+      const data = await response.json();
+      setResults(data.results || []);
+    } catch (error) {
+      console.error('Erro na busca:', error);
+      toast.error('Erro ao buscar resultados');
+    } finally {
+      setLoading(false);
+    }
+  }, 300);
+
+  useEffect(() => {
+    performSearch(query);
+  }, [query, performSearch]);
+
+  return { query, setQuery, results, loading };
+}
+```
+
+---
+
+## 📊 Analytics de Busca
+
+### **✅ DO: Rastreamento de Buscas**
+
+```typescript
+// ✅ DO: Rastrear buscas e resultados
+export function useSearchAnalytics() {
+  const trackSearch = useCallback((query: string, resultCount: number) => {
+    if (typeof gtag !== 'undefined') {
+      gtag('event', 'search', {
+        search_term: query,
+        result_count: resultCount,
+      });
+    }
+  }, []);
+
+  const trackSearchClick = useCallback(
+    (query: string, resultUrl: string, position: number) => {
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'search_click', {
+          search_term: query,
+          result_url: resultUrl,
+          result_position: position,
+        });
+      }
+    },
+    []
+  );
+
+  return { trackSearch, trackSearchClick };
+}
+```
+
+---
+
+## 🎯 Checklist de SXO
+
+### **Funcionalidade de Busca**
+
+- [ ] Campo de busca visível e acessível
+- [ ] Autocomplete implementado com debounce
+- [ ] Sugestões de busca exibidas
+- [ ] Busca em tempo real configurada
+- [ ] Loading states durante busca
+
+### **Resultados de Busca**
+
+- [ ] Resultados exibidos de forma clara
+- [ ] Destaque de termos de busca implementado
+- [ ] Snippets relevantes exibidos
+- [ ] Metadados (data, categoria) mostrados
+- [ ] Paginação implementada
+
+### **Filtros e Refinamento**
+
+- [ ] Filtros por categoria implementados
+- [ ] Filtro por data implementado
+- [ ] Outros filtros relevantes (tipo, autor, etc.)
+- [ ] Botão de limpar filtros
+- [ ] Contagem de resultados atualizada
+
+### **Mobile**
+
+- [ ] Busca otimizada para mobile
+- [ ] Interface touch-friendly
+- [ ] Sugestões acessíveis em mobile
+- [ ] Resultados legíveis em telas pequenas
+
+### **Performance**
+
+- [ ] Debounce configurado (300ms recomendado)
+- [ ] Cache de resultados implementado
+- [ ] Lazy loading de resultados
+- [ ] Otimização de requisições
+
+### **Analytics**
+
+- [ ] Rastreamento de buscas implementado
+- [ ] Rastreamento de cliques em resultados
+- [ ] Métricas de busca sem resultados
+- [ ] Análise de termos mais buscados
+
+### **Acessibilidade**
+
+- [ ] Aria-labels configurados
+- [ ] Navegação por teclado funcional
+- [ ] Screen reader compatibility
+- [ ] Foco visível em elementos interativos
+
+---
+
+## 📚 Referências
+
+- [Search Experience Optimization](https://www.searchenginejournal.com/search-experience-optimization/)
+- [Autocomplete Best Practices](https://www.nngroup.com/articles/autocomplete/)
+- [Search UX Patterns](https://baymard.com/lists/ecommerce-search-ux)
+- [WCAG Search Guidelines](https://www.w3.org/WAI/WCAG21/Understanding/)
+
+---
+
+**Última atualização**: 2024  
+**Versão**: 1.0.0

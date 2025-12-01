@@ -1,0 +1,546 @@
+---
+description: AIO Guidelines - All In One - Diretrizes para integrações completas e sistemas unificados
+globs: src/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# AIO Guidelines - All In One
+
+## **Visão Geral**
+
+Diretrizes para implementação de sistemas integrados e unificados, incluindo integrações com múltiplas APIs, gerenciamento de configurações centralizadas, e padrões para sistemas que agregam múltiplas funcionalidades.
+
+---
+
+## 🔌 Integrações e APIs
+
+### **✅ DO: Configuração Centralizada de APIs**
+
+```typescript
+// ✅ DO: Configuração centralizada de endpoints e credenciais
+export const API_CONFIG = {
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://api.example.com',
+  timeout: 30000,
+  retries: 3,
+  endpoints: {
+    auth: '/auth',
+    users: '/users',
+    products: '/products',
+    orders: '/orders',
+  },
+} as const;
+
+// ✅ DO: Cliente HTTP unificado
+import axios from 'axios';
+
+export const apiClient = axios.create({
+  baseURL: API_CONFIG.baseURL,
+  timeout: API_CONFIG.timeout,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Interceptor para adicionar token
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+```
+
+### **✅ DO: Service Layer Unificado**
+
+```typescript
+// ✅ DO: Services organizados por domínio
+export class UnifiedService {
+  // Auth
+  static async login(credentials: LoginCredentials) {
+    return apiClient.post(API_CONFIG.endpoints.auth + '/login', credentials);
+  }
+
+  static async logout() {
+    return apiClient.post(API_CONFIG.endpoints.auth + '/logout');
+  }
+
+  // Users
+  static async getUsers(params?: UserFilters) {
+    return apiClient.get(API_CONFIG.endpoints.users, { params });
+  }
+
+  static async getUserById(id: string) {
+    return apiClient.get(`${API_CONFIG.endpoints.users}/${id}`);
+  }
+
+  // Products
+  static async getProducts(params?: ProductFilters) {
+    return apiClient.get(API_CONFIG.endpoints.products, { params });
+  }
+
+  // Orders
+  static async createOrder(orderData: CreateOrderData) {
+    return apiClient.post(API_CONFIG.endpoints.orders, orderData);
+  }
+}
+```
+
+---
+
+## ⚙️ Configuração e Feature Flags
+
+### **✅ DO: Sistema de Feature Flags**
+
+```typescript
+// ✅ DO: Feature flags centralizados
+export const FEATURE_FLAGS = {
+  enableNewDashboard: import.meta.env.VITE_ENABLE_NEW_DASHBOARD === 'true',
+  enableAdvancedSearch: import.meta.env.VITE_ENABLE_ADVANCED_SEARCH === 'true',
+  enableAnalytics: import.meta.env.VITE_ENABLE_ANALYTICS === 'true',
+  enableNotifications: import.meta.env.VITE_ENABLE_NOTIFICATIONS === 'true',
+} as const;
+
+// ✅ DO: Hook para verificar feature flags
+export function useFeatureFlag(flag: keyof typeof FEATURE_FLAGS): boolean {
+  return FEATURE_FLAGS[flag];
+}
+
+// ✅ DO: Componente condicional baseado em feature flag
+export function FeatureGate({
+  flag,
+  children,
+  fallback = null,
+}: {
+  flag: keyof typeof FEATURE_FLAGS;
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}) {
+  const isEnabled = useFeatureFlag(flag);
+  return isEnabled ? <>{children}</> : <>{fallback}</>;
+}
+```
+
+### **✅ DO: Configuração de Ambiente**
+
+```typescript
+// ✅ DO: Configuração centralizada de ambiente
+export const ENV_CONFIG = {
+  isDevelopment: import.meta.env.DEV,
+  isProduction: import.meta.env.PROD,
+  apiUrl: import.meta.env.VITE_API_URL,
+  appName: import.meta.env.VITE_APP_NAME || '[Nome do Projeto]',
+  version: import.meta.env.VITE_APP_VERSION || '1.0.0',
+  sentryDsn: import.meta.env.VITE_SENTRY_DSN,
+  analyticsId: import.meta.env.VITE_ANALYTICS_ID,
+} as const;
+```
+
+---
+
+## 🔄 Sincronização e Estado Global
+
+### **✅ DO: Store Unificado para Configurações**
+
+```typescript
+// ✅ DO: Store Zustand para configurações globais
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+interface AppConfigState {
+  theme: 'light' | 'dark' | 'system';
+  language: string;
+  notifications: {
+    email: boolean;
+    push: boolean;
+    sms: boolean;
+  };
+  preferences: Record<string, unknown>;
+  setTheme: (theme: 'light' | 'dark' | 'system') => void;
+  setLanguage: (language: string) => void;
+  updateNotifications: (notifications: Partial<AppConfigState['notifications']>) => void;
+  updatePreferences: (key: string, value: unknown) => void;
+  reset: () => void;
+}
+
+const defaultState = {
+  theme: 'system' as const,
+  language: 'pt-BR',
+  notifications: {
+    email: true,
+    push: true,
+    sms: false,
+  },
+  preferences: {},
+};
+
+export const useAppConfigStore = create<AppConfigState>()(
+  persist(
+    (set) => ({
+      ...defaultState,
+      setTheme: (theme) => set({ theme }),
+      setLanguage: (language) => set({ language }),
+      updateNotifications: (notifications) =>
+        set((state) => ({
+          notifications: { ...state.notifications, ...notifications },
+        })),
+      updatePreferences: (key, value) =>
+        set((state) => ({
+          preferences: { ...state.preferences, [key]: value },
+        })),
+      reset: () => set(defaultState),
+    }),
+    { name: 'app-config-storage' }
+  )
+);
+```
+
+---
+
+## 📊 Analytics e Monitoramento Unificado
+
+### **✅ DO: Sistema de Analytics Centralizado**
+
+```typescript
+// ✅ DO: Service unificado de analytics
+export class AnalyticsService {
+  private static providers: AnalyticsProvider[] = [];
+
+  static registerProvider(provider: AnalyticsProvider) {
+    this.providers.push(provider);
+  }
+
+  static async trackEvent(
+    eventName: string,
+    properties?: Record<string, unknown>
+  ) {
+    // Enviar para todos os providers registrados
+    await Promise.allSettled(
+      this.providers.map((provider) =>
+        provider.trackEvent(eventName, properties)
+      )
+    );
+  }
+
+  static async trackPageView(path: string) {
+    await Promise.allSettled(
+      this.providers.map((provider) => provider.trackPageView(path))
+    );
+  }
+
+  static async identify(userId: string, traits?: Record<string, unknown>) {
+    await Promise.allSettled(
+      this.providers.map((provider) => provider.identify(userId, traits))
+    );
+  }
+}
+
+// ✅ DO: Implementação de providers
+interface AnalyticsProvider {
+  trackEvent(eventName: string, properties?: Record<string, unknown>): Promise<void>;
+  trackPageView(path: string): Promise<void>;
+  identify(userId: string, traits?: Record<string, unknown>): Promise<void>;
+}
+
+// Exemplo: Google Analytics
+class GoogleAnalyticsProvider implements AnalyticsProvider {
+  async trackEvent(eventName: string, properties?: Record<string, unknown>) {
+    if (typeof gtag !== 'undefined') {
+      gtag('event', eventName, properties);
+    }
+  }
+
+  async trackPageView(path: string) {
+    if (typeof gtag !== 'undefined') {
+      gtag('config', ENV_CONFIG.analyticsId, { page_path: path });
+    }
+  }
+
+  async identify(userId: string, traits?: Record<string, unknown>) {
+    if (typeof gtag !== 'undefined') {
+      gtag('set', { user_id: userId, ...traits });
+    }
+  }
+}
+
+// Registrar providers
+if (ENV_CONFIG.analyticsId) {
+  AnalyticsService.registerProvider(new GoogleAnalyticsProvider());
+}
+```
+
+---
+
+## 🔔 Notificações Unificadas
+
+### **✅ DO: Sistema de Notificações Centralizado**
+
+```typescript
+// ✅ DO: Service unificado de notificações
+export class NotificationService {
+  private static channels: NotificationChannel[] = [];
+
+  static registerChannel(channel: NotificationChannel) {
+    this.channels.push(channel);
+  }
+
+  static async send(
+    message: string,
+    options?: NotificationOptions
+  ): Promise<void> {
+    const { channels = ['toast'], ...rest } = options || {};
+
+    await Promise.allSettled(
+      this.channels
+        .filter((channel) => channels.includes(channel.type))
+        .map((channel) => channel.send(message, rest))
+    );
+  }
+
+  static success(message: string, options?: NotificationOptions) {
+    return this.send(message, { ...options, type: 'success' });
+  }
+
+  static error(message: string, options?: NotificationOptions) {
+    return this.send(message, { ...options, type: 'error' });
+  }
+
+  static info(message: string, options?: NotificationOptions) {
+    return this.send(message, { ...options, type: 'info' });
+  }
+
+  static warning(message: string, options?: NotificationOptions) {
+    return this.send(message, { ...options, type: 'warning' });
+  }
+}
+
+// ✅ DO: Canais de notificação
+interface NotificationChannel {
+  type: 'toast' | 'email' | 'push' | 'sms';
+  send(message: string, options?: NotificationOptions): Promise<void>;
+}
+
+// Exemplo: Toast Channel
+class ToastChannel implements NotificationChannel {
+  type = 'toast' as const;
+
+  async send(message: string, options?: NotificationOptions) {
+    const { type = 'info', ...rest } = options || {};
+    
+    switch (type) {
+      case 'success':
+        toast.success(message, rest);
+        break;
+      case 'error':
+        toast.error(message, rest);
+        break;
+      case 'warning':
+        toast.warning(message, rest);
+        break;
+      default:
+        toast.info(message, rest);
+    }
+  }
+}
+
+// Registrar canais
+NotificationService.registerChannel(new ToastChannel());
+```
+
+---
+
+## 🗄️ Cache e Persistência Unificada
+
+### **✅ DO: Sistema de Cache Centralizado**
+
+```typescript
+// ✅ DO: Cache unificado com múltiplas estratégias
+export class CacheService {
+  private static memoryCache = new Map<string, { data: unknown; expires: number }>();
+  private static storage: Storage = localStorage;
+
+  static set(
+    key: string,
+    value: unknown,
+    options?: { ttl?: number; storage?: 'memory' | 'localStorage' }
+  ) {
+    const { ttl = 0, storage = 'memory' } = options || {};
+    const expires = ttl > 0 ? Date.now() + ttl : 0;
+
+    if (storage === 'localStorage') {
+      try {
+        this.storage.setItem(
+          key,
+          JSON.stringify({ data: value, expires })
+        );
+      } catch (error) {
+        console.error('Erro ao salvar no localStorage:', error);
+      }
+    } else {
+      this.memoryCache.set(key, { data: value, expires });
+    }
+  }
+
+  static get<T>(key: string, storage: 'memory' | 'localStorage' = 'memory'): T | null {
+    if (storage === 'localStorage') {
+      try {
+        const item = this.storage.getItem(key);
+        if (!item) return null;
+
+        const { data, expires } = JSON.parse(item);
+        if (expires > 0 && expires < Date.now()) {
+          this.storage.removeItem(key);
+          return null;
+        }
+
+        return data as T;
+      } catch (error) {
+        console.error('Erro ao ler do localStorage:', error);
+        return null;
+      }
+    } else {
+      const item = this.memoryCache.get(key);
+      if (!item) return null;
+
+      if (item.expires > 0 && item.expires < Date.now()) {
+        this.memoryCache.delete(key);
+        return null;
+      }
+
+      return item.data as T;
+    }
+  }
+
+  static clear(pattern?: string) {
+    if (pattern) {
+      // Limpar por padrão
+      this.memoryCache.forEach((_, key) => {
+        if (key.includes(pattern)) {
+          this.memoryCache.delete(key);
+        }
+      });
+    } else {
+      // Limpar tudo
+      this.memoryCache.clear();
+    }
+  }
+}
+```
+
+---
+
+## 🔐 Autenticação e Autorização Unificada
+
+### **✅ DO: Sistema de Permissões Centralizado**
+
+```typescript
+// ✅ DO: Gerenciamento de permissões unificado
+export class PermissionService {
+  private static permissions: Set<string> = new Set();
+  private static roles: Set<string> = new Set();
+
+  static setPermissions(permissions: string[]) {
+    this.permissions = new Set(permissions);
+  }
+
+  static setRoles(roles: string[]) {
+    this.roles = new Set(roles);
+  }
+
+  static hasPermission(permission: string): boolean {
+    return this.permissions.has(permission);
+  }
+
+  static hasRole(role: string): boolean {
+    return this.roles.has(role);
+  }
+
+  static hasAnyPermission(permissions: string[]): boolean {
+    return permissions.some((p) => this.hasPermission(p));
+  }
+
+  static hasAllPermissions(permissions: string[]): boolean {
+    return permissions.every((p) => this.hasPermission(p));
+  }
+}
+
+// ✅ DO: Hook para verificar permissões
+export function usePermission(permission: string): boolean {
+  return PermissionService.hasPermission(permission);
+}
+
+// ✅ DO: Componente de proteção por permissão
+export function PermissionGate({
+  permission,
+  children,
+  fallback = null,
+}: {
+  permission: string;
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}) {
+  const hasPermission = usePermission(permission);
+  return hasPermission ? <>{children}</> : <>{fallback}</>;
+}
+```
+
+---
+
+## 🎯 Checklist de Implementação
+
+### **Configuração**
+
+- [ ] Configuração centralizada de APIs
+- [ ] Feature flags implementados
+- [ ] Variáveis de ambiente organizadas
+- [ ] Configuração de ambiente por stage (dev/staging/prod)
+
+### **Integrações**
+
+- [ ] Cliente HTTP unificado configurado
+- [ ] Interceptors de request/response implementados
+- [ ] Tratamento de erros centralizado
+- [ ] Retry logic implementado
+- [ ] Timeout configurado
+
+### **Estado e Cache**
+
+- [ ] Store unificado para configurações
+- [ ] Sistema de cache implementado
+- [ ] Persistência configurada
+- [ ] Limpeza de cache implementada
+
+### **Analytics e Monitoramento**
+
+- [ ] Sistema de analytics centralizado
+- [ ] Múltiplos providers suportados
+- [ ] Tracking de eventos implementado
+- [ ] Page view tracking configurado
+
+### **Notificações**
+
+- [ ] Sistema de notificações unificado
+- [ ] Múltiplos canais suportados
+- [ ] Preferências de notificação configuráveis
+- [ ] Feedback visual implementado
+
+### **Segurança**
+
+- [ ] Sistema de permissões implementado
+- [ ] Componentes de proteção por permissão
+- [ ] Verificação de roles
+- [ ] Autorização em rotas e ações
+
+---
+
+## 📚 Referências
+
+- [Axios Documentation](https://axios-http.com/)
+- [Zustand Documentation](https://zustand-demo.pmnd.rs/)
+- [Feature Flags Best Practices](https://www.atlassian.com/continuous-delivery/principles/feature-flags)
+- [Analytics Best Practices](https://segment.com/academy/)
+
+---
+
+**Última atualização**: 2024  
+**Versão**: 1.0.0

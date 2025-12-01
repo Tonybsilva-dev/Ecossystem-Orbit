@@ -1,0 +1,594 @@
+---
+description: GEO Guidelines - Diretrizes para geolocalização, mapas e funcionalidades baseadas em localização
+globs: src/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# GEO Guidelines - Diretrizes de Geolocalização
+
+## **Visão Geral**
+
+Diretrizes completas para implementação de funcionalidades baseadas em geolocalização, incluindo mapas interativos, busca por localização, cálculo de distâncias, e integração com serviços de geocodificação.
+
+---
+
+## 🗺️ Mapas e Visualização
+
+### **Bibliotecas Recomendadas**
+
+- **Leaflet** - Biblioteca open-source leve e flexível
+- **Mapbox GL JS** - Renderização vetorial de alta performance
+- **Google Maps API** - Solução completa e robusta
+
+### **✅ DO: Implementação de Mapas**
+
+```typescript
+// ✅ DO: Hook para gerenciar estado do mapa
+import { useState, useEffect, useRef } from 'react';
+import L from 'leaflet';
+
+export function useMap(center: [number, number], zoom: number = 13) {
+  const mapRef = useRef<L.Map | null>(null);
+  const [map, setMap] = useState<L.Map | null>(null);
+
+  useEffect(() => {
+    if (!mapRef.current) {
+      const mapInstance = L.map('map', {
+        center,
+        zoom,
+      });
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+      }).addTo(mapInstance);
+
+      mapRef.current = mapInstance;
+      setMap(mapInstance);
+    }
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, []);
+
+  return { map, mapRef };
+}
+```
+
+### **✅ DO: Marcadores e Popups**
+
+```typescript
+// ✅ DO: Adicionar marcadores com popups informativos
+export function useMapMarkers(map: L.Map | null, locations: Location[]) {
+  const markersRef = useRef<L.Marker[]>([]);
+
+  useEffect(() => {
+    if (!map) return;
+
+    // Limpar marcadores anteriores
+    markersRef.current.forEach(marker => marker.remove());
+
+    // Adicionar novos marcadores
+    const newMarkers = locations.map(location => {
+      const marker = L.marker([location.lat, location.lng])
+        .addTo(map)
+        .bindPopup(`
+          <div>
+            <h3>${location.name}</h3>
+            <p>${location.address}</p>
+            ${location.distance ? `<p>Distância: ${location.distance} km</p>` : ''}
+          </div>
+        `);
+
+      return marker;
+    });
+
+    markersRef.current = newMarkers;
+
+    // Ajustar view para mostrar todos os marcadores
+    if (newMarkers.length > 0) {
+      const group = new L.FeatureGroup(newMarkers);
+      map.fitBounds(group.getBounds().pad(0.1));
+    }
+  }, [map, locations]);
+}
+```
+
+---
+
+## 📍 Geolocalização do Usuário
+
+### **✅ DO: Obter Localização do Usuário**
+
+```typescript
+// ✅ DO: Hook para geolocalização com tratamento de erros
+export function useGeolocation() {
+  const [location, setLocation] = useState<GeolocationPosition | null>(null);
+  const [error, setError] = useState<GeolocationPositionError | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const getCurrentPosition = useCallback(() => {
+    if (!navigator.geolocation) {
+      setError({
+        code: 0,
+        message: 'Geolocalização não suportada pelo navegador',
+        PERMISSION_DENIED: 1,
+        POSITION_UNAVAILABLE: 2,
+        TIMEOUT: 3,
+      } as GeolocationPositionError);
+      return;
+    }
+
+    setLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocation(position);
+        setError(null);
+        setLoading(false);
+      },
+      (err) => {
+        setError(err);
+        setLoading(false);
+        
+        // Mensagens amigáveis de erro
+        let message = 'Erro ao obter localização';
+        switch (err.code) {
+          case err.PERMISSION_DENIED:
+            message = 'Permissão de localização negada';
+            break;
+          case err.POSITION_UNAVAILABLE:
+            message = 'Localização indisponível';
+            break;
+          case err.TIMEOUT:
+            message = 'Tempo de espera excedido';
+            break;
+        }
+        toast.error(message);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  }, []);
+
+  return { location, error, loading, getCurrentPosition };
+}
+```
+
+### **✅ DO: Watch Position (Rastreamento Contínuo)**
+
+```typescript
+// ✅ DO: Rastreamento contínuo com cleanup
+export function useWatchPosition() {
+  const [position, setPosition] = useState<GeolocationPosition | null>(null);
+  const watchIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (pos) => setPosition(pos),
+      (err) => {
+        console.error('Erro ao rastrear posição:', err);
+        toast.error('Erro ao rastrear localização');
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 1000,
+      }
+    );
+
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, []);
+
+  return position;
+}
+```
+
+---
+
+## 🔍 Geocodificação e Reverse Geocoding
+
+### **✅ DO: Geocodificação (Endereço → Coordenadas)**
+
+```typescript
+// ✅ DO: Service para geocodificação
+export class GeocodingService {
+  static async geocode(address: string): Promise<GeocodeResult | null> {
+    try {
+      // Exemplo com OpenStreetMap Nominatim (gratuito)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
+        {
+          headers: {
+            'User-Agent': '[Nome do Projeto]',
+          },
+        }
+      );
+
+      const data = await response.json();
+      
+      if (data.length === 0) {
+        return null;
+      }
+
+      const result = data[0];
+      return {
+        lat: parseFloat(result.lat),
+        lng: parseFloat(result.lon),
+        address: result.display_name,
+        formatted: {
+          street: result.address?.road || '',
+          city: result.address?.city || result.address?.town || '',
+          state: result.address?.state || '',
+          country: result.address?.country || '',
+          postalCode: result.address?.postcode || '',
+        },
+      };
+    } catch (error) {
+      console.error('Erro na geocodificação:', error);
+      throw new Error('Erro ao buscar localização');
+    }
+  }
+}
+```
+
+### **✅ DO: Reverse Geocoding (Coordenadas → Endereço)**
+
+```typescript
+// ✅ DO: Service para reverse geocoding
+export class ReverseGeocodingService {
+  static async reverseGeocode(
+    lat: number,
+    lng: number
+  ): Promise<GeocodeResult | null> {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': '[Nome do Projeto]',
+          },
+        }
+      );
+
+      const data = await response.json();
+      
+      if (!data || !data.address) {
+        return null;
+      }
+
+      return {
+        lat,
+        lng,
+        address: data.display_name,
+        formatted: {
+          street: data.address?.road || '',
+          city: data.address?.city || data.address?.town || '',
+          state: data.address?.state || '',
+          country: data.address?.country || '',
+          postalCode: data.address?.postcode || '',
+        },
+      };
+    } catch (error) {
+      console.error('Erro no reverse geocoding:', error);
+      throw new Error('Erro ao buscar endereço');
+    }
+  }
+}
+```
+
+---
+
+## 📏 Cálculo de Distâncias
+
+### **✅ DO: Distância entre Dois Pontos (Haversine)**
+
+```typescript
+// ✅ DO: Função para calcular distância usando fórmula de Haversine
+export function calculateDistance(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number {
+  const R = 6371; // Raio da Terra em km
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c; // Distância em km
+
+  return Math.round(distance * 100) / 100; // Arredondar para 2 casas decimais
+}
+
+function toRad(degrees: number): number {
+  return degrees * (Math.PI / 180);
+}
+```
+
+### **✅ DO: Busca por Raio**
+
+```typescript
+// ✅ DO: Filtrar locais dentro de um raio
+export function filterByRadius(
+  center: { lat: number; lng: number },
+  locations: Location[],
+  radiusKm: number
+): Location[] {
+  return locations.filter(location => {
+    const distance = calculateDistance(
+      center.lat,
+      center.lng,
+      location.lat,
+      location.lng
+    );
+    
+    location.distance = distance;
+    return distance <= radiusKm;
+  }).sort((a, b) => (a.distance || 0) - (b.distance || 0));
+}
+```
+
+---
+
+## 🎯 Autocomplete de Endereços
+
+### **✅ DO: Autocomplete com Debounce**
+
+```typescript
+// ✅ DO: Hook para autocomplete de endereços
+import { useState, useEffect } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
+
+export function useAddressAutocomplete() {
+  const [query, setQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const searchAddresses = useDebouncedCallback(async (searchQuery: string) => {
+    if (searchQuery.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5`,
+        {
+          headers: {
+            'User-Agent': '[Nome do Projeto]',
+          },
+        }
+      );
+
+      const data = await response.json();
+      setSuggestions(
+        data.map((item: any) => ({
+          id: item.place_id,
+          address: item.display_name,
+          lat: parseFloat(item.lat),
+          lng: parseFloat(item.lon),
+        }))
+      );
+    } catch (error) {
+      console.error('Erro no autocomplete:', error);
+      toast.error('Erro ao buscar endereços');
+    } finally {
+      setLoading(false);
+    }
+  }, 300);
+
+  useEffect(() => {
+    searchAddresses(query);
+  }, [query, searchAddresses]);
+
+  return { query, setQuery, suggestions, loading };
+}
+```
+
+---
+
+## 🔐 Permissões e Privacidade
+
+### **✅ DO: Solicitar Permissão de Localização**
+
+```typescript
+// ✅ DO: Solicitar permissão com feedback ao usuário
+export function useLocationPermission() {
+  const [permission, setPermission] = useState<PermissionState>('prompt');
+
+  const requestPermission = async () => {
+    if (!navigator.permissions) {
+      // Fallback para navegadores que não suportam Permissions API
+      return 'prompt';
+    }
+
+    try {
+      const result = await navigator.permissions.query({ name: 'geolocation' });
+      setPermission(result.state);
+
+      result.onchange = () => {
+        setPermission(result.state);
+      };
+
+      return result.state;
+    } catch (error) {
+      console.error('Erro ao verificar permissão:', error);
+      return 'prompt';
+    }
+  };
+
+  return { permission, requestPermission };
+}
+```
+
+### **✅ DO: Mensagens de Privacidade**
+
+```typescript
+// ✅ DO: Componente de consentimento de localização
+export function LocationConsentDialog({
+  onAccept,
+  onDeny,
+}: {
+  onAccept: () => void;
+  onDeny: () => void;
+}) {
+  return (
+    <Dialog>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Permissão de Localização</DialogTitle>
+          <DialogDescription>
+            Para oferecer uma melhor experiência, precisamos da sua localização.
+            Sua localização não será compartilhada com terceiros.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={onDeny}>
+            Negar
+          </Button>
+          <Button onClick={onAccept}>
+            Permitir Localização
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+---
+
+## ⚡ Performance e Otimização
+
+### **✅ DO: Lazy Loading de Mapas**
+
+```typescript
+// ✅ DO: Carregar biblioteca de mapas apenas quando necessário
+const MapComponent = lazy(() => import('./MapComponent'));
+
+export function LocationPage() {
+  const [showMap, setShowMap] = useState(false);
+
+  return (
+    <div>
+      <Button onClick={() => setShowMap(true)}>
+        Mostrar Mapa
+      </Button>
+      
+      {showMap && (
+        <Suspense fallback={<MapSkeleton />}>
+          <MapComponent />
+        </Suspense>
+      )}
+    </div>
+  );
+}
+```
+
+### **✅ DO: Cache de Geocodificação**
+
+```typescript
+// ✅ DO: Cache de resultados de geocodificação
+const geocodeCache = new Map<string, GeocodeResult>();
+
+export class CachedGeocodingService {
+  static async geocode(address: string): Promise<GeocodeResult | null> {
+    // Verificar cache
+    if (geocodeCache.has(address)) {
+      return geocodeCache.get(address)!;
+    }
+
+    // Buscar e cachear
+    const result = await GeocodingService.geocode(address);
+    if (result) {
+      geocodeCache.set(address, result);
+    }
+
+    return result;
+  }
+}
+```
+
+---
+
+## 🎯 Checklist de Implementação
+
+### **Mapas**
+
+- [ ] Biblioteca de mapas escolhida e configurada
+- [ ] Marcadores implementados com popups informativos
+- [ ] Controles de zoom e navegação funcionais
+- [ ] Responsividade em mobile e desktop
+- [ ] Ajuste automático de view para mostrar todos os marcadores
+
+### **Geolocalização**
+
+- [ ] Solicitação de permissão implementada
+- [ ] Tratamento de erros (permissão negada, timeout, etc.)
+- [ ] Mensagens amigáveis para o usuário
+- [ ] Rastreamento contínuo quando necessário
+- [ ] Cleanup de watchers
+
+### **Geocodificação**
+
+- [ ] Geocodificação (endereço → coordenadas) implementada
+- [ ] Reverse geocoding (coordenadas → endereço) implementado
+- [ ] Autocomplete de endereços com debounce
+- [ ] Cache de resultados de geocodificação
+- [ ] Tratamento de erros e fallbacks
+
+### **Cálculos**
+
+- [ ] Função de cálculo de distância implementada
+- [ ] Busca por raio funcional
+- [ ] Ordenação por distância
+- [ ] Formatação de distâncias (km/m)
+
+### **Performance**
+
+- [ ] Lazy loading de bibliotecas de mapas
+- [ ] Debounce em buscas de endereços
+- [ ] Cache de geocodificação
+- [ ] Limpeza de recursos (watchers, listeners)
+
+### **Privacidade**
+
+- [ ] Consentimento de localização solicitado
+- [ ] Política de privacidade clara
+- [ ] Dados de localização não compartilhados sem consentimento
+
+---
+
+## 📚 Referências
+
+- [Leaflet Documentation](https://leafletjs.com/)
+- [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/)
+- [Google Maps Platform](https://developers.google.com/maps)
+- [Nominatim (OpenStreetMap)](https://nominatim.org/)
+- [Geolocation API (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Geolocation_API)
+- [Haversine Formula](https://en.wikipedia.org/wiki/Haversine_formula)
+
+---
+
+**Última atualização**: 2024  
+**Versão**: 1.0.0

@@ -1,0 +1,470 @@
+---
+description: AI-AEO Guidelines - Answer Engine Optimization - Diretrizes para otimização em motores de resposta e assistentes de IA
+globs: src/**/*.{ts,tsx,html}
+alwaysApply: true
+---
+
+# AI-AEO Guidelines - Answer Engine Optimization
+
+## **Visão Geral**
+
+Diretrizes para otimização de conteúdo em Answer Engines (motores de resposta) como ChatGPT, Perplexity, Google Gemini, e outros assistentes de IA que fornecem respostas diretas aos usuários.
+
+---
+
+## 🎯 Princípios Fundamentais
+
+### **Diferença entre SEO e AEO**
+
+- **SEO**: Otimização para resultados de busca tradicionais (links, rankings)
+- **AEO**: Otimização para respostas diretas e citadas por assistentes de IA
+- **Foco**: Ser a fonte de informação citada, não apenas aparecer nos resultados
+
+### **Objetivos do AEO**
+
+1. Ser citado como fonte confiável por assistentes de IA
+2. Fornecer respostas diretas e completas
+3. Estruturar conteúdo para fácil extração por LLMs
+4. Estabelecer autoridade e expertise no domínio
+
+---
+
+## 📝 Estrutura de Conteúdo
+
+### **✅ DO: Conteúdo Estruturado e Direto**
+
+```tsx
+// ✅ DO: Estrutura clara e hierárquica
+export function ArticlePage({ article }: { article: Article }) {
+  return (
+    <article>
+      {/* Resposta direta no início */}
+      <section className="answer-summary">
+        <h2>Resumo Executivo</h2>
+        <p>{article.summary}</p>
+        {/* Resposta direta à pergunta principal */}
+      </section>
+
+      {/* Conteúdo detalhado estruturado */}
+      <section>
+        <h2>Detalhes</h2>
+        {/* Conteúdo completo e bem estruturado */}
+      </section>
+
+      {/* FAQs estruturados */}
+      <section className="faqs">
+        <h2>Perguntas Frequentes</h2>
+        {article.faqs.map((faq) => (
+          <div key={faq.id}>
+            <h3>{faq.question}</h3>
+            <p>{faq.answer}</p>
+          </div>
+        ))}
+      </section>
+    </article>
+  );
+}
+```
+
+### **✅ DO: Schema.org para FAQs**
+
+```tsx
+// ✅ DO: FAQPage Schema.org para melhor indexação
+export function useFAQSchema(faqs: FAQ[]) {
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqs.map((faq) => ({
+        '@type': 'Question',
+        name: faq.question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: faq.answer,
+        },
+      })),
+    });
+    document.head.appendChild(script);
+
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, [faqs]);
+}
+```
+
+---
+
+## 🔍 Otimização para Extração
+
+### **✅ DO: Respostas Diretas e Completas**
+
+```tsx
+// ✅ DO: Resposta direta no início do conteúdo
+export function HowToPage() {
+  return (
+    <article>
+      {/* Resposta direta imediata */}
+      <div className="direct-answer">
+        <p>
+          Para [ação], você precisa seguir estes passos: 
+          1) [passo 1], 2) [passo 2], 3) [passo 3].
+        </p>
+      </div>
+
+      {/* Detalhamento posterior */}
+      <section>
+        <h2>Passo a Passo Detalhado</h2>
+        {/* Conteúdo completo */}
+      </section>
+    </article>
+  );
+}
+```
+
+### **✅ DO: Listas Estruturadas**
+
+```tsx
+// ✅ DO: Listas numeradas e com marcadores claros
+export function ChecklistPage() {
+  return (
+    <article>
+      <h1>Checklist Completo</h1>
+      
+      <ol>
+        <li>
+          <strong>Item 1:</strong> Descrição clara e completa
+        </li>
+        <li>
+          <strong>Item 2:</strong> Descrição clara e completa
+        </li>
+      </ol>
+
+      {/* Explicação adicional após a lista */}
+      <section>
+        <h2>Explicação Detalhada</h2>
+        {/* Conteúdo expandido */}
+      </section>
+    </article>
+  );
+}
+```
+
+---
+
+## 📊 Dados Estruturados (Schema.org)
+
+### **✅ DO: HowTo Schema**
+
+```tsx
+// ✅ DO: HowTo Schema para tutoriais e guias
+export function useHowToSchema(steps: HowToStep[]) {
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'HowTo',
+      name: 'Como fazer [ação]',
+      description: 'Guia completo passo a passo',
+      step: steps.map((step, index) => ({
+        '@type': 'HowToStep',
+        position: index + 1,
+        name: step.name,
+        text: step.description,
+        image: step.image,
+      })),
+    });
+    document.head.appendChild(script);
+
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, [steps]);
+}
+```
+
+### **✅ DO: Article Schema com Autoridade**
+
+```tsx
+// ✅ DO: Article Schema com informações de autoridade
+export function useArticleSchema(article: Article) {
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: article.title,
+      description: article.description,
+      author: {
+        '@type': 'Person',
+        name: article.author.name,
+        jobTitle: article.author.title,
+        url: article.author.url,
+      },
+      publisher: {
+        '@type': 'Organization',
+        name: '[Nome da Organização]',
+        logo: {
+          '@type': 'ImageObject',
+          url: '[URL do Logo]',
+        },
+      },
+      datePublished: article.publishedAt,
+      dateModified: article.updatedAt,
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': article.url,
+      },
+    });
+    document.head.appendChild(script);
+
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, [article]);
+}
+```
+
+---
+
+## 🎓 Autoridade e Expertise (E-E-A-T)
+
+### **✅ DO: Demonstrar Autoridade**
+
+```tsx
+// ✅ DO: Informações de autoridade visíveis
+export function AuthorSection({ author }: { author: Author }) {
+  return (
+    <aside className="author-info">
+      <img 
+        src={author.avatar} 
+        alt={author.name} 
+        title={author.name}
+      />
+      <div>
+        <h3>{author.name}</h3>
+        <p>{author.bio}</p>
+        <p>
+          <strong>Experiência:</strong> {author.experience} anos
+        </p>
+        <p>
+          <strong>Especialização:</strong> {author.specialization}
+        </p>
+        {author.credentials && (
+          <p>
+            <strong>Credenciais:</strong> {author.credentials}
+          </p>
+        )}
+      </div>
+    </aside>
+  );
+}
+```
+
+### **✅ DO: Citações e Referências**
+
+```tsx
+// ✅ DO: Citações estruturadas
+export function CitationSection({ citations }: { citations: Citation[] }) {
+  return (
+    <section className="citations">
+      <h2>Referências</h2>
+      <ol>
+        {citations.map((citation, index) => (
+          <li key={index}>
+            <cite>
+              <a href={citation.url} title={citation.title}>
+                {citation.title}
+              </a>
+            </cite>
+            {citation.author && (
+              <span> - {citation.author}</span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+```
+
+---
+
+## 📱 Formato de Resposta
+
+### **✅ DO: Respostas em Formato Conversacional**
+
+```tsx
+// ✅ DO: Conteúdo que responde perguntas diretamente
+export function QAPage({ question, answer }: { question: string; answer: string }) {
+  return (
+    <article>
+      <h1>{question}</h1>
+      
+      {/* Resposta direta e completa */}
+      <div className="answer">
+        <p>{answer}</p>
+      </div>
+
+      {/* Contexto adicional */}
+      <section>
+        <h2>Contexto Adicional</h2>
+        {/* Informações complementares */}
+      </section>
+    </article>
+  );
+}
+```
+
+### **✅ DO: Tabelas e Dados Comparativos**
+
+```tsx
+// ✅ DO: Tabelas estruturadas para comparações
+export function ComparisonTable({ items }: { items: ComparisonItem[] }) {
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Característica</th>
+          <th>Opção A</th>
+          <th>Opção B</th>
+          <th>Opção C</th>
+        </tr>
+      </thead>
+      <tbody>
+        {items.map((item, index) => (
+          <tr key={index}>
+            <td>{item.feature}</td>
+            <td>{item.optionA}</td>
+            <td>{item.optionB}</td>
+            <td>{item.optionC}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+```
+
+---
+
+## 🔗 Citações e Links
+
+### **✅ DO: Links para Fontes Confiáveis**
+
+```tsx
+// ✅ DO: Links para fontes autoritárias
+export function ReferenceLinks({ references }: { references: Reference[] }) {
+  return (
+    <section className="references">
+      <h2>Fontes e Referências</h2>
+      <ul>
+        {references.map((ref, index) => (
+          <li key={index}>
+            <a 
+              href={ref.url} 
+              title={ref.title}
+              rel="nofollow"
+            >
+              {ref.title}
+            </a>
+            {ref.domain && (
+              <span className="domain"> ({ref.domain})</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+```
+
+---
+
+## 📊 Métricas e Monitoramento
+
+### **✅ DO: Rastreamento de Citações**
+
+```tsx
+// ✅ DO: Rastrear quando o site é citado por assistentes de IA
+export function useAEOAnalytics() {
+  useEffect(() => {
+    // Rastrear referências de assistentes de IA
+    const trackCitation = (source: string) => {
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'aeo_citation', {
+          source,
+          page_path: window.location.pathname,
+        });
+      }
+    };
+
+    // Monitorar referências (exemplo: Perplexity, ChatGPT)
+    // Implementar lógica de detecção de citações
+
+    return () => {
+      // Cleanup
+    };
+  }, []);
+}
+```
+
+---
+
+## 🎯 Checklist de AEO
+
+### **Estrutura de Conteúdo**
+
+- [ ] Resposta direta no início do conteúdo
+- [ ] Conteúdo estruturado hierarquicamente
+- [ ] FAQs estruturados com Schema.org
+- [ ] Listas numeradas e com marcadores claros
+- [ ] Tabelas para comparações quando aplicável
+
+### **Dados Estruturados**
+
+- [ ] FAQPage Schema implementado
+- [ ] HowTo Schema para tutoriais
+- [ ] Article Schema com informações de autoridade
+- [ ] Informações de autor e publisher completas
+
+### **Autoridade (E-E-A-T)**
+
+- [ ] Informações do autor visíveis
+- [ ] Credenciais e experiência demonstradas
+- [ ] Citações e referências estruturadas
+- [ ] Links para fontes confiáveis
+- [ ] Data de publicação e atualização
+
+### **Formato**
+
+- [ ] Respostas em formato conversacional
+- [ ] Conteúdo completo e detalhado
+- [ ] Contexto adicional fornecido
+- [ ] Exemplos práticos incluídos
+
+### **Monitoramento**
+
+- [ ] Rastreamento de citações implementado
+- [ ] Analytics configurado para AEO
+- [ ] Métricas de referências de assistentes de IA
+
+---
+
+## 📚 Referências
+
+- [Answer Engine Optimization (AEO)](https://www.searchenginejournal.com/answer-engine-optimization/)
+- [Schema.org FAQPage](https://schema.org/FAQPage)
+- [Schema.org HowTo](https://schema.org/HowTo)
+- [E-E-A-T Guidelines](https://developers.google.com/search/docs/appearance/creating-helpful-content)
+- [Perplexity AI](https://www.perplexity.ai/)
+- [ChatGPT](https://chat.openai.com/)
+
+---
+
+**Última atualização**: 2024  
+**Versão**: 1.0.0
