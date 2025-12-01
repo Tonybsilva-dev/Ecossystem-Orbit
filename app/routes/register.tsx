@@ -139,6 +139,22 @@ export default function Register() {
                 <div className="text-red-500 text-sm mt-1">{fields.user.getFieldset().email.errors}</div>
               </div>
             </div>
+
+            <div className="mt-4">
+              <label htmlFor={fields.user.getFieldset().password.id} className="block text-sm font-medium leading-6 text-gray-900">
+                Password
+              </label>
+              <div className="mt-2">
+                <input
+                  id={fields.user.getFieldset().password.id}
+                  name={fields.user.getFieldset().password.name}
+                  defaultValue={fields.user.getFieldset().password.initialValue}
+                  type="password"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 px-3"
+                />
+                <div className="text-red-500 text-sm mt-1">{fields.user.getFieldset().password.errors}</div>
+              </div>
+            </div>
           </div>
 
           <div>

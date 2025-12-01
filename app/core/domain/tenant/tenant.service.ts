@@ -1,8 +1,11 @@
 import { prisma } from "../../db/prisma.server";
 import type { CreateTenantInput, UpdateTenantInput } from "./tenant.schema";
+import { hashPassword } from "../../auth/password.server";
 
 export class TenantService {
   static async create(data: CreateTenantInput) {
+    const hashedPassword = await hashPassword(data.user.password);
+
     return prisma.tenant.create({
       data: {
         name: data.name,
@@ -12,6 +15,7 @@ export class TenantService {
           create: {
             email: data.user.email,
             name: data.user.name,
+            passwordHash: hashedPassword,
             role: "OWNER",
           },
         },

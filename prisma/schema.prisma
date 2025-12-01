@@ -43,6 +43,7 @@ model User {
   id        String   @id @default(uuid())
   email     String   @unique
   name      String?
+  passwordHash String
   role      Role     @default(MEMBER)
   tenantId  String
   createdAt DateTime @default(now())

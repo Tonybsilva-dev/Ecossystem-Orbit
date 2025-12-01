@@ -7,6 +7,7 @@ export const TenantSchema = z.object({
   user: z.object({
     email: z.string().email(),
     name: z.string().min(2).optional(),
+    password: z.string().min(8, "Password must be at least 8 characters"),
   }),
 });
 
