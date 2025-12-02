@@ -391,6 +391,8 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   Tenant: 'Tenant',
+  Plan: 'Plan',
+  TenantFeature: 'TenantFeature',
   User: 'User'
 } as const
 
@@ -407,7 +409,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "tenant" | "user"
+    modelProps: "tenant" | "plan" | "tenantFeature" | "user"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -482,6 +484,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.TenantCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.TenantCountAggregateOutputType> | number
+        }
+      }
+    }
+    Plan: {
+      payload: Prisma.$PlanPayload<ExtArgs>
+      fields: Prisma.PlanFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PlanFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PlanFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanPayload>
+        }
+        findFirst: {
+          args: Prisma.PlanFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PlanFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanPayload>
+        }
+        findMany: {
+          args: Prisma.PlanFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanPayload>[]
+        }
+        create: {
+          args: Prisma.PlanCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanPayload>
+        }
+        createMany: {
+          args: Prisma.PlanCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PlanCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanPayload>[]
+        }
+        delete: {
+          args: Prisma.PlanDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanPayload>
+        }
+        update: {
+          args: Prisma.PlanUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanPayload>
+        }
+        deleteMany: {
+          args: Prisma.PlanDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PlanUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PlanUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanPayload>[]
+        }
+        upsert: {
+          args: Prisma.PlanUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanPayload>
+        }
+        aggregate: {
+          args: Prisma.PlanAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePlan>
+        }
+        groupBy: {
+          args: Prisma.PlanGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PlanGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PlanCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PlanCountAggregateOutputType> | number
+        }
+      }
+    }
+    TenantFeature: {
+      payload: Prisma.$TenantFeaturePayload<ExtArgs>
+      fields: Prisma.TenantFeatureFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.TenantFeatureFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantFeaturePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.TenantFeatureFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantFeaturePayload>
+        }
+        findFirst: {
+          args: Prisma.TenantFeatureFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantFeaturePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.TenantFeatureFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantFeaturePayload>
+        }
+        findMany: {
+          args: Prisma.TenantFeatureFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantFeaturePayload>[]
+        }
+        create: {
+          args: Prisma.TenantFeatureCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantFeaturePayload>
+        }
+        createMany: {
+          args: Prisma.TenantFeatureCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.TenantFeatureCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantFeaturePayload>[]
+        }
+        delete: {
+          args: Prisma.TenantFeatureDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantFeaturePayload>
+        }
+        update: {
+          args: Prisma.TenantFeatureUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantFeaturePayload>
+        }
+        deleteMany: {
+          args: Prisma.TenantFeatureDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.TenantFeatureUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.TenantFeatureUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantFeaturePayload>[]
+        }
+        upsert: {
+          args: Prisma.TenantFeatureUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TenantFeaturePayload>
+        }
+        aggregate: {
+          args: Prisma.TenantFeatureAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTenantFeature>
+        }
+        groupBy: {
+          args: Prisma.TenantFeatureGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TenantFeatureGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.TenantFeatureCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TenantFeatureCountAggregateOutputType> | number
         }
       }
     }
@@ -603,11 +753,33 @@ export const TenantScalarFieldEnum = {
   name: 'name',
   slug: 'slug',
   status: 'status',
+  planId: 'planId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type TenantScalarFieldEnum = (typeof TenantScalarFieldEnum)[keyof typeof TenantScalarFieldEnum]
+
+
+export const PlanScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  features: 'features',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PlanScalarFieldEnum = (typeof PlanScalarFieldEnum)[keyof typeof PlanScalarFieldEnum]
+
+
+export const TenantFeatureScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  feature: 'feature',
+  createdAt: 'createdAt'
+} as const
+
+export type TenantFeatureScalarFieldEnum = (typeof TenantFeatureScalarFieldEnum)[keyof typeof TenantFeatureScalarFieldEnum]
 
 
 export const UserScalarFieldEnum = {
@@ -811,6 +983,8 @@ export interface PrismaClientOptions {
 }
 export type GlobalOmitConfig = {
   tenant?: Prisma.TenantOmit
+  plan?: Prisma.PlanOmit
+  tenantFeature?: Prisma.TenantFeatureOmit
   user?: Prisma.UserOmit
 }
 

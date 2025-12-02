@@ -425,10 +425,6 @@ export type UserUncheckedUpdateManyWithoutTenantNestedInput = {
   deleteMany?: Prisma.UserScalarWhereInput | Prisma.UserScalarWhereInput[]
 }
 
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
 export type EnumRoleFieldUpdateOperationsInput = {
   set?: $Enums.Role
 }

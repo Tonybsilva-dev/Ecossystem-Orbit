@@ -10,11 +10,12 @@ export class TenantService {
       data: {
         name: data.name,
         slug: data.slug,
-        status: "ACTIVE",
+        status: data.status || "ACTIVE",
+        planId: data.planId || null,
         users: {
           create: {
             email: data.user.email,
-            name: data.user.name,
+            name: data.user.name || null,
             passwordHash: hashedPassword,
             role: "OWNER",
           },
@@ -22,6 +23,7 @@ export class TenantService {
       },
       include: {
         users: true,
+        plan: true,
       },
     });
   }

@@ -66,8 +66,11 @@ export default function Login() {
     <div className="flex min-h-screen flex-col justify-center px-6 py-12 lg:px-8 bg-gray-50">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
         <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
-          Sign in to your account
+          Orbit Control Plane
         </h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Restricted access for authorized personnel only.
+        </p>
       </div>
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
@@ -126,17 +129,10 @@ export default function Login() {
               disabled={isSubmitting}
               className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
             >
-              {isSubmitting ? "Signing in..." : "Sign in"}
+              {isSubmitting ? "Authenticating..." : "Access Control Plane"}
             </button>
           </div>
         </Form>
-
-        <p className="mt-10 text-center text-sm text-gray-500">
-          Not a member?{" "}
-          <Link to="/register" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
-            Start a 14 day free trial
-          </Link>
-        </p>
       </div>
     </div>
   );

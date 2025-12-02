@@ -54,3 +54,24 @@ export async function logout(request: Request) {
     },
   });
 }
+
+export async function requireAdmin(request: Request) {
+  const userId = await requireUserId(request);
+
+  // We need to fetch the user to check the role
+  // This introduces a circular dependency if we import prisma here directly if not careful,
+  // but usually it's fine in Remix server files.
+  // Better to import prisma from db.server
+  const { prisma } = await import("../db/prisma.server");
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+
+  if (!user || (user.role !== "OWNER" && user.role !== "ADMIN")) {
+    throw redirect("/"); // Redirect to home/dashboard if not admin
+  }
+
+  return userId;
+}

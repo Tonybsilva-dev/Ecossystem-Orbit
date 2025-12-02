@@ -50,6 +50,16 @@ path.join(process.cwd(), "app/generated/client/libquery_engine-darwin-arm64.dyli
  */
 export type Tenant = Prisma.TenantModel
 /**
+ * Model Plan
+ * 
+ */
+export type Plan = Prisma.PlanModel
+/**
+ * Model TenantFeature
+ * 
+ */
+export type TenantFeature = Prisma.TenantFeatureModel
+/**
  * Model User
  * 
  */

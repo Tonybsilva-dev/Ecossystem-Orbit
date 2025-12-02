@@ -31,23 +31,50 @@ model Tenant {
   name      String
   slug      String   @unique
   status    Status   @default(ACTIVE)
+  planId    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users User[]
+  plan     Plan?           @relation(fields: [planId], references: [id])
+  users    User[]
+  features TenantFeature[]
 
   @@map("tenants")
 }
 
-model User {
+model Plan {
   id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  passwordHash String
-  role      Role     @default(MEMBER)
-  tenantId  String
+  name      String   @unique
+  features  String[] // Array of feature strings (e.g., ['COUPONS', 'WHATSAPP'])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  tenants Tenant[]
+
+  @@map("plans")
+}
+
+model TenantFeature {
+  id        String   @id @default(uuid())
+  tenantId  String
+  feature   String // Feature name (e.g., 'COUPONS', 'WHATSAPP')
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, feature])
+  @@map("tenant_features")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  role         Role     @default(MEMBER)
+  tenantId     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
 

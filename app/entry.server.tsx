@@ -6,6 +6,7 @@ import { ServerRouter } from "react-router";
 import { isbot } from "isbot";
 import type { RenderToPipeableStreamOptions } from "react-dom/server";
 import { renderToPipeableStream } from "react-dom/server";
+import { applySecurityHeaders } from "./core/security/security.server";
 
 export const streamTimeout = 5_000;
 
@@ -59,12 +60,8 @@ export default function handleRequest(
           });
           const stream = createReadableStreamFromReadable(body);
 
-          responseHeaders.set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self';");
-          responseHeaders.set("X-Frame-Options", "DENY");
-          responseHeaders.set("X-Content-Type-Options", "nosniff");
-          responseHeaders.set("Referrer-Policy", "strict-origin-when-cross-origin");
-          responseHeaders.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-          responseHeaders.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+          // Apply security headers
+          applySecurityHeaders(responseHeaders);
 
           responseHeaders.set("Content-Type", "text/html");
 

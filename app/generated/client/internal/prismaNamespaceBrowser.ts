@@ -50,6 +50,8 @@ export const AnyNull = runtime.objectEnumValues.instances.AnyNull
 
 export const ModelName = {
   Tenant: 'Tenant',
+  Plan: 'Plan',
+  TenantFeature: 'TenantFeature',
   User: 'User'
 } as const
 
@@ -74,11 +76,33 @@ export const TenantScalarFieldEnum = {
   name: 'name',
   slug: 'slug',
   status: 'status',
+  planId: 'planId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type TenantScalarFieldEnum = (typeof TenantScalarFieldEnum)[keyof typeof TenantScalarFieldEnum]
+
+
+export const PlanScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  features: 'features',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PlanScalarFieldEnum = (typeof PlanScalarFieldEnum)[keyof typeof PlanScalarFieldEnum]
+
+
+export const TenantFeatureScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  feature: 'feature',
+  createdAt: 'createdAt'
+} as const
+
+export type TenantFeatureScalarFieldEnum = (typeof TenantFeatureScalarFieldEnum)[keyof typeof TenantFeatureScalarFieldEnum]
 
 
 export const UserScalarFieldEnum = {

@@ -6,7 +6,10 @@
     "build": "react-router build",
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsc"
+    "typecheck": "react-router typegen && tsc",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.44",
@@ -28,12 +31,14 @@
     "zod-i18n-map": "^2.27.0"
   },
   "devDependencies": {
+    "@prisma/config": "^7.0.1",
     "@react-router/dev": "^7.9.2",
     "@tailwindcss/postcss": "^4.1.17",
     "@tailwindcss/vite": "^4.1.13",
     "@types/node": "^22",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
+    "@vitest/ui": "^4.0.15",
     "autoprefixer": "^10.4.22",
     "dotenv": "^17.2.3",
     "postcss": "^8.5.6",
@@ -41,6 +46,7 @@
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.2",
     "vite": "^7.1.7",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.4"
   }
 }
