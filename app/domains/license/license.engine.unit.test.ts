@@ -22,7 +22,7 @@ import { TenantService } from "../../core/domain/tenant/tenant.service";
 
 // Importar o módulo dinamicamente para poder fazer spy
 let licenseEngine: typeof import("./license.engine");
-let resolvePermissionsSpy: ReturnType<typeof vi.spyOn>;
+let resolvePermissionsSpy: any;
 
 describe("validateAccess - Unit Tests (with mocks)", () => {
   // Mock do TenantService
@@ -51,7 +51,7 @@ describe("validateAccess - Unit Tests (with mocks)", () => {
     // Fazer spy na função exportada do módulo importado
     resolvePermissionsSpy = vi
       .spyOn(licenseEngine, "resolvePermissions")
-      .mockImplementation(mockResolvePermissions);
+      .mockImplementation(mockResolvePermissions as any);
   });
 
   afterEach(() => {

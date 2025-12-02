@@ -350,20 +350,37 @@ Os testes unitários para `validateAccess` utilizam mocks para isolar a função
   ✓ validateAccess - Unit Tests (with mocks) > deve chamar resolvePermissions apenas uma vez mesmo com múltiplas validações do mesmo tenant
   ✓ validateAccess - Unit Tests (with mocks) > deve retornar capabilities ordenadas quando resolvePermissions retorna array ordenado
 
-Test Files  2 passed (2)
-     Tests  28 passed (28)
-  Duration  2.05s
+✓ app/routes/api.validate.test.ts (14 tests) 19ms
+  ✓ API Route: /api/validate > Validação de Parâmetros > deve retornar 400 quando licenseKey está faltando
+  ✓ API Route: /api/validate > Validação de Parâmetros > deve retornar 400 quando Origin header está faltando
+  ✓ API Route: /api/validate > Validação de Parâmetros > deve aceitar Origin header em minúsculas
+  ✓ API Route: /api/validate > Validação de Licença Válida > deve retornar 200 com capabilities quando licenseKey é válido
+  ✓ API Route: /api/validate > Validação de Licença Válida > deve retornar 200 com capabilities vazias quando licenseKey é válido mas não tem features
+  ✓ API Route: /api/validate > Validação de Licença Inválida > deve retornar 403 quando licenseKey é inválido
+  ✓ API Route: /api/validate > Tratamento de Erros > deve retornar 500 quando validateAccess lança um erro
+  ✓ API Route: /api/validate > Formato de Resposta > deve retornar Content-Type application/json em todas as respostas
+  ✓ API Route: /api/validate > Formato de Resposta > deve retornar JSON válido em todas as respostas
+  ✓ API Route: /api/validate > CORS Headers > deve incluir headers CORS em resposta 200
+  ✓ API Route: /api/validate > CORS Headers > deve incluir headers CORS em resposta 403
+  ✓ API Route: /api/validate > Chamada de validateAccess > deve chamar validateAccess com licenseKey e origin corretos
+  ✓ API Route: /api/validate > Chamada de validateAccess > deve não chamar validateAccess quando licenseKey está faltando
+  ✓ API Route: /api/validate > Chamada de validateAccess > deve não chamar validateAccess quando Origin está faltando
+
+Test Files  3 passed (3)
+     Tests  42 passed (42)
+  Duration  2.07s
 ```
 
 ### Métricas
 
-- **Total de Testes**: 28
+- **Total de Testes**: 42
   - **Testes de Integração**: 13 (7 para `resolvePermissions` + 6 para `validateAccess`)
   - **Testes Unitários**: 15 (para `validateAccess` com mocks)
-- **Testes Passando**: 28 (100%)
+  - **Testes de API Route**: 14 (para `/api/validate` endpoint)
+- **Testes Passando**: 42 (100%)
 - **Testes Falhando**: 0
-- **Tempo de Execução**: ~2.05s (integração: ~1.98s, unitários: ~68ms)
-- **Cobertura de Código**: ~100% (funções `resolvePermissions` e `validateAccess`)
+- **Tempo de Execução**: ~5.19s (integração: ~1.98s, unitários: ~68ms, API route: ~19ms)
+- **Cobertura de Código**: ~100% (funções `resolvePermissions`, `validateAccess` e rota `/api/validate`)
 
 ---
 
@@ -393,18 +410,122 @@ Todos os testes utilizam `beforeEach` e `afterEach` para garantir isolamento:
 
 ---
 
+## Testes de API Route
+
+### API Route: /api/validate
+
+#### TC-021: Retornar 400 quando licenseKey está faltando
+- **Descrição**: Verificar se a rota retorna erro 400 quando o parâmetro licenseKey não é fornecido
+- **Setup**: Request sem licenseKey nos search params
+- **Entrada**: `GET /api/validate` (sem licenseKey)
+- **Saída Esperada**: `{ error: "Missing licenseKey query parameter" }` com status 400
+- **Status**: ✅ Passando
+
+#### TC-022: Retornar 400 quando Origin header está faltando
+- **Descrição**: Verificar se a rota retorna erro 400 quando o header Origin não é fornecido
+- **Setup**: Request sem Origin header
+- **Entrada**: `GET /api/validate?licenseKey=test-key` (sem Origin)
+- **Saída Esperada**: `{ error: "Missing Origin header" }` com status 400
+- **Status**: ✅ Passando
+
+#### TC-023: Aceitar Origin header em minúsculas
+- **Descrição**: Verificar se a rota aceita Origin header tanto em maiúsculas quanto minúsculas
+- **Setup**: Request com origin em minúsculas
+- **Entrada**: `GET /api/validate?licenseKey=test-key` com header `origin: https://example.com`
+- **Saída Esperada**: Validação bem-sucedida
+- **Status**: ✅ Passando
+
+#### TC-024: Retornar 200 com capabilities quando licenseKey é válido
+- **Descrição**: Verificar se a rota retorna status 200 com capabilities quando a validação é bem-sucedida
+- **Setup**: Mock de validateAccess retornando valid: true
+- **Entrada**: `GET /api/validate?licenseKey=valid-key` com Origin header
+- **Saída Esperada**: `{ valid: true, capabilities: ["COUPONS", "WHATSAPP", "EMAIL"] }` com status 200
+- **Status**: ✅ Passando
+
+#### TC-025: Retornar 200 com capabilities vazias quando licenseKey é válido mas não tem features
+- **Descrição**: Verificar se a rota retorna status 200 mesmo quando não há capabilities
+- **Setup**: Mock de validateAccess retornando valid: true com capabilities vazias
+- **Entrada**: `GET /api/validate?licenseKey=valid-key-no-features` com Origin header
+- **Saída Esperada**: `{ valid: true, capabilities: [] }` com status 200
+- **Status**: ✅ Passando
+
+#### TC-026: Retornar 403 quando licenseKey é inválido
+- **Descrição**: Verificar se a rota retorna status 403 quando a validação falha
+- **Setup**: Mock de validateAccess retornando valid: false
+- **Entrada**: `GET /api/validate?licenseKey=invalid-key` com Origin header
+- **Saída Esperada**: `{ valid: false, capabilities: [] }` com status 403
+- **Status**: ✅ Passando
+
+#### TC-027: Retornar 500 quando validateAccess lança um erro
+- **Descrição**: Verificar se a rota trata erros inesperados retornando status 500
+- **Setup**: Mock de validateAccess lançando erro
+- **Entrada**: `GET /api/validate?licenseKey=test-key` com Origin header
+- **Saída Esperada**: `{ error: "Internal server error", valid: false, capabilities: [] }` com status 500
+- **Status**: ✅ Passando
+
+#### TC-028: Retornar Content-Type application/json em todas as respostas
+- **Descrição**: Verificar se todas as respostas têm o header Content-Type correto
+- **Setup**: Request válido
+- **Entrada**: `GET /api/validate?licenseKey=test-key` com Origin header
+- **Saída Esperada**: Header `Content-Type: application/json` presente
+- **Status**: ✅ Passando
+
+#### TC-029: Retornar JSON válido em todas as respostas
+- **Descrição**: Verificar se todas as respostas são JSON válido
+- **Setup**: Request válido
+- **Entrada**: `GET /api/validate?licenseKey=test-key` com Origin header
+- **Saída Esperada**: Body é um objeto JSON válido com propriedades `valid` e `capabilities`
+- **Status**: ✅ Passando
+
+#### TC-030: Incluir headers CORS em resposta 200
+- **Descrição**: Verificar se headers CORS estão presentes em respostas de sucesso
+- **Setup**: Request válido retornando 200
+- **Entrada**: `GET /api/validate?licenseKey=test-key` com Origin header
+- **Saída Esperada**: Headers CORS (`Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`) presentes
+- **Status**: ✅ Passando
+
+#### TC-031: Incluir headers CORS em resposta 403
+- **Descrição**: Verificar se headers CORS estão presentes em respostas de falha
+- **Setup**: Request com licenseKey inválido retornando 403
+- **Entrada**: `GET /api/validate?licenseKey=invalid-key` com Origin header
+- **Saída Esperada**: Headers CORS presentes mesmo em resposta 403
+- **Status**: ✅ Passando
+
+#### TC-032: Chamar validateAccess com licenseKey e origin corretos
+- **Descrição**: Verificar se validateAccess é chamado com os parâmetros corretos
+- **Setup**: Request com licenseKey e Origin específicos
+- **Entrada**: `GET /api/validate?licenseKey=my-license-key` com Origin `https://my-domain.com`
+- **Saída Esperada**: validateAccess chamado com `{ licenseKey: "my-license-key", origin: "https://my-domain.com" }`
+- **Status**: ✅ Passando
+
+#### TC-033: Não chamar validateAccess quando licenseKey está faltando
+- **Descrição**: Verificar se validateAccess não é chamado quando há erro de validação de parâmetros
+- **Setup**: Request sem licenseKey
+- **Entrada**: `GET /api/validate` (sem licenseKey)
+- **Saída Esperada**: validateAccess não é chamado
+- **Status**: ✅ Passando
+
+#### TC-034: Não chamar validateAccess quando Origin está faltando
+- **Descrição**: Verificar se validateAccess não é chamado quando Origin está faltando
+- **Setup**: Request sem Origin header
+- **Entrada**: `GET /api/validate?licenseKey=test-key` (sem Origin)
+- **Saída Esperada**: validateAccess não é chamado
+- **Status**: ✅ Passando
+
 ## Próximos Passos
 
 1. ✅ Implementar validação de acesso público (`ValidateAccessInput`/`ValidateAccessOutput`) - **Concluído**
 2. ✅ Adicionar testes unitários para `validateAccess` - **Concluído**
-3. Adicionar testes de performance com muitos overrides
-4. Implementar cache de permissões resolvidas
-5. Adicionar validação de formato de features
-6. Implementar validação de domain quando campo for adicionado ao schema
-7. Adicionar testes de integração com API pública
+3. ✅ Criar rota de API `/api/validate` - **Concluído**
+4. ✅ Adicionar testes para rota de API - **Concluído**
+5. Adicionar testes de performance com muitos overrides
+6. Implementar cache de permissões resolvidas
+7. Adicionar validação de formato de features
+8. Implementar validação de domain quando campo for adicionado ao schema
+9. Adicionar testes de integração end-to-end com API pública
 
 ---
 
 **Última atualização**: 2024-12-02  
-**Versão**: 2.1.0
+**Versão**: 3.0.0
 
