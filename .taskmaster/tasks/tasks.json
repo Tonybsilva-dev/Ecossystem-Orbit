@@ -573,7 +573,7 @@
           "6",
           "7"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -636,7 +636,8 @@
         ],
         "complexity": 6,
         "recommendedSubtasks": 5,
-        "expansionPrompt": "Break down the creation of a `createTenant` service function. Steps should include scaffolding the service file and function, implementing Zod input validation, adding the Prisma database creation logic, handling unique constraint errors, and finalizing the function's return value."
+        "expansionPrompt": "Break down the creation of a `createTenant` service function. Steps should include scaffolding the service file and function, implementing Zod input validation, adding the Prisma database creation logic, handling unique constraint errors, and finalizing the function's return value.",
+        "updatedAt": "2025-12-02T21:56:43.805Z"
       },
       {
         "id": "9",
@@ -648,7 +649,7 @@
         "dependencies": [
           "8"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -656,9 +657,10 @@
             "description": "Ensure the `Tenant` model in `prisma/schema.prisma` is correctly defined with a unique `slug` field to support efficient lookups by `findUnique`.",
             "dependencies": [],
             "details": "Open `prisma/schema.prisma`. Locate the `Tenant` model. Confirm or add the field `slug String @unique`. After modification, run `npx prisma generate` to update the Prisma Client types to reflect the schema changes.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Review the generated `node_modules/.prisma/client/index.d.ts` to confirm the `Tenant` type and its findUnique arguments include `slug`.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T22:59:38.051Z"
           },
           {
             "id": 2,
@@ -668,9 +670,10 @@
               1
             ],
             "details": "Create a new file at `app/domains/tenant/tenant.service.ts`. Add an import statement at the top, like `import { prisma } from '~/db.server';`, to make the database client available for the service functions.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "File creation and import statement presence will be verified in subsequent tasks. No direct test is needed.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T22:59:38.597Z"
           },
           {
             "id": 3,
@@ -680,9 +683,10 @@
               2
             ],
             "details": "In `app/domains/tenant/tenant.service.ts`, define and export `export async function getAllTenants()`. The function body should call `return prisma.tenant.findMany()` to fetch all records from the tenant table.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "A unit test will be written to call this function and assert that it returns an array of tenant objects, mocking the `prisma.tenant.findMany` response.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T22:59:53.562Z"
           },
           {
             "id": 4,
@@ -692,9 +696,10 @@
               2
             ],
             "details": "In `app/domains/tenant/tenant.service.ts`, define `export async function findTenantBySlug(slug: string)`. Use `prisma.tenant.findUnique` with a `where: { slug }` clause. Include a `select` clause to fetch only essential fields like `id`, `name`, `slug`, and `domain`.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Write unit tests to mock `prisma.tenant.findUnique`. Test finding an existing tenant (returns the selected fields) and a non-existent tenant (returns null).",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T22:59:53.581Z"
           },
           {
             "id": 5,
@@ -705,14 +710,16 @@
               4
             ],
             "details": "Create `app/domains/tenant/tenant.service.test.ts`. Using a test runner like Vitest, mock the Prisma client. For `getAllTenants`, assert the function returns the mocked array. For `findTenantBySlug`, create tests for both a successful match and a `null` return for a miss.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Run the test suite and ensure all assertions pass. Check test coverage report to confirm all new code paths are covered.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:00:42.918Z"
           }
         ],
         "complexity": 3,
         "recommendedSubtasks": 5,
-        "expansionPrompt": "Outline the steps to implement read operations for the Tenant service. Include verifying the Prisma schema for unique lookups, creating the service file, and then implementing the `getAllTenants` and `findTenantBySlug` functions, concluding with writing unit tests."
+        "expansionPrompt": "Outline the steps to implement read operations for the Tenant service. Include verifying the Prisma schema for unique lookups, creating the service file, and then implementing the `getAllTenants` and `findTenantBySlug` functions, concluding with writing unit tests.",
+        "updatedAt": "2025-12-02T23:00:42.918Z"
       },
       {
         "id": "10",
@@ -1093,7 +1100,7 @@
         "testStrategy": "This is a type definition file, so no runtime tests are needed. The success criteria is that these types can be imported and used in other modules without TypeScript errors.",
         "priority": "medium",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1101,9 +1108,10 @@
             "description": "Establish the necessary directory structure for the licensing module by creating the `app/domains/license` folder. This provides a dedicated namespace for all licensing-related code.",
             "dependencies": [],
             "details": "Based on the project structure seen in other tasks (e.g., `app/utils`), a domain-driven approach is appropriate. Use the command `mkdir -p app/domains/license` to create the nested directories.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify that the `app/domains/license` directory exists in the project's file structure before proceeding.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T22:58:06.816Z"
           },
           {
             "id": 2,
@@ -1113,9 +1121,10 @@
               1
             ],
             "details": "Inside the `app/domains/license` directory, create a new file named `license.types.ts`. Add a file-level comment explaining its purpose, e.g., 'This file contains all TypeScript interfaces and types for the Orbit licensing engine.'",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Confirm the existence of the file at `app/domains/license/license.types.ts` with the introductory comment.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T22:58:24.025Z"
           },
           {
             "id": 3,
@@ -1125,9 +1134,10 @@
               2
             ],
             "details": "In `license.types.ts`, add the `ValidateAccessInput` interface. It must be exported and contain the properties `licenseKey: string;` and `origin: string;` as specified in the task description.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "This is a type definition. Type checking during development will confirm correctness when the interface is imported and used.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T22:58:24.042Z"
           },
           {
             "id": 4,
@@ -1137,9 +1147,10 @@
               2
             ],
             "details": "In `license.types.ts`, define and export a `type Capability = string;` for better semantics. Then, define and export the `ValidateAccessOutput` interface with `valid: boolean;` and `capabilities: Capability[];` properties.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Success is measured by the ability to import and use `ValidateAccessOutput` and `Capability` in other modules without TypeScript errors.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T22:58:24.052Z"
           },
           {
             "id": 5,
@@ -1149,14 +1160,16 @@
               2
             ],
             "details": "In `license.types.ts`, define and export an interface like `LicenseValidationContext`. This interface will hold data fetched from the database for validation, such as `{ tenantStatus: string; planFeatures: string[]; tenantFeatureOverrides: string[] }`, aligning with the entities from Task 5.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "These types will be validated by the TypeScript compiler when they are implemented within the private functions of the licensing engine.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T22:58:24.060Z"
           }
         ],
         "complexity": 1,
         "recommendedSubtasks": 5,
-        "expansionPrompt": "Generate subtasks for defining the TypeScript types for a licensing engine. Start with creating the domain directory and the types file, then define the main `ValidateAccessInput` and `ValidateAccessOutput` interfaces, and finally define any internal context types needed by the engine."
+        "expansionPrompt": "Generate subtasks for defining the TypeScript types for a licensing engine. Start with creating the domain directory and the types file, then define the main `ValidateAccessInput` and `ValidateAccessOutput` interfaces, and finally define any internal context types needed by the engine.",
+        "updatedAt": "2025-12-02T22:58:24.060Z"
       },
       {
         "id": "16",
@@ -1169,7 +1182,7 @@
           "9",
           "15"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1177,9 +1190,10 @@
             "description": "Create the new file `app/domains/license/license.engine.ts` and add the basic function structure for `async function resolvePermissions(tenantId: string): Promise<string[]>`. This establishes the file and exports the function for future implementation.",
             "dependencies": [],
             "details": "Create the file at `app/domains/license/license.engine.ts`. Define and export an async function named `resolvePermissions` that accepts `tenantId` as a string. For now, it can return a 'not implemented' error or an empty array.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify the file is created in the correct directory and the function is exported. A lint check can confirm the basic structure.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:03:39.130Z"
           },
           {
             "id": 2,
@@ -1189,9 +1203,10 @@
               1
             ],
             "details": "Use the Prisma client to query the `Tenant` model. The query should use `findUnique` with the `tenantId` and `include` the `plan`. The plan inclusion should then further include its `planFeatures`, which in turn includes the `feature` model to get the feature names.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Manually test or write a preliminary test to ensure that for a given tenant ID, the function correctly retrieves the array of feature names from its assigned plan. Mock the prisma client response.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:03:39.138Z"
           },
           {
             "id": 3,
@@ -1201,9 +1216,10 @@
               1
             ],
             "details": "Use the Prisma client's `findMany` method on the `TenantFeature` model. The query must have a `where` clause filtering by `tenantId` to retrieve all explicit feature grants or revocations for that tenant, along with the associated feature name.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Log the output of the database call to verify it returns the correct override records for a test tenant. Mock the prisma client response in a unit test.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:03:39.143Z"
           },
           {
             "id": 4,
@@ -1214,9 +1230,10 @@
               3
             ],
             "details": "Use a JavaScript `Set` for efficient handling of features. First, add all base feature names from the plan to the set. Then, iterate through the tenant-specific overrides. If an override has `enabled: true`, add its feature name to the set. If `enabled: false`, delete the feature name from the set. Finally, convert the set to an array and return it.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "The main unit tests will cover this logic. Ensure the function correctly adds new features, removes existing ones, and handles redundant additions gracefully (which `Set` does automatically).",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:03:39.151Z"
           },
           {
             "id": 5,
@@ -1226,14 +1243,16 @@
               4
             ],
             "details": "Using a testing framework like Vitest, mock the Prisma client calls. Write separate test cases for: 1. A tenant with only a base plan. 2. A tenant with a base plan plus additional features via overrides. 3. A tenant with base plan features explicitly removed via overrides. 4. A tenant with no plan (edge case).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": null,
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:04:37.703Z"
           }
         ],
         "complexity": 5,
         "recommendedSubtasks": 5,
-        "expansionPrompt": "Deconstruct the task of creating a `resolvePermissions` function. The process should involve creating the engine file, fetching the tenant's base plan features, fetching tenant-specific overrides, implementing the logic to merge and resolve the final feature set, and writing comprehensive unit tests."
+        "expansionPrompt": "Deconstruct the task of creating a `resolvePermissions` function. The process should involve creating the engine file, fetching the tenant's base plan features, fetching tenant-specific overrides, implementing the logic to merge and resolve the final feature set, and writing comprehensive unit tests.",
+        "updatedAt": "2025-12-02T23:04:37.703Z"
       },
       {
         "id": "17",
@@ -3795,9 +3814,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-02T21:48:46.829Z",
+      "lastModified": "2025-12-02T23:04:37.705Z",
       "taskCount": 50,
-      "completedCount": 7,
+      "completedCount": 11,
       "tags": [
         "master"
       ]
