@@ -54,31 +54,30 @@ export class TenantService {
       return tenant;
     } catch (error: unknown) {
       // 4. Tratar erros de constraint única (P2002)
-      if (
-        error &&
-        typeof error === "object" &&
-        "code" in error &&
-        error.code === "P2002" &&
-        "meta" in error
-      ) {
+      // Verificar se é um erro do Prisma
+      if (error && typeof error === "object" && "code" in error) {
         const prismaError = error as {
           code: string;
           meta?: { target?: string[] };
         };
-        const target = prismaError.meta?.target as string[] | undefined;
 
-        if (target?.includes("slug")) {
-          throw new Error(`O slug "${validatedData.slug}" já está em uso`);
+        // Verificar se é erro de constraint única
+        if (prismaError.code === "P2002" && "meta" in prismaError) {
+          const target = prismaError.meta?.target as string[] | undefined;
+
+          if (target?.includes("slug")) {
+            throw new Error(`O slug "${validatedData.slug}" já está em uso`);
+          }
+
+          if (target?.includes("email")) {
+            throw new Error(
+              `O email "${validatedData.user.email}" já está cadastrado`
+            );
+          }
+
+          // Constraint única genérica
+          throw new Error("Já existe um registro com esses dados");
         }
-
-        if (target?.includes("email")) {
-          throw new Error(
-            `O email "${validatedData.user.email}" já está cadastrado`
-          );
-        }
-
-        // Constraint única genérica
-        throw new Error("Já existe um registro com esses dados");
       }
 
       // Re-throw outros erros
@@ -140,6 +139,21 @@ export class TenantService {
     return prisma.tenant.update({
       where: { id },
       data,
+    });
+  }
+
+  /**
+   * Busca um tenant pela chave de licença (licenseKey).
+   * 
+   * Nota: No schema atual, o licenseKey é mapeado para o campo `slug` do tenant,
+   * que é único e serve como identificador de licença.
+   * 
+   * @param licenseKey - Chave de licença (slug do tenant)
+   * @returns Tenant encontrado ou null se não existir
+   */
+  static async findTenantByLicenseKey(licenseKey: string) {
+    return prisma.tenant.findUnique({
+      where: { slug: licenseKey },
     });
   }
 }

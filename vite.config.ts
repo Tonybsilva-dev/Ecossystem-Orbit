@@ -9,5 +9,11 @@ export default defineConfig({
     globals: true,
     environment: "node",
     include: ["**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    // Executar testes sequencialmente para evitar conflitos com banco de dados
+    // Isso garante que testes que interagem com o banco não executem em paralelo
+    fileParallelism: false,
+    sequence: {
+      concurrent: false,
+    },
   },
 });

@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { resolvePermissions } from "./license.engine";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { resolvePermissions, validateAccess } from "./license.engine";
 import { prisma } from "../../core/db/prisma.server";
 import { TenantService } from "../../core/domain/tenant/tenant.service";
 import type { CreateTenantInput } from "../../core/domain/tenant/tenant.schema";
+import type { ValidateAccessInput } from "./license.types";
 
 describe("resolvePermissions", () => {
   beforeEach(async () => {
@@ -274,6 +275,222 @@ describe("resolvePermissions", () => {
     expect(permissions).toContain("FEATURE_1");
     expect(permissions).toContain("FEATURE_2");
     expect(permissions).toContain("FEATURE_3");
+  });
+});
+
+describe("validateAccess", () => {
+  beforeEach(async () => {
+    // Limpar dados de teste
+    await prisma.tenantFeature.deleteMany({
+      where: {
+        tenant: {
+          slug: { startsWith: "test-" },
+        },
+      },
+    });
+    await prisma.user.deleteMany({
+      where: { email: { startsWith: "test-" } },
+    });
+    await prisma.tenant.deleteMany({
+      where: { slug: { startsWith: "test-" } },
+    });
+    await prisma.plan.deleteMany({
+      where: { name: { startsWith: "Test Plan" } },
+    });
+  });
+
+  afterEach(async () => {
+    // Limpar dados de teste
+    await prisma.tenantFeature.deleteMany({
+      where: {
+        tenant: {
+          slug: { startsWith: "test-" },
+        },
+      },
+    });
+    await prisma.user.deleteMany({
+      where: { email: { startsWith: "test-" } },
+    });
+    await prisma.tenant.deleteMany({
+      where: { slug: { startsWith: "test-" } },
+    });
+    await prisma.plan.deleteMany({
+      where: { name: { startsWith: "Test Plan" } },
+    });
+  });
+
+  it("deve retornar válido com capabilities quando licenseKey é válido e tenant está ACTIVE", async () => {
+    // Criar plano com features
+    const plan = await prisma.plan.create({
+      data: {
+        name: "Test Plan Valid",
+        features: ["COUPONS", "WHATSAPP"],
+      },
+    });
+
+    // Criar tenant com plano e status ACTIVE
+    const tenantData: CreateTenantInput = {
+      name: "Test Tenant Valid",
+      slug: "test-tenant-valid",
+      planId: plan.id,
+      status: "ACTIVE",
+      user: {
+        email: "test-valid@example.com",
+        password: "senhaSegura123",
+      },
+    };
+
+    const tenant = await TenantService.create(tenantData);
+
+    // Validar acesso usando slug como licenseKey
+    const input: ValidateAccessInput = {
+      licenseKey: "test-tenant-valid",
+      origin: "https://example.com",
+    };
+
+    const result = await validateAccess(input);
+
+    expect(result.valid).toBe(true);
+    expect(result.capabilities).toBeDefined();
+    expect(Array.isArray(result.capabilities)).toBe(true);
+    expect(result.capabilities.length).toBeGreaterThan(0);
+    expect(result.capabilities).toContain("COUPONS");
+    expect(result.capabilities).toContain("WHATSAPP");
+  });
+
+  it("deve retornar inválido quando licenseKey não existe", async () => {
+    const input: ValidateAccessInput = {
+      licenseKey: "non-existent-license-key",
+      origin: "https://example.com",
+    };
+
+    const result = await validateAccess(input);
+
+    expect(result.valid).toBe(false);
+    expect(result.capabilities).toBeDefined();
+    expect(result.capabilities.length).toBe(0);
+  });
+
+  it("deve retornar inválido quando tenant está INACTIVE", async () => {
+    // Criar tenant com status INACTIVE
+    const tenantData: CreateTenantInput = {
+      name: "Test Tenant Inactive",
+      slug: "test-tenant-inactive",
+      status: "INACTIVE",
+      user: {
+        email: "test-inactive@example.com",
+        password: "senhaSegura123",
+      },
+    };
+
+    await TenantService.create(tenantData);
+
+    const input: ValidateAccessInput = {
+      licenseKey: "test-tenant-inactive",
+      origin: "https://example.com",
+    };
+
+    const result = await validateAccess(input);
+
+    expect(result.valid).toBe(false);
+    expect(result.capabilities).toBeDefined();
+    expect(result.capabilities.length).toBe(0);
+  });
+
+  it("deve retornar inválido quando tenant está PAST_DUE", async () => {
+    // Criar tenant com status PAST_DUE
+    const tenantData: CreateTenantInput = {
+      name: "Test Tenant Past Due",
+      slug: "test-tenant-past-due",
+      status: "PAST_DUE",
+      user: {
+        email: "test-past-due@example.com",
+        password: "senhaSegura123",
+      },
+    };
+
+    await TenantService.create(tenantData);
+
+    const input: ValidateAccessInput = {
+      licenseKey: "test-tenant-past-due",
+      origin: "https://example.com",
+    };
+
+    const result = await validateAccess(input);
+
+    expect(result.valid).toBe(false);
+    expect(result.capabilities).toBeDefined();
+    expect(result.capabilities.length).toBe(0);
+  });
+
+  it("deve retornar capabilities corretas incluindo overrides", async () => {
+    // Criar plano com features
+    const plan = await prisma.plan.create({
+      data: {
+        name: "Test Plan With Overrides",
+        features: ["COUPONS", "WHATSAPP"],
+      },
+    });
+
+    // Criar tenant com plano
+    const tenantData: CreateTenantInput = {
+      name: "Test Tenant With Overrides",
+      slug: "test-tenant-overrides-valid",
+      planId: plan.id,
+      status: "ACTIVE",
+      user: {
+        email: "test-overrides-valid@example.com",
+        password: "senhaSegura123",
+      },
+    };
+
+    const tenant = await TenantService.create(tenantData);
+
+    // Adicionar override
+    await prisma.tenantFeature.create({
+      data: {
+        tenantId: tenant.id,
+        feature: "ADVANCED_ANALYTICS",
+      },
+    });
+
+    const input: ValidateAccessInput = {
+      licenseKey: "test-tenant-overrides-valid",
+      origin: "https://example.com",
+    };
+
+    const result = await validateAccess(input);
+
+    expect(result.valid).toBe(true);
+    expect(result.capabilities).toContain("COUPONS");
+    expect(result.capabilities).toContain("WHATSAPP");
+    expect(result.capabilities).toContain("ADVANCED_ANALYTICS");
+  });
+
+  it("deve retornar array vazio de capabilities quando tenant não tem plano nem overrides", async () => {
+    // Criar tenant sem plano
+    const tenantData: CreateTenantInput = {
+      name: "Test Tenant No Features",
+      slug: "test-tenant-no-features",
+      status: "ACTIVE",
+      user: {
+        email: "test-no-features@example.com",
+        password: "senhaSegura123",
+      },
+    };
+
+    await TenantService.create(tenantData);
+
+    const input: ValidateAccessInput = {
+      licenseKey: "test-tenant-no-features",
+      origin: "https://example.com",
+    };
+
+    const result = await validateAccess(input);
+
+    expect(result.valid).toBe(true); // Tenant está ACTIVE
+    expect(result.capabilities).toBeDefined();
+    expect(result.capabilities.length).toBe(0); // Sem features
   });
 });
 

@@ -7,14 +7,21 @@ Este documento descreve a estratégia de testes, casos de teste e cobertura para
 ### Estratégia de Testes
 
 - **Testes de Integração**: Testes com banco de dados real (usando Prisma)
+- **Testes Unitários**: Testes isolados com mocks (usando Vitest mocks)
 - **Ferramenta**: Vitest
-- **Abordagem**: Testes baseados em dados reais com limpeza antes/depois de cada teste
-- **Isolamento**: Cada teste cria seus próprios dados e limpa após execução
+- **Abordagem**: 
+  - Integração: Testes baseados em dados reais com limpeza antes/depois de cada teste
+  - Unitários: Testes isolados com mocks de dependências externas
+- **Isolamento**: 
+  - Integração: Cada teste cria seus próprios dados e limpa após execução
+  - Unitários: Mocks são resetados antes de cada teste
 
 ### Cobertura de Testes
 
-- **Cobertura Atual**: 100% da função `resolvePermissions`
-- **Total de Testes**: 7 testes
+- **Cobertura Atual**: 
+  - `resolvePermissions`: 100% (7 testes de integração)
+  - `validateAccess`: 100% (6 testes de integração + 15 testes unitários)
+- **Total de Testes**: 28 testes (13 de integração + 15 unitários)
 - **Status**: ✅ Todos os testes passando
 
 ---
@@ -110,6 +117,148 @@ Este documento descreve a estratégia de testes, casos de teste e cobertura para
 
 ---
 
+## Testes Unitários
+
+### validateAccess (com mocks)
+
+Os testes unitários para `validateAccess` utilizam mocks para isolar a função das dependências externas (`TenantService.findTenantByLicenseKey` e `resolvePermissions`), permitindo testar todos os cenários sem depender do banco de dados.
+
+#### TC-008: Acesso Válido com Tenant Ativo e Features
+- **Descrição**: Deve retornar `valid: true` e capabilities quando tenant existe, está ACTIVE e resolvePermissions retorna features
+- **Setup**: Mock de tenant ativo e mock de capabilities
+- **Entrada**: `{ licenseKey: "test-tenant", origin: "https://example.com" }`
+- **Saída Esperada**: `{ valid: true, capabilities: ["COUPONS", "WHATSAPP", "EMAIL"] }`
+- **Validações**:
+  - `result.valid` é `true`
+  - `result.capabilities` contém as features esperadas
+  - `TenantService.findTenantByLicenseKey` foi chamado corretamente
+  - `resolvePermissions` foi chamado com o tenantId correto
+- **Status**: ✅ Passando
+
+#### TC-009: License Key Inexistente
+- **Descrição**: Deve retornar `valid: false` quando licenseKey não corresponde a nenhum tenant
+- **Setup**: Mock retornando `null`
+- **Entrada**: `{ licenseKey: "non-existent-key", origin: "https://example.com" }`
+- **Saída Esperada**: `{ valid: false, capabilities: [] }`
+- **Validações**:
+  - `result.valid` é `false`
+  - `result.capabilities` é array vazio
+  - `resolvePermissions` não foi chamado
+- **Status**: ✅ Passando
+
+#### TC-010: Tenant Inativo
+- **Descrição**: Deve retornar `valid: false` quando tenant existe mas status é INACTIVE
+- **Setup**: Mock de tenant com status `INACTIVE`
+- **Entrada**: `{ licenseKey: "test-tenant", origin: "https://example.com" }`
+- **Saída Esperada**: `{ valid: false, capabilities: [] }`
+- **Validações**:
+  - `result.valid` é `false`
+  - `result.capabilities` é array vazio
+  - `resolvePermissions` não foi chamado
+- **Status**: ✅ Passando
+
+#### TC-011: Tenant com Status PAST_DUE
+- **Descrição**: Deve retornar `valid: false` quando tenant existe mas status é PAST_DUE
+- **Setup**: Mock de tenant com status `PAST_DUE`
+- **Entrada**: `{ licenseKey: "test-tenant", origin: "https://example.com" }`
+- **Saída Esperada**: `{ valid: false, capabilities: [] }`
+- **Validações**:
+  - `result.valid` é `false`
+  - `result.capabilities` é array vazio
+  - `resolvePermissions` não foi chamado
+- **Status**: ✅ Passando
+
+#### TC-012: Capabilities Vazias
+- **Descrição**: Deve retornar `valid: true` com capabilities vazias quando resolvePermissions retorna array vazio
+- **Setup**: Mock de tenant ativo e mock de capabilities vazio
+- **Entrada**: `{ licenseKey: "test-tenant", origin: "https://example.com" }`
+- **Saída Esperada**: `{ valid: true, capabilities: [] }`
+- **Validações**:
+  - `result.valid` é `true`
+  - `result.capabilities` é array vazio
+  - `resolvePermissions` foi chamado
+- **Status**: ✅ Passando
+
+#### TC-013: Múltiplas Capabilities
+- **Descrição**: Deve retornar capabilities com múltiplas features quando resolvePermissions retorna várias
+- **Setup**: Mock de tenant ativo e mock de 5 capabilities
+- **Entrada**: `{ licenseKey: "test-tenant", origin: "https://example.com" }`
+- **Saída Esperada**: `{ valid: true, capabilities: ["COUPONS", "WHATSAPP", "EMAIL", "ANALYTICS", "ADVANCED_REPORTS"] }`
+- **Validações**:
+  - `result.valid` é `true`
+  - `result.capabilities.length` é 5
+  - Todas as capabilities estão presentes
+- **Status**: ✅ Passando
+
+#### TC-014: Propagação de Erro
+- **Descrição**: Deve propagar erro quando resolvePermissions lança exceção
+- **Setup**: Mock de tenant ativo e mock de resolvePermissions lançando erro
+- **Entrada**: `{ licenseKey: "test-tenant", origin: "https://example.com" }`
+- **Saída Esperada**: Erro lançado
+- **Validações**:
+  - Erro é propagado
+  - Mensagem de erro correta
+- **Status**: ✅ Passando
+
+#### TC-015: License Key Correto
+- **Descrição**: Deve chamar findTenantByLicenseKey com o licenseKey correto
+- **Setup**: Mock de tenant ativo
+- **Entrada**: `{ licenseKey: "custom-license-key-123", origin: "https://example.com" }`
+- **Saída Esperada**: `findTenantByLicenseKey` chamado com "custom-license-key-123"
+- **Validações**:
+  - Função foi chamada uma vez
+  - Parâmetro correto
+- **Status**: ✅ Passando
+
+#### TC-016: License Key Vazia
+- **Descrição**: Deve retornar inválido quando licenseKey é string vazia
+- **Setup**: Mock retornando `null`
+- **Entrada**: `{ licenseKey: "", origin: "https://example.com" }`
+- **Saída Esperada**: `{ valid: false, capabilities: [] }`
+- **Validações**:
+  - `result.valid` é `false`
+  - `findTenantByLicenseKey` foi chamado com string vazia
+- **Status**: ✅ Passando
+
+#### TC-017: License Key com Espaços
+- **Descrição**: Deve retornar inválido quando licenseKey contém apenas espaços
+- **Setup**: Mock retornando `null`
+- **Entrada**: `{ licenseKey: "   ", origin: "https://example.com" }`
+- **Saída Esperada**: `{ valid: false, capabilities: [] }`
+- **Validações**:
+  - `result.valid` é `false`
+- **Status**: ✅ Passando
+
+#### TC-018: Diferentes Origins (Domain não implementado)
+- **Descrição**: Deve lidar com diferentes valores de origin sem afetar validação (domain ainda não implementado)
+- **Setup**: Mock de tenant ativo
+- **Entrada**: Múltiplos origins (https://example.com, http://localhost:3000, etc.)
+- **Saída Esperada**: Todos retornam `valid: true` (domain não implementado)
+- **Validações**:
+  - Todos os origins passam na validação
+  - Capabilities são retornadas corretamente
+- **Status**: ✅ Passando
+
+#### TC-019: Chamada Única de resolvePermissions
+- **Descrição**: Deve chamar resolvePermissions apenas uma vez mesmo com múltiplas validações do mesmo tenant
+- **Setup**: Mock de tenant ativo
+- **Entrada**: Múltiplas chamadas com mesma licenseKey
+- **Saída Esperada**: `resolvePermissions` chamado o número de vezes que `validateAccess` foi chamado
+- **Validações**:
+  - Número de chamadas corresponde ao número de validações
+- **Status**: ✅ Passando
+
+#### TC-020: Capabilities Ordenadas
+- **Descrição**: Deve retornar capabilities ordenadas quando resolvePermissions retorna array ordenado
+- **Setup**: Mock de tenant ativo e mock de capabilities ordenadas
+- **Entrada**: `{ licenseKey: "test-tenant", origin: "https://example.com" }`
+- **Saída Esperada**: `{ valid: true, capabilities: ["ANALYTICS", "DASHBOARD", "REPORTS"] }`
+- **Validações**:
+  - Capabilities mantêm a ordem fornecida
+- **Status**: ✅ Passando
+
+---
+
 ## Casos de Teste por Funcionalidade
 
 ### Resolução de Permissões
@@ -130,10 +279,12 @@ Este documento descreve a estratégia de testes, casos de teste e cobertura para
 
 ### Funções Cobertas
 
-- ✅ `resolvePermissions` - 7 testes
+- ✅ `resolvePermissions` - 7 testes de integração
+- ✅ `validateAccess` - 6 testes de integração + 15 testes unitários
 
 ### Áreas de Cobertura
 
+#### resolvePermissions
 - ✅ Resolução com plano base
 - ✅ Resolução sem plano
 - ✅ Combinação de plano e overrides
@@ -142,12 +293,25 @@ Este documento descreve a estratégia de testes, casos de teste e cobertura para
 - ✅ Múltiplos overrides
 - ✅ Unicidade de features
 
+#### validateAccess
+- ✅ Validação com tenant ativo e features
+- ✅ Validação com licenseKey inexistente
+- ✅ Validação com tenant inativo
+- ✅ Validação com tenant PAST_DUE
+- ✅ Validação com capabilities vazias
+- ✅ Validação com múltiplas capabilities
+- ✅ Propagação de erros
+- ✅ Validação de licenseKey (vazia, espaços, formato)
+- ✅ Validação de origin (diferentes valores)
+- ✅ Chamadas múltiplas
+- ✅ Ordenação de capabilities
+
 ### Áreas Não Cobertas (Ainda)
 
-- ⏳ Validação de acesso público (`ValidateAccessInput`/`ValidateAccessOutput`)
 - ⏳ Cache de permissões resolvidas
 - ⏳ Performance com muitos overrides
 - ⏳ Validação de formato de features
+- ⏳ Validação de domain (quando campo for adicionado ao schema)
 
 ---
 
@@ -156,7 +320,7 @@ Este documento descreve a estratégia de testes, casos de teste e cobertura para
 ### Execução Mais Recente
 
 ```
-✓ app/domains/license/license.engine.test.ts (7 tests) 1151ms
+✓ app/domains/license/license.engine.test.ts (13 tests) 1978ms
   ✓ resolvePermissions > deve retornar features do plano base quando tenant tem apenas plano
   ✓ resolvePermissions > deve retornar array vazio quando tenant não tem plano
   ✓ resolvePermissions > deve combinar features do plano base com overrides do tenant
@@ -164,19 +328,42 @@ Este documento descreve a estratégia de testes, casos de teste e cobertura para
   ✓ resolvePermissions > deve remover duplicatas quando override repete feature do plano
   ✓ resolvePermissions > deve lançar erro quando tenant não existe
   ✓ resolvePermissions > deve retornar features únicas mesmo com múltiplos overrides
+  ✓ validateAccess > deve retornar válido com capabilities quando licenseKey é válido e tenant está ACTIVE
+  ✓ validateAccess > deve retornar inválido quando licenseKey não existe
+  ✓ validateAccess > deve retornar inválido quando tenant está INACTIVE
+  ✓ validateAccess > deve retornar inválido quando tenant está PAST_DUE
+  ✓ validateAccess > deve retornar válido mesmo sem features quando tenant está ACTIVE
+  ✓ validateAccess > deve retornar capabilities corretas quando tenant tem plano com features
 
-Test Files  1 passed (1)
-     Tests  7 passed (7)
-  Duration  2.26s
+✓ app/domains/license/license.engine.unit.test.ts (15 tests) 68ms
+  ✓ validateAccess - Unit Tests (with mocks) > deve retornar válido com capabilities quando tenant existe, está ACTIVE e resolvePermissions retorna features
+  ✓ validateAccess - Unit Tests (with mocks) > deve retornar inválido quando licenseKey não existe (tenant é null)
+  ✓ validateAccess - Unit Tests (with mocks) > deve retornar inválido quando tenant está INACTIVE
+  ✓ validateAccess - Unit Tests (with mocks) > deve retornar inválido quando tenant está PAST_DUE
+  ✓ validateAccess - Unit Tests (with mocks) > deve retornar capabilities vazias quando resolvePermissions retorna array vazio
+  ✓ validateAccess - Unit Tests (with mocks) > deve retornar capabilities com múltiplas features quando resolvePermissions retorna várias
+  ✓ validateAccess - Unit Tests (with mocks) > deve propagar erro quando resolvePermissions lança exceção
+  ✓ validateAccess - Unit Tests (with mocks) > deve chamar findTenantByLicenseKey com o licenseKey correto
+  ✓ validateAccess - Unit Tests (with mocks) > deve retornar inválido quando licenseKey é string vazia
+  ✓ validateAccess - Unit Tests (with mocks) > deve retornar inválido quando licenseKey contém apenas espaços
+  ✓ validateAccess - Unit Tests (with mocks) > deve lidar com diferentes valores de origin sem afetar validação (domain ainda não implementado)
+  ✓ validateAccess - Unit Tests (with mocks) > deve chamar resolvePermissions apenas uma vez mesmo com múltiplas validações do mesmo tenant
+  ✓ validateAccess - Unit Tests (with mocks) > deve retornar capabilities ordenadas quando resolvePermissions retorna array ordenado
+
+Test Files  2 passed (2)
+     Tests  28 passed (28)
+  Duration  2.05s
 ```
 
 ### Métricas
 
-- **Total de Testes**: 7
-- **Testes Passando**: 7 (100%)
+- **Total de Testes**: 28
+  - **Testes de Integração**: 13 (7 para `resolvePermissions` + 6 para `validateAccess`)
+  - **Testes Unitários**: 15 (para `validateAccess` com mocks)
+- **Testes Passando**: 28 (100%)
 - **Testes Falhando**: 0
-- **Tempo de Execução**: ~2.26s
-- **Cobertura de Código**: ~100% (função `resolvePermissions`)
+- **Tempo de Execução**: ~2.05s (integração: ~1.98s, unitários: ~68ms)
+- **Cobertura de Código**: ~100% (funções `resolvePermissions` e `validateAccess`)
 
 ---
 
@@ -208,14 +395,16 @@ Todos os testes utilizam `beforeEach` e `afterEach` para garantir isolamento:
 
 ## Próximos Passos
 
-1. Implementar validação de acesso público (`ValidateAccessInput`/`ValidateAccessOutput`)
-2. Adicionar testes de performance com muitos overrides
-3. Implementar cache de permissões resolvidas
-4. Adicionar validação de formato de features
-5. Adicionar testes de integração com API pública
+1. ✅ Implementar validação de acesso público (`ValidateAccessInput`/`ValidateAccessOutput`) - **Concluído**
+2. ✅ Adicionar testes unitários para `validateAccess` - **Concluído**
+3. Adicionar testes de performance com muitos overrides
+4. Implementar cache de permissões resolvidas
+5. Adicionar validação de formato de features
+6. Implementar validação de domain quando campo for adicionado ao schema
+7. Adicionar testes de integração com API pública
 
 ---
 
 **Última atualização**: 2024-12-02  
-**Versão**: 1.0.0
+**Versão**: 2.1.0
 

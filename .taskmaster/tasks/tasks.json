@@ -1265,7 +1265,7 @@
           "9",
           "16"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1273,9 +1273,10 @@
             "description": "Add a new function `findTenantByLicenseKey` to `app/domains/tenant/tenant.service.ts` to retrieve a tenant from the database using their unique license key. This function is a necessary prerequisite for the validation logic.",
             "dependencies": [],
             "details": "In `app/domains/tenant/tenant.service.ts`, implement `export async function findTenantByLicenseKey(licenseKey: string)`. Use `prisma.tenant.findUnique` with a `where` clause on the indexed `licenseKey` field. The function should return the full tenant object or null if not found.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Write a unit test for `findTenantByLicenseKey`. Test two scenarios: one where a valid key is provided and the tenant is returned, and another where an invalid key is provided and `null` is returned. Mock the prisma client.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:12:20.347Z"
           },
           {
             "id": 2,
@@ -1285,9 +1286,10 @@
               1
             ],
             "details": "Import `findTenantByLicenseKey` from the tenant service into `license.engine.ts`. Call this function with `input.licenseKey`. If the result is null, the function must immediately return `{ valid: false, capabilities: [] }` as specified.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "In the unit test suite for `validateAccess`, create a test case where the mocked `findTenantByLicenseKey` returns `null`. Assert that `validateAccess` returns `{ valid: false, capabilities: [] }`.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:12:34.747Z"
           },
           {
             "id": 3,
@@ -1297,9 +1299,10 @@
               2
             ],
             "details": "After a tenant is successfully retrieved, add a condition to check the `tenant.subscriptionStatus` property. If the status is not exactly 'ACTIVE' (e.g., it is 'PAST_DUE', 'CANCELED', or null), return `{ valid: false, capabilities: [] }`.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Add unit tests where `findTenantByLicenseKey` returns a tenant with `subscriptionStatus: 'PAST_DUE'` and another with `subscriptionStatus: null`. Assert that both scenarios result in an invalid access response.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:12:34.756Z"
           },
           {
             "id": 4,
@@ -1309,9 +1312,10 @@
               3
             ],
             "details": "After the subscription check passes, add logic to compare `input.origin` with `tenant.domain`. If `tenant.domain` has a value and it does not strictly match `input.origin`, return `{ valid: false, capabilities: [] }`. The check should pass if `tenant.domain` is null or empty.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Create a unit test where the tenant has a configured `domain` (e.g., 'https://example.com') and the input `origin` does not match. Assert the function returns an invalid response. Also test the case where the domain matches and the check passes.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:12:34.765Z"
           },
           {
             "id": 5,
@@ -1321,14 +1325,16 @@
               4
             ],
             "details": "If all previous checks (tenant exists, subscription is active, origin is valid) pass, the function should return a success object. The final return statement should be `return { valid: true, capabilities: tenant.capabilities ?? [] };`. This ensures a valid response is sent and handles cases where capabilities might be null on the tenant record.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Write a unit test for the 'happy path'. Mock a tenant with an 'ACTIVE' subscription, a matching domain, and a sample capabilities array. Assert that `validateAccess` returns `{ valid: true, capabilities: [...] }` with the correct capabilities.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:13:32.467Z"
           }
         ],
         "complexity": 6,
         "recommendedSubtasks": 5,
-        "expansionPrompt": "Break down the implementation of a `validateAccess` function. Steps must include creating a `findTenantByLicenseKey` service function, using it to look up the tenant in the main function, adding checks for subscription status and request origin, and finally implementing the success path. Unit tests are required for each step."
+        "expansionPrompt": "Break down the implementation of a `validateAccess` function. Steps must include creating a `findTenantByLicenseKey` service function, using it to look up the tenant in the main function, adding checks for subscription status and request origin, and finally implementing the success path. Unit tests are required for each step.",
+        "updatedAt": "2025-12-02T23:13:32.467Z"
       },
       {
         "id": "18",
@@ -1340,7 +1346,7 @@
         "dependencies": [
           "17"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1348,9 +1354,10 @@
             "description": "Modify the `ValidationResult` interface to formally include the `capabilities` property, which will hold the permissions array.",
             "dependencies": [],
             "details": "In the file `src/domains/license/license.engine.ts`, locate the `ValidationResult` type or interface definition. Add the property `capabilities?: string[]` to ensure the function's return type matches the new data structure.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Type checking during compilation will validate this change. No specific unit test is required for an interface update.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:15:07.307Z"
           },
           {
             "id": 2,
@@ -1358,9 +1365,10 @@
             "description": "Add the necessary import statement in `license.engine.ts` to make the `resolvePermissions` function from the permission service available.",
             "dependencies": [],
             "details": "At the top of `src/domains/license/license.engine.ts`, add the line: `import { resolvePermissions } from '~/domains/permission/permission.service';`. This assumes the function is exported from that module.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "The build process will fail if the import path is incorrect, serving as a basic validation.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:15:07.315Z"
           },
           {
             "id": 3,
@@ -1370,9 +1378,10 @@
               2
             ],
             "details": "Inside the `validateAccess` function in `src/domains/license/license.engine.ts`, after the `tenant.status` check passes, add the asynchronous call: `const capabilities = await resolvePermissions(tenant.id);`.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Code review and subsequent integration testing will verify the call is made correctly.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:15:07.321Z"
           },
           {
             "id": 4,
@@ -1383,9 +1392,10 @@
               3
             ],
             "details": "In `src/domains/license/license.engine.ts`, find the return statement for a successful validation (currently `return { valid: true };`). Change it to `return { valid: true, capabilities };` to include the fetched permissions.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "This will be tested as part of the unit test in the next subtask, which will assert the structure of the returned object.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:15:07.329Z"
           },
           {
             "id": 5,
@@ -1395,14 +1405,16 @@
               4
             ],
             "details": "In the test file for `license.engine.ts`, use a mocking framework (e.g., Vitest, Jest) to mock the `permission.service`. Configure the mock for `resolvePermissions` to return a sample array like `['CAN_CREATE', 'CAN_EDIT']`. Update the assertion to check that the result of `validateAccess` is `{ valid: true, capabilities: ['CAN_CREATE', 'CAN_EDIT'] }`.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Run the test suite and ensure the updated test for `validateAccess` passes and correctly validates the new return structure.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:15:07.336Z"
           }
         ],
         "complexity": 4,
         "recommendedSubtasks": 5,
-        "expansionPrompt": "Break down the process of integrating a permissions service into a license validation function. The steps should include updating the return type interface, importing the permissions service, calling it within the validation function's success path, modifying the return value to include the capabilities, and finally updating unit tests to mock the service and assert the new output."
+        "expansionPrompt": "Break down the process of integrating a permissions service into a license validation function. The steps should include updating the return type interface, importing the permissions service, calling it within the validation function's success path, modifying the return value to include the capabilities, and finally updating unit tests to mock the service and assert the new output.",
+        "updatedAt": "2025-12-02T23:15:07.336Z"
       },
       {
         "id": "19",
@@ -2618,7 +2630,7 @@
         "dependencies": [
           "18"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -2681,7 +2693,8 @@
         ],
         "complexity": 7,
         "recommendedSubtasks": 5,
-        "expansionPrompt": "Break down the task of writing a comprehensive test suite for `license.engine.ts`. Steps should include setting up the test file with mocked dependencies, testing the successful 'happy path', and then creating specific failure-case tests for an invalid key, an inactive tenant, and an incorrect origin."
+        "expansionPrompt": "Break down the task of writing a comprehensive test suite for `license.engine.ts`. Steps should include setting up the test file with mocked dependencies, testing the successful 'happy path', and then creating specific failure-case tests for an invalid key, an inactive tenant, and an incorrect origin.",
+        "updatedAt": "2025-12-02T23:30:50.411Z"
       },
       {
         "id": "36",
@@ -3814,9 +3827,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-02T23:04:37.705Z",
+      "lastModified": "2025-12-02T23:30:50.416Z",
       "taskCount": 50,
-      "completedCount": 11,
+      "completedCount": 14,
       "tags": [
         "master"
       ]

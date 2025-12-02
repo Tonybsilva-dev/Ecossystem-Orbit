@@ -3,28 +3,12 @@ import { TenantService } from "./tenant.service";
 import { prisma } from "../../db/prisma.server";
 import type { CreateTenantInput } from "./tenant.schema";
 
+// Desabilitar execução paralela para evitar conflitos com banco de dados
 describe("TenantService.create", () => {
-  // Limpar dados de teste antes e depois de cada teste
-  beforeEach(async () => {
-    // Limpar tenants e users de teste
-    await prisma.user.deleteMany({
-      where: {
-        email: {
-          startsWith: "test-",
-        },
-      },
-    });
-    await prisma.tenant.deleteMany({
-      where: {
-        slug: {
-          startsWith: "test-",
-        },
-      },
-    });
-  });
-
+  // Limpar dados de teste após cada teste
+  // Usar padrão específico para evitar remover dados de outros testes
   afterEach(async () => {
-    // Limpar dados de teste
+    // Limpar apenas dados de teste criados neste describe block
     await prisma.user.deleteMany({
       where: {
         email: {
@@ -95,58 +79,90 @@ describe("TenantService.create", () => {
   });
 
   it("deve rejeitar criação com slug duplicado", async () => {
+    // Usar timestamp para garantir slug único mesmo em execução paralela
+    const timestamp = Date.now();
+    const uniqueSlug = `test-duplicate-slug-${timestamp}`;
+    
     const validData: CreateTenantInput = {
       name: "Test Tenant",
-      slug: "test-duplicate-slug",
+      slug: uniqueSlug,
       user: {
-        email: "test-owner1@example.com",
+        email: `test-owner1-${timestamp}@example.com`,
         password: "senhaSegura123",
       },
     };
 
     // Criar primeiro tenant
-    await TenantService.create(validData);
+    const firstTenant = await TenantService.create(validData);
+    
+    // Verificar que o primeiro tenant foi criado
+    expect(firstTenant).toBeDefined();
+    expect(firstTenant.slug).toBe(uniqueSlug);
+
+    // Verificar que o tenant ainda existe no banco antes de tentar criar o duplicado
+    const tenantInDb = await prisma.tenant.findUnique({
+      where: { slug: uniqueSlug },
+    });
+    expect(tenantInDb).toBeDefined();
+    expect(tenantInDb?.slug).toBe(uniqueSlug);
 
     // Tentar criar segundo tenant com mesmo slug
     const duplicateData: CreateTenantInput = {
       name: "Test Tenant 2",
-      slug: "test-duplicate-slug", // Mesmo slug
+      slug: uniqueSlug, // Mesmo slug
       user: {
-        email: "test-owner2@example.com",
+        email: `test-owner2-${timestamp}@example.com`,
         password: "senhaSegura123",
       },
     };
 
     await expect(TenantService.create(duplicateData)).rejects.toThrow(
-      'O slug "test-duplicate-slug" já está em uso'
+      `O slug "${uniqueSlug}" já está em uso`
     );
   });
 
   it("deve rejeitar criação com email duplicado", async () => {
+    // Usar timestamp para garantir email único mesmo em execução paralela
+    const timestamp = Date.now();
+    const uniqueEmail = `test-duplicate-email-${timestamp}@example.com`;
+    const uniqueSlug1 = `test-tenant-1-${timestamp}`;
+    const uniqueSlug2 = `test-tenant-2-${timestamp}`;
+    
     const validData: CreateTenantInput = {
       name: "Test Tenant",
-      slug: "test-tenant-1",
+      slug: uniqueSlug1,
       user: {
-        email: "test-duplicate-email@example.com",
+        email: uniqueEmail,
         password: "senhaSegura123",
       },
     };
 
     // Criar primeiro tenant
-    await TenantService.create(validData);
+    const firstTenant = await TenantService.create(validData);
+    
+    // Verificar que o primeiro tenant foi criado
+    expect(firstTenant).toBeDefined();
+    expect(firstTenant.users[0].email).toBe(uniqueEmail);
+
+    // Verificar que o usuário ainda existe no banco antes de tentar criar o duplicado
+    const userInDb = await prisma.user.findUnique({
+      where: { email: uniqueEmail },
+    });
+    expect(userInDb).toBeDefined();
+    expect(userInDb?.email).toBe(uniqueEmail);
 
     // Tentar criar segundo tenant com mesmo email
     const duplicateData: CreateTenantInput = {
       name: "Test Tenant 2",
-      slug: "test-tenant-2",
+      slug: uniqueSlug2,
       user: {
-        email: "test-duplicate-email@example.com", // Mesmo email
+        email: uniqueEmail, // Mesmo email
         password: "senhaSegura123",
       },
     };
 
     await expect(TenantService.create(duplicateData)).rejects.toThrow(
-      'O email "test-duplicate-email@example.com" já está cadastrado'
+      `O email "${uniqueEmail}" já está cadastrado`
     );
   });
 
@@ -343,18 +359,31 @@ describe("TenantService.getAllTenants", () => {
       },
     };
 
-    await TenantService.create(tenant1);
-    await TenantService.create(tenant2);
-    await TenantService.create(tenant3);
+    const created1 = await TenantService.create(tenant1);
+    const created2 = await TenantService.create(tenant2);
+    const created3 = await TenantService.create(tenant3);
+
+    // Verificar que todos foram criados
+    expect(created1).toBeDefined();
+    expect(created2).toBeDefined();
+    expect(created3).toBeDefined();
 
     const tenants = await TenantService.getAllTenants();
 
     expect(tenants).toBeDefined();
     expect(Array.isArray(tenants)).toBe(true);
-    expect(tenants.length).toBeGreaterThanOrEqual(3);
+    
+    // Filtrar apenas os tenants de teste criados neste teste
+    const testTenants = tenants.filter((t) => 
+      t.slug === "test-tenant-1" || 
+      t.slug === "test-tenant-2" || 
+      t.slug === "test-tenant-3"
+    );
+    
+    expect(testTenants.length).toBe(3);
 
     // Verificar que os tenants criados estão na lista
-    const slugs = tenants.map((t) => t.slug);
+    const slugs = testTenants.map((t) => t.slug);
     expect(slugs).toContain("test-tenant-1");
     expect(slugs).toContain("test-tenant-2");
     expect(slugs).toContain("test-tenant-3");

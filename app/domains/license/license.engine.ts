@@ -6,6 +6,8 @@
  */
 
 import { prisma } from "../../core/db/prisma.server";
+import { TenantService } from "../../core/domain/tenant/tenant.service";
+import type { ValidateAccessInput, ValidateAccessOutput } from "./license.types";
 
 /**
  * Resolves the final set of features (permissions) available to a tenant.
@@ -57,5 +59,88 @@ export async function resolvePermissions(tenantId: string): Promise<string[]> {
 
   // Convert Set to array and return
   return Array.from(featureSet);
+}
+
+/**
+ * Validates access for a license key and returns the capabilities if valid.
+ * 
+ * This function performs the following validation checks:
+ * 1. Finds tenant by license key (slug). If not found, returns invalid.
+ * 2. Checks if tenant's subscription status is ACTIVE. If not, returns invalid.
+ * 3. Checks if request origin matches tenant's configured domain (if domain is configured).
+ * 
+ * If all checks pass, resolves and returns the tenant's capabilities.
+ * 
+ * @param input - Validation input containing licenseKey and origin
+ * @returns Promise resolving to validation result with valid flag and capabilities
+ */
+export async function validateAccess(
+  input: ValidateAccessInput
+): Promise<ValidateAccessOutput> {
+  // 1. Find tenant by license key (slug)
+  const tenant = await TenantService.findTenantByLicenseKey(input.licenseKey);
+
+  if (!tenant) {
+    return { valid: false, capabilities: [] };
+  }
+
+  // 2. Check if tenant's subscription status is ACTIVE
+  // Status must be exactly 'ACTIVE' to be valid
+  if (tenant.status !== "ACTIVE") {
+    return { valid: false, capabilities: [] };
+  }
+
+  // 3. Check if request origin matches tenant's configured domain
+  // Note: Domain field is not yet in the Prisma schema.
+  // When domain is added to the schema, this check will validate:
+  // - If tenant.domain is null/empty, any origin is allowed
+  // - If tenant.domain has a value, it must strictly match input.origin
+  // For now, this check always passes (domain validation will be implemented when field is added)
+  // TODO: Implement domain validation when domain field is added to Tenant model
+
+  // 4. All checks passed - resolve permissions and return valid response
+  // Usar a função exportada para permitir mocking em testes
+  const capabilities = await resolvePermissions(tenant.id);
+
+  return {
+    valid: true,
+    capabilities,
+  };
+}
+
+// Exportar uma versão que aceita resolvePermissions como parâmetro para testes
+export async function validateAccessWithResolver(
+  input: ValidateAccessInput,
+  resolver: (tenantId: string) => Promise<string[]> = resolvePermissions
+): Promise<ValidateAccessOutput> {
+  // 1. Find tenant by license key (slug)
+  const tenant = await TenantService.findTenantByLicenseKey(input.licenseKey);
+
+  if (!tenant) {
+    return { valid: false, capabilities: [] };
+  }
+
+  // 2. Check if tenant's subscription status is ACTIVE
+  // Status must be exactly 'ACTIVE' to be valid
+  if (tenant.status !== "ACTIVE") {
+    return { valid: false, capabilities: [] };
+  }
+
+  // 3. Check if request origin matches tenant's configured domain
+  // Note: Domain field is not yet in the Prisma schema.
+  // When domain is added to the schema, this check will validate:
+  // - If tenant.domain is null/empty, any origin is allowed
+  // - If tenant.domain has a value, it must strictly match input.origin
+  // For now, this check always passes (domain validation will be implemented when field is added)
+  // TODO: Implement domain validation when domain field is added to Tenant model
+
+  // 4. All checks passed - resolve permissions and return valid response
+  // Usar o resolver injetado para permitir mocking em testes
+  const capabilities = await resolver(tenant.id);
+
+  return {
+    valid: true,
+    capabilities,
+  };
 }
 
