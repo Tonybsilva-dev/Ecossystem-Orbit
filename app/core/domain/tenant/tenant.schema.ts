@@ -69,7 +69,17 @@ export const createTenantSchema = tenantBaseSchema.extend({
 // Schema para atualização de Tenant (todos os campos opcionais, sem user)
 export const updateTenantSchema = tenantBaseSchema.partial().strict();
 
+// Schema para busca de tenants
+export const tenantSearchSchema = z.object({
+  query: z
+    .string({ required_error: "Query de busca é obrigatória" })
+    .trim()
+    .min(1, "Query de busca não pode estar vazia")
+    .max(100, "Query de busca deve ter no máximo 100 caracteres"),
+});
+
 // Tipos derivados
 export type CreateTenantInput = z.infer<typeof createTenantSchema>;
 export type UpdateTenantInput = z.infer<typeof updateTenantSchema>;
 export type TenantBaseInput = z.infer<typeof tenantBaseSchema>;
+export type TenantSearchInput = z.infer<typeof tenantSearchSchema>;

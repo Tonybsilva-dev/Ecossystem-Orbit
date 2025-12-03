@@ -1,6 +1,6 @@
 import { prisma } from "../../db/prisma.server";
 import type { CreateTenantInput, UpdateTenantInput } from "./tenant.schema";
-import { createTenantSchema } from "./tenant.schema";
+import { createTenantSchema, tenantSearchSchema } from "./tenant.schema";
 import { hashPassword } from "../../auth/password.server";
 
 export class TenantService {
@@ -155,5 +155,66 @@ export class TenantService {
     return prisma.tenant.findUnique({
       where: { slug: licenseKey },
     });
+  }
+
+  /**
+   * Realiza busca full-text de tenants por nome ou slug.
+   * 
+   * Esta função implementa busca case-insensitive nos campos `name` e `slug`
+   * do modelo Tenant, retornando todos os tenants que correspondem à query.
+   * 
+   * A busca é otimizada com índices nos campos `name` e `slug` para melhor
+   * performance em grandes volumes de dados.
+   * 
+   * @param query - String de busca (será validada e trimada)
+   * @returns Array de tenants que correspondem à busca, ordenados por nome
+   * @throws Error se a query for inválida (vazia, muito longa, etc.)
+   * 
+   * @example
+   * ```ts
+   * // Buscar tenants com "acme" no nome ou slug
+   * const results = await TenantService.searchTenants("acme");
+   * // Retorna tenants como "Acme Corp", "acme-enterprise", etc.
+   * ```
+   */
+  static async searchTenants(query: string) {
+    // 1. Validar input usando Zod schema
+    const validationResult = tenantSearchSchema.safeParse({ query });
+
+    if (!validationResult.success) {
+      const firstError = validationResult.error.errors[0];
+      throw new Error(
+        firstError?.message || "Query de busca inválida"
+      );
+    }
+
+    const validatedQuery = validationResult.data.query;
+
+    // 2. Realizar busca full-text usando Prisma
+    // Usa OR para buscar em ambos os campos (name e slug)
+    // mode: 'insensitive' torna a busca case-insensitive
+    const tenants = await prisma.tenant.findMany({
+      where: {
+        OR: [
+          {
+            name: {
+              contains: validatedQuery,
+              mode: "insensitive",
+            },
+          },
+          {
+            slug: {
+              contains: validatedQuery,
+              mode: "insensitive",
+            },
+          },
+        ],
+      },
+      orderBy: {
+        name: "asc",
+      },
+    });
+
+    return tenants;
   }
 }

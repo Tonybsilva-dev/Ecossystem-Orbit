@@ -242,6 +242,255 @@ describe("TenantService.create", () => {
   });
 });
 
+// Desabilitar execução paralela para evitar conflitos com banco de dados
+describe("TenantService.searchTenants", () => {
+  // Limpar dados de teste após cada teste
+  afterEach(async () => {
+    await prisma.user.deleteMany({
+      where: {
+        email: {
+          startsWith: "test-search-",
+        },
+      },
+    });
+    await prisma.tenant.deleteMany({
+      where: {
+        slug: {
+          startsWith: "test-search-",
+        },
+      },
+    });
+  });
+
+  it("deve retornar tenants que correspondem à busca por nome", async () => {
+    // Arrange: Criar múltiplos tenants
+    const tenant1 = await TenantService.create({
+      name: "Acme Corporation",
+      slug: "test-search-acme-corp",
+      user: {
+        email: "test-search-acme@example.com",
+        password: "senhaSegura123",
+      },
+    });
+
+    const tenant2 = await TenantService.create({
+      name: "Beta Industries",
+      slug: "test-search-beta-ind",
+      user: {
+        email: "test-search-beta@example.com",
+        password: "senhaSegura123",
+      },
+    });
+
+    const tenant3 = await TenantService.create({
+      name: "Acme Solutions",
+      slug: "test-search-acme-sol",
+      user: {
+        email: "test-search-acme-sol@example.com",
+        password: "senhaSegura123",
+      },
+    });
+
+    // Act: Buscar por "Acme"
+    const results = await TenantService.searchTenants("Acme");
+
+    // Assert: Deve retornar apenas tenants com "Acme" no nome
+    expect(results.length).toBe(2);
+    expect(results.map((t) => t.id)).toContain(tenant1.id);
+    expect(results.map((t) => t.id)).toContain(tenant3.id);
+    expect(results.map((t) => t.id)).not.toContain(tenant2.id);
+  });
+
+  it("deve retornar tenants que correspondem à busca por slug", async () => {
+    // Arrange: Criar múltiplos tenants
+    const tenant1 = await TenantService.create({
+      name: "Test Company",
+      slug: "test-search-enterprise",
+      user: {
+        email: "test-search-enterprise@example.com",
+        password: "senhaSegura123",
+      },
+    });
+
+    const tenant2 = await TenantService.create({
+      name: "Another Company",
+      slug: "test-search-startup",
+      user: {
+        email: "test-search-startup@example.com",
+        password: "senhaSegura123",
+      },
+    });
+
+    // Act: Buscar por "enterprise"
+    const results = await TenantService.searchTenants("enterprise");
+
+    // Assert: Deve retornar apenas o tenant com "enterprise" no slug
+    expect(results.length).toBe(1);
+    expect(results[0].id).toBe(tenant1.id);
+    expect(results[0].slug).toBe("test-search-enterprise");
+  });
+
+  it("deve fazer busca case-insensitive", async () => {
+    // Arrange: Criar tenant com nome em maiúsculas
+    const tenant = await TenantService.create({
+      name: "ACME CORPORATION",
+      slug: "test-search-acme-upper",
+      user: {
+        email: "test-search-acme-upper@example.com",
+        password: "senhaSegura123",
+      },
+    });
+
+    // Act: Buscar com minúsculas
+    const results = await TenantService.searchTenants("acme");
+
+    // Assert: Deve encontrar o tenant mesmo com case diferente
+    expect(results.length).toBe(1);
+    expect(results[0].id).toBe(tenant.id);
+  });
+
+  it("deve retornar array vazio quando nenhum tenant corresponde", async () => {
+    // Arrange: Criar tenant
+    await TenantService.create({
+      name: "Test Company",
+      slug: "test-search-no-match",
+      user: {
+        email: "test-search-no-match@example.com",
+        password: "senhaSegura123",
+      },
+    });
+
+    // Act: Buscar por termo que não existe
+    const results = await TenantService.searchTenants("xyz-nonexistent-123");
+
+    // Assert: Deve retornar array vazio
+    expect(results).toEqual([]);
+    expect(results.length).toBe(0);
+  });
+
+  it("deve retornar resultados ordenados por nome (ascendente)", async () => {
+    // Arrange: Criar tenants com nomes em ordem diferente
+    const tenant1 = await TenantService.create({
+      name: "Zebra Company",
+      slug: "test-search-zebra",
+      user: {
+        email: "test-search-zebra@example.com",
+        password: "senhaSegura123",
+      },
+    });
+
+    const tenant2 = await TenantService.create({
+      name: "Alpha Company",
+      slug: "test-search-alpha",
+      user: {
+        email: "test-search-alpha@example.com",
+        password: "senhaSegura123",
+      },
+    });
+
+    const tenant3 = await TenantService.create({
+      name: "Beta Company",
+      slug: "test-search-beta",
+      user: {
+        email: "test-search-beta@example.com",
+        password: "senhaSegura123",
+      },
+    });
+
+    // Act: Buscar por "Company"
+    const results = await TenantService.searchTenants("Company");
+
+    // Assert: Deve retornar ordenado por nome (A, B, Z)
+    expect(results.length).toBe(3);
+    expect(results[0].name).toBe("Alpha Company");
+    expect(results[1].name).toBe("Beta Company");
+    expect(results[2].name).toBe("Zebra Company");
+  });
+
+  it("deve fazer busca parcial (substring)", async () => {
+    // Arrange: Criar tenant
+    const tenant = await TenantService.create({
+      name: "Enterprise Solutions Inc",
+      slug: "test-search-enterprise-sol",
+      user: {
+        email: "test-search-enterprise-sol@example.com",
+        password: "senhaSegura123",
+      },
+    });
+
+    // Act: Buscar por substring "prise"
+    const results = await TenantService.searchTenants("prise");
+
+    // Assert: Deve encontrar o tenant
+    expect(results.length).toBe(1);
+    expect(results[0].id).toBe(tenant.id);
+  });
+
+  it("deve lançar erro quando query está vazia", async () => {
+    // Act & Assert
+    await expect(TenantService.searchTenants("")).rejects.toThrow();
+    await expect(TenantService.searchTenants("")).rejects.toThrow(
+      "vazia"
+    );
+  });
+
+  it("deve lançar erro quando query contém apenas espaços", async () => {
+    // Act & Assert
+    await expect(TenantService.searchTenants("   ")).rejects.toThrow();
+    await expect(TenantService.searchTenants("   ")).rejects.toThrow(
+      "vazia"
+    );
+  });
+
+  it("deve fazer trim da query antes de buscar", async () => {
+    // Arrange: Criar tenant
+    const tenant = await TenantService.create({
+      name: "Trim Test Company",
+      slug: "test-search-trim",
+      user: {
+        email: "test-search-trim@example.com",
+        password: "senhaSegura123",
+      },
+    });
+
+    // Act: Buscar com espaços no início e fim
+    const results = await TenantService.searchTenants("  Trim Test  ");
+
+    // Assert: Deve encontrar o tenant (trim aplicado)
+    expect(results.length).toBe(1);
+    expect(results[0].id).toBe(tenant.id);
+  });
+
+  it("deve buscar em ambos os campos (name e slug) simultaneamente", async () => {
+    // Arrange: Criar tenants onde um tem match no nome e outro no slug
+    const tenant1 = await TenantService.create({
+      name: "Tech Solutions",
+      slug: "test-search-other",
+      user: {
+        email: "test-search-tech@example.com",
+        password: "senhaSegura123",
+      },
+    });
+
+    const tenant2 = await TenantService.create({
+      name: "Other Company",
+      slug: "test-search-tech-solutions",
+      user: {
+        email: "test-search-other@example.com",
+        password: "senhaSegura123",
+      },
+    });
+
+    // Act: Buscar por "tech"
+    const results = await TenantService.searchTenants("tech");
+
+    // Assert: Deve encontrar ambos (um no nome, outro no slug)
+    expect(results.length).toBe(2);
+    expect(results.map((t) => t.id)).toContain(tenant1.id);
+    expect(results.map((t) => t.id)).toContain(tenant2.id);
+  });
+});
+
 describe("TenantService.findTenantBySlug", () => {
   beforeEach(async () => {
     await prisma.user.deleteMany({

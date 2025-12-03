@@ -39,6 +39,9 @@ model Tenant {
   users    User[]
   features TenantFeature[]
 
+  // Índices para otimizar busca full-text
+  @@index([name])
+  @@index([slug])
   @@map("tenants")
 }
 
