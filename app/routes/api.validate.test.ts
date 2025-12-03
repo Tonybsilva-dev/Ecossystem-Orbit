@@ -6,9 +6,10 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { loader } from "./api.validate";
+import { loader, headers } from "./api.validate";
 import { validateAccess } from "../domains/license/license.engine";
 import type { ValidateAccessOutput } from "../domains/license/license.types";
+import { LICENSE_VALIDATION_CACHE_CONTROL } from "../core/constants/cache-control.constants";
 
 // Mock do validateAccess
 vi.mock("../domains/license/license.engine", () => ({
@@ -421,6 +422,107 @@ describe("API Route: /api/validate", () => {
 
       // Assert
       expect(vi.mocked(validateAccess)).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Headers Function: Cache-Control", () => {
+    it("deve adicionar Cache-Control header para respostas de sucesso (200)", () => {
+      // Arrange
+      const loaderHeaders = new Headers({
+        "Content-Type": "application/json",
+        "X-License-Valid": "true",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET",
+        "Access-Control-Allow-Headers": "Origin",
+      });
+
+      // Act
+      const result = headers({ loaderHeaders } as any);
+
+      // Assert
+      expect(result.get("Cache-Control")).toBe(LICENSE_VALIDATION_CACHE_CONTROL);
+      // Verificar que outros headers foram preservados
+      expect(result.get("Content-Type")).toBe("application/json");
+      expect(result.get("X-License-Valid")).toBe("true");
+      expect(result.get("Access-Control-Allow-Origin")).toBe("*");
+    });
+
+    it("não deve adicionar Cache-Control header para respostas de erro (403)", () => {
+      // Arrange
+      const loaderHeaders = new Headers({
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET",
+        "Access-Control-Allow-Headers": "Origin",
+        // Sem X-License-Valid header (indica erro)
+      });
+
+      // Act
+      const result = headers({ loaderHeaders } as any);
+
+      // Assert
+      expect(result.get("Cache-Control")).toBeNull();
+      // Verificar que outros headers foram preservados
+      expect(result.get("Content-Type")).toBe("application/json");
+      expect(result.get("Access-Control-Allow-Origin")).toBe("*");
+    });
+
+    it("não deve adicionar Cache-Control header para respostas de erro (400)", () => {
+      // Arrange
+      const loaderHeaders = new Headers({
+        "Content-Type": "application/json",
+        // Sem X-License-Valid header e sem CORS headers (indica erro 400)
+      });
+
+      // Act
+      const result = headers({ loaderHeaders } as any);
+
+      // Assert
+      expect(result.get("Cache-Control")).toBeNull();
+      expect(result.get("Content-Type")).toBe("application/json");
+    });
+
+    it("não deve adicionar Cache-Control header para respostas de erro (500)", () => {
+      // Arrange
+      const loaderHeaders = new Headers({
+        "Content-Type": "application/json",
+        // Sem X-License-Valid header (indica erro 500)
+      });
+
+      // Act
+      const result = headers({ loaderHeaders } as any);
+
+      // Assert
+      expect(result.get("Cache-Control")).toBeNull();
+      expect(result.get("Content-Type")).toBe("application/json");
+    });
+
+    it("deve preservar todos os headers originais do loader", () => {
+      // Arrange
+      const loaderHeaders = new Headers({
+        "Content-Type": "application/json",
+        "X-License-Valid": "true",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET",
+        "Access-Control-Allow-Headers": "Origin",
+        "X-Custom-Header": "custom-value",
+      });
+
+      // Act
+      const result = headers({ loaderHeaders } as any);
+
+      // Assert
+      // Verificar que todos os headers originais foram preservados
+      expect(result.get("Content-Type")).toBe("application/json");
+      expect(result.get("X-License-Valid")).toBe("true");
+      expect(result.get("Access-Control-Allow-Origin")).toBe("*");
+      expect(result.get("Access-Control-Allow-Methods")).toBe("GET");
+      expect(result.get("Access-Control-Allow-Headers")).toBe("Origin");
+      expect(result.get("X-Custom-Header")).toBe("custom-value");
+      // Verificar que Cache-Control foi adicionado
+      expect(result.get("Cache-Control")).toBe(
+        "public, max-age=600, stale-while-revalidate=3600"
+      );
     });
   });
 });

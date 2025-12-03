@@ -1427,7 +1427,7 @@
           "4",
           "18"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1435,9 +1435,10 @@
             "description": "Create the new file for the API resource route at `app/routes/api.validate.ts`. This file will house the loader function for license validation.",
             "dependencies": [],
             "details": "In the `app/routes/` directory, create a new TypeScript file named `api.validate.ts`. This filename follows Remix conventions for creating a resource route accessible at the `/api/validate` path.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify that the file `app/routes/api.validate.ts` exists in the project structure.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:51:35.127Z"
           },
           {
             "id": 2,
@@ -1447,9 +1448,10 @@
               1
             ],
             "details": "Import `LoaderFunctionArgs` from `@remix-run/node`. Create and export an async function named `loader` that accepts `({ request }: LoaderFunctionArgs)`. Return a placeholder JSON response for now.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Start the dev server and navigate to `/api/validate`. The server should not crash, and a placeholder response should be returned.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:51:35.135Z"
           },
           {
             "id": 3,
@@ -1459,9 +1461,10 @@
               2
             ],
             "details": "Inside the loader, use `new URL(request.url).searchParams.get('licenseKey')` to get the key. Use `request.headers.get('Origin')` to get the origin domain. Add basic validation to ensure both values are present; if not, prepare to return an error.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Add `console.log` statements for the parsed key and origin. Call the endpoint with `/api/validate?licenseKey=some-key` from a browser or API client and check that the server logs the correct values.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:51:35.141Z"
           },
           {
             "id": 4,
@@ -1471,9 +1474,10 @@
               3
             ],
             "details": "Assuming the function exists in `app/lib/license-engine.server.ts` (as per dependent tasks), import `validateAccess`. Call it with the `licenseKey` and `origin` obtained in the previous step. Handle the returned validation result, which should contain the validity status and any associated data or error messages.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Mock the `validateAccess` function using Vitest to return predictable true/false responses. Create unit tests for the loader function that assert the correct logic path is taken based on the mocked return value.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:51:35.147Z"
           },
           {
             "id": 5,
@@ -1483,14 +1487,16 @@
               4
             ],
             "details": "Use the `json` helper from `@remix-run/node`. If `validateAccess` returns a successful validation, respond with `json({ valid: true }, { status: 200 })`. If validation fails, respond with `json({ valid: false, error: '...' }, { status: 403 })`. Ensure CORS headers are included if necessary for cross-origin requests.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Use an API client like cURL or Postman. Make a request with a valid (mocked) key and assert a 200 status and `{ valid: true }` body. Make a request with an invalid key and assert a 403 status and a body indicating failure.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:51:35.152Z"
           }
         ],
         "complexity": 4,
         "recommendedSubtasks": 5,
-        "expansionPrompt": "Generate subtasks for creating a Remix API resource route for license validation. The steps should include creating the route file, implementing the loader boilerplate, parsing the license key and origin from the request, calling the `validateAccess` service, and returning a formatted JSON response with correct HTTP status codes."
+        "expansionPrompt": "Generate subtasks for creating a Remix API resource route for license validation. The steps should include creating the route file, implementing the loader boilerplate, parsing the license key and origin from the request, calling the `validateAccess` service, and returning a formatted JSON response with correct HTTP status codes.",
+        "updatedAt": "2025-12-02T23:51:35.152Z"
       },
       {
         "id": "20",
@@ -1502,7 +1508,7 @@
         "dependencies": [
           "19"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1510,9 +1516,10 @@
             "description": "Locate the `app/routes/api.validate.ts` file and analyze its current structure, including its loader and/or action function. Search the project for existing `headers` function exports to understand and follow established conventions for setting response headers.",
             "dependencies": [],
             "details": "Use codebase search tools to find all instances of `export const headers` in `app/routes/`. Read the contents of `app/routes/api.validate.ts` to determine if a `loader` or `action` is used and how it returns data or errors.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Confirm the file `app/routes/api.validate.ts` exists and note whether it uses a loader or an action. Note any other files that export a `headers` function.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T00:01:26.552Z"
           },
           {
             "id": 2,
@@ -1522,9 +1529,10 @@
               1
             ],
             "details": "At the top of `app/routes/api.validate.ts`, add: `const CACHE_CONTROL_HEADER = 'public, max-age=600, stale-while-revalidate=3600';`. This centralizes the caching configuration for this route.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Review the code to ensure the constant is defined correctly and is exported if it needs to be used elsewhere (though likely not for this task).",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T00:01:33.400Z"
           },
           {
             "id": 3,
@@ -1534,9 +1542,10 @@
               2
             ],
             "details": "Import `HeadersFunction` from `@remix-run/node`. Create the exported function: `export const headers: HeadersFunction = () => ({ 'Cache-Control': CACHE_CONTROL_HEADER });`. This sets the foundation for the caching mechanism.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Run the application and use `curl -I http://localhost:3000/api/validate` (or a similar tool) to verify that the `Cache-Control` header is present in the response.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T00:03:58.948Z"
           },
           {
             "id": 4,
@@ -1546,9 +1555,10 @@
               3
             ],
             "details": "Modify the `headers` function to accept the `loaderHeaders` parameter. Add logic to check if these headers indicate a successful response (e.g., by checking for a specific `Content-Type` or a custom header set in the loader). Return caching headers only for success cases, and merge with existing loader headers: `return new Headers([...loaderHeaders, ['Cache-Control', CACHE_CONTROL_HEADER]])`.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Trigger both a successful validation and an error state (e.g., by providing invalid data). Use `curl -I` to verify the `Cache-Control` header is present on the successful response and absent on the error response.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T00:04:20.572Z"
           },
           {
             "id": 5,
@@ -1558,14 +1568,16 @@
               4
             ],
             "details": "Write a comment explaining what `public`, `max-age=600`, and `stale-while-revalidate=3600` mean in the context of this endpoint. Perform a final check using `curl -I` and document this command as the official way to test this feature's implementation.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Code review the added comments for clarity. Execute the documented `curl -I` command and confirm the output matches expectations for both success and failure scenarios.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T00:05:03.089Z"
           }
         ],
         "complexity": 3,
         "recommendedSubtasks": 5,
-        "expansionPrompt": "Break down the task of adding caching headers to a Remix route. Steps should include analyzing the target route, defining a constant for the header value, implementing the basic `headers` function, refining it with conditional logic for success/error cases, and adding documentation."
+        "expansionPrompt": "Break down the task of adding caching headers to a Remix route. Steps should include analyzing the target route, defining a constant for the header value, implementing the basic `headers` function, refining it with conditional logic for success/error cases, and adding documentation.",
+        "updatedAt": "2025-12-03T00:05:03.089Z"
       },
       {
         "id": "21",
@@ -2781,7 +2793,7 @@
         "dependencies": [
           "20"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -2789,9 +2801,10 @@
             "description": "Set up the environment for running integration tests against a live server. This includes installing necessary dependencies and creating the main integration test file.",
             "dependencies": [],
             "details": "Install `supertest` as a dev dependency for making HTTP requests. Create a new test file, `test/integration/api.validate.test.ts`. This file will contain the setup and teardown logic for the test server.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify that `supertest` is added to `package.json` and that a blank test file can be run by Vitest without errors.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T00:18:49.789Z"
           },
           {
             "id": 2,
@@ -2801,9 +2814,10 @@
               1
             ],
             "details": "In `api.validate.test.ts`, create `beforeEach` and `afterEach` hooks. The `beforeEach` hook will use the Prisma client to create a test tenant with a known license key and allowed origin. The `afterEach` hook will use `prisma.tenant.deleteMany({})` to clear the table.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Manually inspect the test database during a paused test run to confirm that the tenant is created and subsequently deleted after the test completes.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T00:20:32.814Z"
           },
           {
             "id": 3,
@@ -2813,9 +2827,10 @@
               2
             ],
             "details": "Using `supertest`, send a POST request to `/api/validate`. The request body should contain the `licenseKey` of the seeded tenant, and the `Origin` header should match one of the `allowedOrigins` on the tenant record. Assert that the HTTP status is 200 and the JSON response is `{ valid: true, ... }`.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Run the test suite and confirm this specific test case passes and correctly receives a `valid: true` response from the running application.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T00:20:32.820Z"
           },
           {
             "id": 4,
@@ -2825,9 +2840,10 @@
               2
             ],
             "details": "Using `supertest`, send a POST request to `/api/validate` with a randomly generated or non-existent `licenseKey`. Assert that the HTTP status is 200 but the JSON response body is `{ valid: false, reason: 'INVALID_KEY' }` or a similar failure indicator.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Run the test and verify that the API correctly returns a `valid: false` payload when the license key is incorrect.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T00:20:32.825Z"
           },
           {
             "id": 5,
@@ -2837,14 +2853,16 @@
               2
             ],
             "details": "Using the seeded tenant's valid `licenseKey`, send a POST request to `/api/validate` but set the `Origin` header to a domain that is not in the tenant's `allowedOrigins` array (e.g., 'https://invalid-origin.com'). Assert the HTTP status is 200 and the JSON response is `{ valid: false, reason: 'INVALID_ORIGIN' }`.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Run the test and confirm the API denies validation due to the origin mismatch, returning a `valid: false` payload.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T00:20:32.831Z"
           }
         ],
         "complexity": 7,
         "recommendedSubtasks": 5,
-        "expansionPrompt": "Deconstruct the task of creating an integration test for a license validation API. Subtasks should cover setting up the test environment with `supertest`, implementing database seeding and teardown, writing the test case for a valid license, and then adding test cases for invalid scenarios like a wrong key or mismatched origin."
+        "expansionPrompt": "Deconstruct the task of creating an integration test for a license validation API. Subtasks should cover setting up the test environment with `supertest`, implementing database seeding and teardown, writing the test case for a valid license, and then adding test cases for invalid scenarios like a wrong key or mismatched origin.",
+        "updatedAt": "2025-12-03T00:20:32.831Z"
       },
       {
         "id": "38",
@@ -3827,9 +3845,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-02T23:30:50.416Z",
+      "lastModified": "2025-12-03T00:20:32.832Z",
       "taskCount": 50,
-      "completedCount": 14,
+      "completedCount": 17,
       "tags": [
         "master"
       ]

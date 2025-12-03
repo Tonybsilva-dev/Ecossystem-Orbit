@@ -512,6 +512,132 @@ Todos os testes utilizam `beforeEach` e `afterEach` para garantir isolamento:
 - **Saída Esperada**: validateAccess não é chamado
 - **Status**: ✅ Passando
 
+---
+
+## Testes de Integração da API
+
+### Testes de Integração: /api/validate
+
+Os testes de integração verificam o comportamento end-to-end do endpoint `/api/validate` fazendo requisições HTTP reais para um servidor Express configurado com React Router. Estes testes simulam o comportamento "Phone Home" de aplicações externas.
+
+#### Configuração do Ambiente de Teste
+
+- **Ferramenta**: `supertest` para fazer requisições HTTP
+- **Servidor**: Express com React Router usando `@react-router/express`
+- **Build**: Usa o build de produção (`build/server/index.js`)
+- **Banco de Dados**: Banco de dados real (PostgreSQL via Prisma)
+- **Isolamento**: Cada teste cria e limpa seus próprios dados
+
+#### TC-041: Retornar 200 com valid: true quando licenseKey é válido e tenant está ACTIVE
+- **Descrição**: Verificar se a API retorna sucesso para um tenant válido e ativo
+- **Setup**: Criar tenant com status ACTIVE
+- **Entrada**: `GET /api/validate?licenseKey=<slug>` com Origin header
+- **Saída Esperada**: 
+  - Status 200
+  - `{ valid: true, capabilities: string[] }`
+  - Content-Type: application/json
+- **Status**: ✅ Passando
+
+#### TC-042: Retornar capabilities corretas quando tenant tem plano com features
+- **Descrição**: Verificar se as capabilities são retornadas corretamente quando o tenant tem um plano com features
+- **Setup**: Criar plan com features e associar ao tenant
+- **Entrada**: `GET /api/validate?licenseKey=<slug>` com Origin header
+- **Saída Esperada**: 
+  - Status 200
+  - `{ valid: true, capabilities: ["COUPONS", "WHATSAPP", "EMAIL"] }`
+- **Status**: ✅ Passando
+
+#### TC-043: Retornar 403 com valid: false quando licenseKey não existe
+- **Descrição**: Verificar se a API retorna erro 403 para uma license key inexistente
+- **Setup**: Nenhum (usar key inexistente)
+- **Entrada**: `GET /api/validate?licenseKey=non-existent-key` com Origin header
+- **Saída Esperada**: 
+  - Status 403
+  - `{ valid: false, capabilities: [] }`
+- **Status**: ✅ Passando
+
+#### TC-044: Retornar 403 com valid: false quando tenant está INACTIVE
+- **Descrição**: Verificar se a API retorna erro 403 para tenant inativo
+- **Setup**: Criar tenant com status INACTIVE
+- **Entrada**: `GET /api/validate?licenseKey=<slug>` com Origin header
+- **Saída Esperada**: 
+  - Status 403
+  - `{ valid: false, capabilities: [] }`
+- **Status**: ✅ Passando
+
+#### TC-045: Retornar 403 com valid: false quando tenant está PAST_DUE
+- **Descrição**: Verificar se a API retorna erro 403 para tenant com pagamento vencido
+- **Setup**: Criar tenant com status PAST_DUE
+- **Entrada**: `GET /api/validate?licenseKey=<slug>` com Origin header
+- **Saída Esperada**: 
+  - Status 403
+  - `{ valid: false, capabilities: [] }`
+- **Status**: ✅ Passando
+
+#### TC-046: Retornar 400 quando licenseKey está faltando (Integração)
+- **Descrição**: Verificar validação de parâmetros em requisição HTTP real
+- **Setup**: Nenhum
+- **Entrada**: `GET /api/validate` (sem licenseKey) com Origin header
+- **Saída Esperada**: 
+  - Status 400
+  - `{ error: "Missing licenseKey query parameter" }`
+- **Status**: ✅ Passando
+
+#### TC-047: Retornar 400 quando Origin header está faltando (Integração)
+- **Descrição**: Verificar validação de headers em requisição HTTP real
+- **Setup**: Nenhum
+- **Entrada**: `GET /api/validate?licenseKey=test-key` (sem Origin)
+- **Saída Esperada**: 
+  - Status 400
+  - `{ error: "Missing Origin header" }`
+- **Status**: ✅ Passando
+
+#### TC-048: Aceitar Origin header em minúsculas (Integração)
+- **Descrição**: Verificar se a API aceita Origin header em minúsculas em requisição HTTP real
+- **Setup**: Criar tenant válido
+- **Entrada**: `GET /api/validate?licenseKey=<slug>` com header `origin: https://example.com` (minúsculas)
+- **Saída Esperada**: 
+  - Status 200
+  - `{ valid: true, capabilities: [] }`
+- **Status**: ✅ Passando
+
+#### TC-049: Incluir headers CORS em respostas de sucesso
+- **Descrição**: Verificar se headers CORS são incluídos em respostas de sucesso
+- **Setup**: Criar tenant válido
+- **Entrada**: `GET /api/validate?licenseKey=<slug>` com Origin header
+- **Saída Esperada**: 
+  - Status 200
+  - Headers: `Access-Control-Allow-Origin: *`, `Access-Control-Allow-Methods: GET`, `Access-Control-Allow-Headers: Origin`
+- **Status**: ✅ Passando
+
+#### TC-050: Incluir headers CORS em respostas de erro (403)
+- **Descrição**: Verificar se headers CORS são incluídos mesmo em respostas de erro
+- **Setup**: Nenhum (usar key inválida)
+- **Entrada**: `GET /api/validate?licenseKey=invalid-key` com Origin header
+- **Saída Esperada**: 
+  - Status 403
+  - Headers: `Access-Control-Allow-Origin: *`, `Access-Control-Allow-Methods: GET`, `Access-Control-Allow-Headers: Origin`
+- **Status**: ✅ Passando
+
+### Resumo dos Testes de Integração
+
+- **Total de Testes**: 10
+- **Testes Passando**: 10 ✅
+- **Testes Falhando**: 0
+- **Cobertura**: 
+  - Validação de parâmetros (licenseKey, Origin)
+  - Validação de status do tenant (ACTIVE, INACTIVE, PAST_DUE)
+  - Retorno de capabilities baseadas em planos
+  - Headers CORS
+  - Tratamento de erros
+
+### Observações
+
+- Os testes de integração usam o build de produção (`build/server/index.js`)
+- É necessário executar `npm run build` antes de rodar os testes de integração
+- Cada teste cria e limpa seus próprios dados para garantir isolamento
+- Os testes verificam o comportamento real do endpoint, incluindo interação com o banco de dados
+
 ## Próximos Passos
 
 1. ✅ Implementar validação de acesso público (`ValidateAccessInput`/`ValidateAccessOutput`) - **Concluído**
@@ -522,10 +648,10 @@ Todos os testes utilizam `beforeEach` e `afterEach` para garantir isolamento:
 6. Implementar cache de permissões resolvidas
 7. Adicionar validação de formato de features
 8. Implementar validação de domain quando campo for adicionado ao schema
-9. Adicionar testes de integração end-to-end com API pública
+9. ✅ Adicionar testes de integração end-to-end com API pública - **Concluído**
 
 ---
 
-**Última atualização**: 2024-12-02  
-**Versão**: 3.0.0
+**Última atualização**: 2024-12-03  
+**Versão**: 4.0.0
 
