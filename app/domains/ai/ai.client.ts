@@ -11,6 +11,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateText } from "ai";
+import { sanitizeLogObject } from "./ai.utils";
 
 /**
  * Supported AI providers.
@@ -269,6 +270,18 @@ export class AIClient {
         attempts++;
         lastError = error;
 
+        // Log error with sanitization (only if not the last attempt)
+        if (attempts < maxRetries) {
+          console.error(
+            `[AIClient] Provider ${this.config.provider} attempt ${attempts} failed, retrying...`,
+            sanitizeLogObject({
+              provider: this.config.provider,
+              attempt: attempts,
+              error: error,
+            })
+          );
+        }
+
         // If this is the last attempt, break to try fallback
         if (attempts >= maxRetries) {
           break;
@@ -300,6 +313,17 @@ export class AIClient {
 
         return text;
       } catch (error) {
+        // Log fallback error with sanitization
+        console.error(
+          `[AIClient] Fallback provider ${this.config.fallback.provider} also failed`,
+          sanitizeLogObject({
+            primaryProvider: this.config.provider,
+            fallbackProvider: this.config.fallback.provider,
+            primaryAttempts: maxRetries,
+            fallbackError: error,
+          })
+        );
+
         // If fallback also fails, throw error with both failures
         throw new AIClientError(
           `All AI providers failed. Primary provider (${this.config.provider}) failed after ${maxRetries} attempts, and fallback provider (${this.config.fallback.provider}) also failed.`,
@@ -309,6 +333,16 @@ export class AIClient {
         );
       }
     }
+
+    // Log final error with sanitization before throwing
+    console.error(
+      `[AIClient] All attempts failed for provider ${this.config.provider}`,
+      sanitizeLogObject({
+        provider: this.config.provider,
+        attempts: maxRetries,
+        error: lastError,
+      })
+    );
 
     // No fallback configured, throw error with primary provider failure
     throw new AIClientError(

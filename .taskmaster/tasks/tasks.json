@@ -2,7 +2,7 @@
   "master": {
     "tasks": [
       {
-        "id": 1,
+        "id": "1",
         "title": "Phase 0: Project Initialization with Remix, Prisma, and Tailwind CSS",
         "description": "Set up a new Remix project, integrate Prisma for database access, and configure Tailwind CSS for styling. This forms the foundational infrastructure of the Orbit application.",
         "details": "Use the Remix CLI to bootstrap the project: `npx create-remix@latest`. During setup, select TypeScript. Afterwards, add Tailwind CSS following the official Remix guide. Initialize Prisma with `npx prisma init` and set the provider to `postgresql` in `prisma/schema.prisma`.",
@@ -82,7 +82,7 @@
         "updatedAt": "2025-12-02T21:19:30.697Z"
       },
       {
-        "id": 2,
+        "id": "2",
         "title": "Phase 0: Configure Database Connection",
         "description": "Create the database server utility file to manage a singleton instance of the Prisma client, ensuring efficient database connections.",
         "details": "Create a file `app/utils/db.server.ts`. This file will instantiate and export a single PrismaClient instance for the entire application to prevent connection exhaustion in a serverless environment. Example: `import { PrismaClient } from '@prisma/client'; let db: PrismaClient; declare global { var __db: PrismaClient | undefined; } if (process.env.NODE_ENV === 'production') { db = new PrismaClient(); } else { if (!global.__db) { global.__db = new PrismaClient(); } db = global.__db; } export { db };`",
@@ -162,7 +162,7 @@
         "updatedAt": "2025-12-02T21:31:28.336Z"
       },
       {
-        "id": 3,
+        "id": "3",
         "title": "Phase 0: Base Validation Schema Setup with Zod",
         "description": "Configure Zod for data validation, including setting up custom error messages in Brazilian Portuguese (PT-BR) for a consistent user experience.",
         "details": "Install Zod: `npm install zod`. Create a utility file `app/utils/validation.server.ts`. In this file, configure a custom Zod error map to translate default error messages to PT-BR. Export the configured Zod instance for use in other schemas. `import { z } from 'zod'; import { zodI18nMap } from 'zod-i18n-map'; import pt from 'zod-i18n-map/locales/pt/zod.json'; z.setErrorMap(zodI18nMap(pt)); export { z as zValidated };`",
@@ -240,7 +240,7 @@
         "updatedAt": "2025-12-02T21:26:43.996Z"
       },
       {
-        "id": 4,
+        "id": "4",
         "title": "Phase 0: Implement Core Security Headers and CSP",
         "description": "Establish baseline security by implementing essential security headers, including a Content Security Policy (CSP), to protect against common web vulnerabilities.",
         "details": "Create `app/utils/security.server.ts`. This file will export functions to generate security headers (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, etc.) and a strict CSP. These headers will be applied in the root layout's `headers` export in `app/root.tsx`.",
@@ -322,7 +322,7 @@
         "updatedAt": "2025-12-02T21:35:08.398Z"
       },
       {
-        "id": 5,
+        "id": "5",
         "title": "Phase 1: Model Core Entities in Prisma Schema",
         "description": "Define the `Tenant`, `Plan`, and `TenantFeature` data models in the `schema.prisma` file, establishing the core data structure for the application.",
         "details": "In `prisma/schema.prisma`, define the models. `Tenant` should include fields like `id`, `name`, `slug (unique)`, `domain (unique)`, `licenseKey (unique)`, `status`. `Plan` should have `id`, `name`, `features`. `TenantFeature` will be a join table linking `Tenant` and a feature string, representing overrides.",
@@ -403,7 +403,7 @@
         "updatedAt": "2025-12-02T21:36:30.013Z"
       },
       {
-        "id": 6,
+        "id": "6",
         "title": "Phase 1: Generate and Run Initial Database Migration",
         "description": "Apply the defined Prisma schema to the PostgreSQL database by generating and running the initial migration.",
         "details": "Execute the command `npx prisma migrate dev --name init`. This will create the SQL migration file based on `schema.prisma` and apply it to the database configured in the `.env` file.",
@@ -485,7 +485,7 @@
         "updatedAt": "2025-12-02T21:38:34.510Z"
       },
       {
-        "id": 7,
+        "id": "7",
         "title": "Phase 1: Implement Tenant Zod Validation Schema",
         "description": "Create a Zod schema for tenant creation and updates within `app/domains/tenant/tenant.schema.ts` to enforce data integrity.",
         "details": "Create the file `app/domains/tenant/tenant.schema.ts`. Use the configured Zod from `validation.server.ts`. Define a schema for creating a tenant that validates `name` (string, non-empty), `slug` (string, kebab-case), `domain` (string, domain format), and `planId` (string/number).",
@@ -563,7 +563,7 @@
         "updatedAt": "2025-12-02T21:48:46.827Z"
       },
       {
-        "id": 8,
+        "id": "8",
         "title": "Phase 1: Implement Tenant Service - `createTenant`",
         "description": "Develop the `createTenant` function in `tenant.service.ts` to handle the business logic of creating a new tenant.",
         "details": "Create `app/domains/tenant/tenant.service.ts`. Implement `async function createTenant(data)`. The function should first validate the input data using the Zod schema from `tenant.schema.ts`. Then, it uses the Prisma client to create a new `Tenant` record in the database. Ensure to wrap the database call in a try/catch block to handle potential unique constraint violations for `slug` and `domain` gracefully.",
@@ -640,7 +640,7 @@
         "updatedAt": "2025-12-02T21:56:43.805Z"
       },
       {
-        "id": 9,
+        "id": "9",
         "title": "Phase 1: Implement Tenant Service - Read Operations",
         "description": "Implement functions for reading tenant data, including `findTenantBySlug` and `getAllTenants`.",
         "details": "In `app/domains/tenant/tenant.service.ts`, add `async function findTenantBySlug(slug: string)` and `async function getAllTenants()`. These functions will use the Prisma client's `findUnique` and `findMany` methods respectively to retrieve data from the database. Optimize `findTenantBySlug` by selecting only necessary fields if possible.",
@@ -722,7 +722,7 @@
         "updatedAt": "2025-12-02T23:00:42.918Z"
       },
       {
-        "id": 10,
+        "id": "10",
         "title": "Phase 1: Implement Tenant Service - `searchTenants`",
         "description": "Implement a basic full-text search function `searchTenants` for the Global Search (SXO) feature.",
         "details": "In `app/domains/tenant/tenant.service.ts`, implement `async function searchTenants(query: string)`. Use Prisma's full-text search capabilities on fields like `name` and `slug`. For PostgreSQL, this would be `where: { OR: [ { name: { search: query } }, { slug: { search: query } } ] }`. Configure the necessary index on the `Tenant` model in `schema.prisma`.",
@@ -802,7 +802,7 @@
         "updatedAt": "2025-12-03T00:28:26.430Z"
       },
       {
-        "id": 11,
+        "id": "11",
         "title": "Phase 0: AI Client Gateway - Base HTTP Client",
         "description": "Create the initial structure for a resilient HTTP client for communicating with AI providers in `app/domains/ai/ai.client.ts`.",
         "details": "Create `app/domains/ai/ai.client.ts`. Define a class or a set of functions to act as a gateway. Implement a base `completion` function that takes a prompt and context, and uses `fetch` to call a primary AI provider's API (e.g., OpenAI). The function should handle environment variables for API keys securely.",
@@ -882,7 +882,7 @@
         "updatedAt": "2025-12-03T00:53:32.149Z"
       },
       {
-        "id": 12,
+        "id": "12",
         "title": "Phase 0: AI Client Gateway - Retry Logic",
         "description": "Enhance the AI Client by implementing a retry mechanism to handle transient network errors or API failures.",
         "details": "In `app/domains/ai/ai.client.ts`, wrap the `fetch` call within the `completion` function with retry logic. Use a library like `async-retry` or implement a simple loop with exponential backoff. The function should attempt the API call up to a configurable number of times (e.g., 3 times) before throwing an error.",
@@ -955,7 +955,7 @@
         "expansionPrompt": "Outline the steps to add retry logic to an AI client. Subtasks should cover installing `async-retry`, configuring retry attempts via environment variables, refactoring the fetch logic into a separate function, wrapping the call with the retry logic, and writing specific unit tests for the retry mechanism."
       },
       {
-        "id": 13,
+        "id": "13",
         "title": "Phase 0: AI Client Gateway - Provider Fallback",
         "description": "Implement a fallback mechanism to switch to a secondary AI provider (e.g., Gemini) if the primary one (e.g., OpenAI) fails permanently.",
         "details": "Modify the `completion` function in `ai.client.ts`. After the retry logic for the primary provider is exhausted and fails, the `catch` block should trigger a call to a secondary provider. This requires abstracting the provider-specific logic into separate helper functions. The function signature should remain the same.",
@@ -1030,7 +1030,7 @@
         "expansionPrompt": "Break down the task of implementing an AI provider fallback mechanism. Start by refactoring the primary provider logic into its own function, then add configuration for a secondary provider, implement the secondary provider's helper function, and finally integrate the fallback logic into the main completion function and write tests to verify it."
       },
       {
-        "id": 14,
+        "id": "14",
         "title": "Phase 0: AI Client Gateway - Log Sanitization",
         "description": "Implement log sanitization within the AI client to prevent sensitive data like API keys or PII from being exposed in logs.",
         "details": "Before logging any request or response from the AI providers, create a sanitization function that removes or masks sensitive information. This includes redacting the `Authorization` header and any known sensitive fields within the prompt or context. Integrate this into the error handling and logging parts of `ai.client.ts`.",
@@ -1039,17 +1039,18 @@
         "dependencies": [
           "11"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
             "title": "Create a Log Sanitization Utility Function",
             "description": "Create a new utility file and define a `sanitizeLogObject` function. This function will be responsible for taking any object and returning a deep-cloned, sanitized version to prevent mutation of original objects.",
             "dependencies": [],
-            "details": "Create `app/domains/ai/ai.utils.ts`. Implement a `sanitizeLogObject(obj: any): any` function. It should perform a deep clone of the input object. Initially, configure it to find and redact the `Authorization` header key, replacing its value with a placeholder like '[REDACTED]'.",
-            "status": "pending",
+            "details": "Create `app/domains/ai/ai.utils.ts`. Implement a `sanitizeLogObject(obj: any): any` function. It should perform a deep clone of the input object. Initially, configure it to find and redact the `Authorization` header key, replacing its value with a placeholder like '[REDACTED]'.\n<info added on 2025-12-03T02:02:48.896Z>\nThe implementation performs a deep clone to return a new sanitized object, ensuring the original is not mutated. Redaction of the `Authorization` header is case-insensitive. The function supports nested objects, arrays, primitives, null/undefined, and Date objects. The next step identified is to enhance the sanitizer to accept a configurable list of sensitive keys.\n</info added on 2025-12-03T02:02:48.896Z>",
+            "status": "done",
             "testStrategy": "A unit test will be created in a later subtask, but initial manual testing can be done by calling the function with a sample object containing an 'Authorization' key.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T02:02:49.495Z"
           },
           {
             "id": 2,
@@ -1058,10 +1059,11 @@
             "dependencies": [
               1
             ],
-            "details": "In `app/domains/ai/ai.utils.ts`, modify `sanitizeLogObject` to accept an array of sensitive key names (e.g., ['apiKey', 'password', 'secret']). The function should recursively scan the cloned object and redact values for any matching keys, regardless of their nesting depth.",
-            "status": "pending",
+            "details": "In `app/domains/ai/ai.utils.ts`, modify `sanitizeLogObject` to accept an array of sensitive key names (e.g., ['apiKey', 'password', 'secret']). The function should recursively scan the cloned object and redact values for any matching keys, regardless of their nesting depth.\n<info added on 2025-12-03T02:03:45.253Z>\nThe `sanitizeLogObject` function will be enhanced to accept an optional `sensitiveKeys` parameter for a configurable list of sensitive keys. A default constant, `DEFAULT_SENSITIVE_KEYS`, will be created in `app/domains/ai/ai.utils.ts` and will include keys such as `authorization`, `apikey`, `password`, `secret`, and `token`. The recursive search for keys to redact must be case-insensitive. This implementation allows for call-specific customization by passing a custom array of keys; otherwise, it will use the default list.\n</info added on 2025-12-03T02:03:45.253Z>",
+            "status": "done",
             "testStrategy": "The final unit test will cover this functionality. During development, test with a complex nested object containing keys to be redacted at different levels.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T02:03:46.389Z"
           },
           {
             "id": 3,
@@ -1070,10 +1072,11 @@
             "dependencies": [
               2
             ],
-            "details": "In `app/domains/ai/ai.client.ts`, import `sanitizeLogObject`. Before any `console.log` or `console.error` that includes the `fetch` options object or the raw error response from the provider, wrap the object with the sanitizer. For example: `console.error('API Error', sanitizeLogObject(errorPayload));`",
-            "status": "pending",
+            "details": "In `app/domains/ai/ai.client.ts`, import `sanitizeLogObject`. Before any `console.log` or `console.error` that includes the `fetch` options object or the raw error response from the provider, wrap the object with the sanitizer. For example: `console.error('API Error', sanitizeLogObject(errorPayload));`\n<info added on 2025-12-03T02:04:41.024Z>\nImplementation is complete. The `sanitizeLogObject` utility has been integrated into the error logging within `app/domains/ai/ai.client.ts`. Sanitized logs are now in place for errors that occur during retry attempts, when the fallback provider fails, and before the final error is thrown when no fallback is available. This ensures sensitive data is redacted from all relevant error logs.\n</info added on 2025-12-03T02:04:41.024Z>",
+            "status": "done",
             "testStrategy": "Manually trigger an API error and inspect the console output to ensure the `Authorization` header and any other sensitive data within the logged error object are redacted.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T02:04:42.994Z"
           },
           {
             "id": 4,
@@ -1082,10 +1085,11 @@
             "dependencies": [
               3
             ],
-            "details": "In `ai.client.ts`, locate the `catch` blocks within the main `completion` function. Before logging `primaryError` and `fallbackError`, pass them through the `sanitizeLogObject` function to ensure that any aggregated or nested sensitive data is redacted from the final error logs.",
-            "status": "pending",
+            "details": "In `ai.client.ts`, locate the `catch` blocks within the main `completion` function. Before logging `primaryError` and `fallbackError`, pass them through the `sanitizeLogObject` function to ensure that any aggregated or nested sensitive data is redacted from the final error logs.\n<info added on 2025-12-03T02:05:15.697Z>\nThis task's scope was completed as part of the implementation for subtask 14.3. The sanitizer has been integrated into the `completionWithConfig` function's error handling logic. Sanitization is now applied in the catch block for the primary provider's retry loop, the catch block for the fallback provider, and before the final error is thrown. All critical error logging points are now covered. The next step is to proceed with subtask 14.5, writing unit tests for the `sanitizeLogObject` utility.\n</info added on 2025-12-03T02:05:15.697Z>",
+            "status": "done",
             "testStrategy": "Induce a full provider failure (primary and fallback) and check the application logs. Verify that the logged `primaryError` and `fallbackError` objects are fully sanitized.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T02:05:16.316Z"
           },
           {
             "id": 5,
@@ -1094,18 +1098,20 @@
             "dependencies": [
               2
             ],
-            "details": "Create `app/domains/ai/ai.utils.test.ts`. Write a suite of tests for `sanitizeLogObject`. Test cases should include: an object with an `Authorization` header, an object with deeply nested sensitive keys, an object with no sensitive data (should remain unchanged), and an array of objects.",
-            "status": "pending",
+            "details": "Create `app/domains/ai/ai.utils.test.ts`. Write a suite of tests for `sanitizeLogObject`. Test cases should include: an object with an `Authorization` header, an object with deeply nested sensitive keys, an object with no sensitive data (should remain unchanged), and an array of objects.\n<info added on 2025-12-03T02:08:45.539Z>\nImplementation complete with 17 passing unit tests. Full coverage achieved for: Authorization header, nested data, arrays, primitives, custom keys, immutability, edge cases, and default sensitive keys. A test was adjusted to use 'auth' instead of 'credentials' since 'credentials' is on the sensitive key list. All 17 tests are passing.\n</info added on 2025-12-03T02:08:45.539Z>",
+            "status": "done",
             "testStrategy": "Use Vitest or Jest. Create sample log objects with known sensitive fields. Call the `sanitizeLogObject` function and use assertions (`expect`) to verify that the output object has the sensitive fields correctly redacted while leaving other data intact.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T02:08:46.348Z"
           }
         ],
         "complexity": 4,
         "recommendedSubtasks": 5,
-        "expansionPrompt": "Generate subtasks for implementing log sanitization in an API client. Steps should include creating a generic sanitization utility function, enhancing it to handle nested data, integrating it into the client's request/error logging, applying it to high-level error handling, and writing comprehensive unit tests for the utility."
+        "expansionPrompt": "Generate subtasks for implementing log sanitization in an API client. Steps should include creating a generic sanitization utility function, enhancing it to handle nested data, integrating it into the client's request/error logging, applying it to high-level error handling, and writing comprehensive unit tests for the utility.",
+        "updatedAt": "2025-12-03T02:08:46.348Z"
       },
       {
-        "id": 15,
+        "id": "15",
         "title": "Phase 2: Define Licensing Data Types",
         "description": "Create the `license.types.ts` file to define TypeScript interfaces for the inputs and outputs of the licensing engine.",
         "details": "Create `app/domains/license/license.types.ts`. Define interfaces such as `ValidateAccessInput { licenseKey: string; origin: string; }` and `ValidateAccessOutput { valid: boolean; capabilities: string[]; }` to ensure type safety throughout the licensing module.",
@@ -1184,7 +1190,7 @@
         "updatedAt": "2025-12-02T22:58:24.060Z"
       },
       {
-        "id": 16,
+        "id": "16",
         "title": "Phase 2: Implement Feature Flag Resolution Logic",
         "description": "Implement the `resolvePermissions` function in `license.engine.ts` to calculate the final set of features available to a tenant.",
         "details": "Create `app/domains/license/license.engine.ts`. Implement `async function resolvePermissions(tenantId: string): Promise<string[]>` which will: 1. Fetch the tenant and its associated base plan. 2. Get the list of base features from the plan. 3. Fetch all specific feature overrides from the `TenantFeature` table for that tenant. 4. Combine the base features and the overrides into a final, unique list of feature strings (e.g., `['COUPONS', 'WHATSAPP']`).",
@@ -1267,7 +1273,7 @@
         "updatedAt": "2025-12-02T23:04:37.703Z"
       },
       {
-        "id": 17,
+        "id": "17",
         "title": "Phase 2: Implement License Validation Core Logic",
         "description": "Implement the main `validateAccess` function in `license.engine.ts` to handle the core validation checks.",
         "details": "In `app/domains/license/license.engine.ts`, implement `async function validateAccess(input: ValidateAccessInput): Promise<ValidateAccessOutput>`. The function should: 1. Find a tenant by the provided `licenseKey`. If not found, return `{ valid: false, capabilities: [] }`. 2. Check if the tenant's subscription status is active (e.g., not 'PAST_DUE'). If not, return invalid. 3. Check if the request `origin` header matches the tenant's configured `domain`. If not, return invalid.",
@@ -1349,7 +1355,7 @@
         "updatedAt": "2025-12-02T23:13:32.467Z"
       },
       {
-        "id": 18,
+        "id": "18",
         "title": "Phase 2: Finalize `validateAccess` by Integrating Permissions",
         "description": "Complete the `validateAccess` function by calling `resolvePermissions` on successful validation to return the tenant's capabilities.",
         "details": "Modify the `validateAccess` function in `license.engine.ts`. In the successful validation path (after all checks pass), call the `resolvePermissions(tenant.id)` function. The final return for a valid request should be `{ valid: true, capabilities: [...] }`, where capabilities is the result from `resolvePermissions`.",
@@ -1429,7 +1435,7 @@
         "updatedAt": "2025-12-02T23:15:07.336Z"
       },
       {
-        "id": 19,
+        "id": "19",
         "title": "Phase 2: Create API Route for License Validation",
         "description": "Create a Remix API route at `app/routes/api.validate.ts` to expose the `validateAccess` logic as a public endpoint.",
         "details": "Create the file `app/routes/api.validate.ts`. This will be a resource route that exports a `loader` function. The loader will parse the `licenseKey` from the request (e.g., from a search param or header) and the `Origin` header. It will then call `validateAccess` from the license engine and return the result as a JSON response.",
@@ -1511,7 +1517,7 @@
         "updatedAt": "2025-12-02T23:51:35.152Z"
       },
       {
-        "id": 20,
+        "id": "20",
         "title": "Phase 2: Implement Caching on License Validation Endpoint",
         "description": "Add `Cache-Control` headers with a `stale-while-revalidate` directive to the license validation API route to meet the <200ms latency requirement.",
         "details": "In `app/routes/api.validate.ts`, export a `headers` function. Return a `Cache-Control` header. A good starting point would be `public, max-age=600, stale-while-revalidate=3600`. This will cache the response on a CDN for 10 minutes, but allow stale content to be served for up to an hour while a fresh version is fetched in the background.",
@@ -1592,7 +1598,7 @@
         "updatedAt": "2025-12-03T00:05:03.089Z"
       },
       {
-        "id": 21,
+        "id": "21",
         "title": "Phase 3: Set Up Basic Admin UI Layout and Routing",
         "description": "Create the main layout file for the admin section and configure nested routes for the dashboard and tenant management.",
         "details": "Create a layout file `app/routes/admin.tsx`. This file will contain the shared UI for the admin panel (e.g., sidebar, header). It should render an `<Outlet />`. Then create placeholder files for nested routes like `app/routes/admin/index.tsx` (Dashboard) and `app/routes/admin/tenants.tsx` (Tenant List).",
@@ -1667,7 +1673,7 @@
         "expansionPrompt": "Outline the steps for creating a basic admin UI layout. This should include creating the parent admin layout route, implementing a loader for authentication, building the static UI (sidebar/header), and creating placeholder index and nested routes to render within the layout's Outlet."
       },
       {
-        "id": 22,
+        "id": "22",
         "title": "Phase 3: Setup Zustand for Client-Side State Management",
         "description": "Install and configure Zustand for managing global UI state, such as the state of the Command Palette.",
         "details": "Install Zustand: `npm install zustand`. Create a file `app/stores/ui.store.ts`. Define and export a store using `create`. For example, a store to manage the command palette: `interface CommandPaletteState { isOpen: boolean; open: () => void; close: () => void; } export const useCommandPaletteStore = create<CommandPaletteState>((set) => ({ isOpen: false, open: () => set({ isOpen: true }), close: () => set({ isOpen: false }) }));`",
@@ -1743,7 +1749,7 @@
         "expansionPrompt": "Break down the process of setting up Zustand for UI state. The steps should include installing the dependency, creating the store file, implementing the store logic for a command palette, creating a global keyboard shortcut controller, and integrating the UI component that uses the store."
       },
       {
-        "id": 23,
+        "id": "23",
         "title": "Phase 3: Admin Dashboard - Data Loader",
         "description": "Implement the Remix loader for the admin dashboard route to fetch vital metrics, such as the total number of tenants.",
         "details": "In `app/routes/admin/index.tsx`, export a `loader` function. This function will use the `tenant.service` to fetch aggregate data, for example, `const tenantCount = await db.tenant.count();`. Return this data as JSON. Use `defer` if some metrics are slower than others.",
@@ -1818,7 +1824,7 @@
         "expansionPrompt": "Generate subtasks for implementing an admin dashboard loader with deferred data. The process should involve adding necessary metric functions to the tenant service, implementing an authentication check in the loader, using Remix's `defer` to fetch the metrics, and updating the UI component to handle the deferred data with Suspense and Await."
       },
       {
-        "id": 24,
+        "id": "24",
         "title": "Phase 3: Admin Dashboard - UI Implementation",
         "description": "Build the UI for the admin dashboard, displaying the vital metrics fetched by the loader.",
         "details": "In the component part of `app/routes/admin/index.tsx`, use the `useLoaderData` hook to access the metrics. Display the data in a visually appealing way using simple stat cards created with Tailwind CSS.",
@@ -1892,7 +1898,7 @@
         "expansionPrompt": "Break down the UI implementation for a dashboard displaying metrics. The steps should include accessing loader data, creating a responsive grid layout, building the first reusable stat card component, creating additional cards for other metrics, and finally adding icons and refining the styling."
       },
       {
-        "id": 25,
+        "id": "25",
         "title": "Phase 3: Tenant List Page - Data Loader",
         "description": "Implement the Remix loader for the `/admin/tenants` route to fetch and return a list of all tenants.",
         "details": "In `app/routes/admin/tenants.tsx`, export a `loader` function that calls `getAllTenants` from the `tenant.service`. Return the list of tenants as JSON.",
@@ -1968,7 +1974,7 @@
         "expansionPrompt": "Outline the steps to create a data loader for a tenant list page. Subtasks should cover verifying the existence of the `getAllTenants` service function, adding necessary imports to the route, defining the loader function structure, implementing the data fetching logic, and adding basic error handling."
       },
       {
-        "id": 26,
+        "id": "26",
         "title": "Phase 3: Tenant List Page - UI Implementation",
         "description": "Create a table to display the list of tenants on the `/admin/tenants` page.",
         "details": "In the component of `app/routes/admin/tenants.tsx`, use `useLoaderData` to get the tenants array. Render the data in an HTML table, with columns for Name, Slug, Domain, and Status. Style the table with Tailwind CSS.",
@@ -2042,7 +2048,7 @@
         "expansionPrompt": "Break down the UI implementation for a tenant list page. The steps should include accessing the tenant data via the `useLoaderData` hook, scaffolding the main HTML table structure, implementing the static table header, dynamically rendering the tenant data rows, and finally adding the status column to the rows."
       },
       {
-        "id": 27,
+        "id": "27",
         "title": "Phase 3: Create Tenant Page - Form UI",
         "description": "Create a new route and build the HTML form for creating a new tenant.",
         "details": "Create a route `app/routes/admin/tenants/new.tsx`. Inside, create a Remix `<Form method='post'>` component. Add input fields for `name`, `slug`, `domain`, and a select field for the base plan. Add a submit button.",
@@ -2118,7 +2124,7 @@
         "expansionPrompt": "Generate subtasks for creating a new tenant form UI in Remix. The steps should cover creating the new route file, implementing the main Remix `<Form>` component, adding text inputs for core fields, adding a select dropdown for the plan, and including a final submit button."
       },
       {
-        "id": 28,
+        "id": "28",
         "title": "Phase 3: Create Tenant Page - Form Action",
         "description": "Implement the Remix action for the new tenant form to handle submission and create the tenant.",
         "details": "In `app/routes/admin/tenants/new.tsx`, export an `action` function. This function will receive the form data from the request. It should parse and validate the form data using the `tenant.schema`, call `createTenant` from the `tenant.service`, and then redirect to the tenant list page on success. Handle validation errors by returning them to the form.",
@@ -2194,7 +2200,7 @@
         "expansionPrompt": "Outline the steps for creating a Remix form action to handle new tenant creation. Subtasks should cover extracting form data, integrating Zod for validation, handling validation errors by returning a 400 response, calling the `createTenant` service on success and redirecting, and finally implementing service-level error handling for cases like duplicate slugs."
       },
       {
-        "id": 29,
+        "id": "29",
         "title": "Phase 3: Command Palette (Cmd+K) - UI Component",
         "description": "Build the floating modal UI for the Command Palette (SXO).",
         "details": "Create a new component `app/components/CommandPalette.tsx`. Use a library like Headless UI's `Dialog` for accessibility. The component should be a fixed-position modal with a search input at the top and a list area for results. Style it with Tailwind CSS.",
@@ -2270,7 +2276,7 @@
         "expansionPrompt": "Break down the task of building a Command Palette UI component. Steps should include creating a Zustand store for state, creating the component file, implementing the modal structure using Headless UI, adding the search input and results area, and integrating the final component into the root layout."
       },
       {
-        "id": 30,
+        "id": "30",
         "title": "Phase 3: Command Palette - Keyboard Shortcut",
         "description": "Implement the `Cmd+K` (or `Ctrl+K`) keyboard shortcut to open the Command Palette from anywhere in the app.",
         "details": "In a root component like `app/root.tsx`, use a `useEffect` hook to add a `keydown` event listener to the `document`. When the listener detects `Cmd+K`, it should call the `open()` function from the `useCommandPaletteStore` Zustand store. Remember to clean up the event listener on component unmount.",
@@ -2345,7 +2351,7 @@
         "expansionPrompt": "Generate subtasks to implement a global keyboard shortcut. The process should involve importing necessary hooks and the store into the root component, setting up the `useEffect` hook, defining the key-checking logic, attaching and cleaning up the global event listener, and finally triggering the store action to open the UI."
       },
       {
-        "id": 31,
+        "id": "31",
         "title": "Phase 3: Search Resource Route for Command Palette",
         "description": "Create a new Remix resource route to handle search queries from the Command Palette.",
         "details": "Create a file `app/routes/api/search.ts`. Export a `loader` function that reads a `q` search parameter from the request URL. Call the `tenant.service.searchTenants(q)` function and return the results as JSON. This dedicated endpoint is more efficient than re-validating a full page loader.",
@@ -2420,7 +2426,7 @@
         "expansionPrompt": "Break down the task of creating a Remix resource route for search. The steps should include creating the route file, defining the loader function, extracting the search query from the URL, calling the tenant search service with the query, and returning the results as a JSON response."
       },
       {
-        "id": 32,
+        "id": "32",
         "title": "Phase 3: Command Palette - Frontend Data Fetching and Debounce",
         "description": "Wire up the Command Palette's search input to fetch data from the search resource route, implementing a 300ms debounce.",
         "details": "In `CommandPalette.tsx`, use Remix's `useFetcher` hook to call the `/api/search` endpoint. As the user types in the search input, update a state variable. Use a `useEffect` with a `setTimeout` (or a `use-debounce` hook) to trigger `fetcher.load('/api/search?q=...')` only after the user has stopped typing for 300ms.",
@@ -2497,7 +2503,7 @@
         "expansionPrompt": "Generate subtasks for wiring up the Command Palette's data fetching. Steps must include adding a Remix `useFetcher` hook, managing the input's state, implementing a 300ms debounce on the query, triggering the API fetch on the debounced value, and handling the empty input case to clear results."
       },
       {
-        "id": 33,
+        "id": "33",
         "title": "Phase 3: Command Palette - Display Results and States",
         "description": "Render the search results from the fetcher in the Command Palette, including empty and loading states.",
         "details": "In `CommandPalette.tsx`, use the state of the `useFetcher` hook (`fetcher.state` and `fetcher.data`). When `fetcher.state` is 'loading', show a spinner. When `fetcher.data` is available, map over the results and render a list of items. If `fetcher.data` is an empty array, show a 'No results found' message.",
@@ -2570,7 +2576,7 @@
         "expansionPrompt": "Break down the task of displaying search results and states in the Command Palette. This should include implementing a loading state indicator, creating a reusable item component for a single result, rendering the list of results, handling the 'no results found' state, and integrating all states with clean conditional rendering."
       },
       {
-        "id": 34,
+        "id": "34",
         "title": "Phase 3: Command Palette - Keyboard Navigation",
         "description": "Enable navigation through the search results in the Command Palette using the up/down arrow keys and selection with the Enter key.",
         "details": "In `CommandPalette.tsx`, manage a state variable for the `activeIndex`. Add a `keydown` event listener to the search input. On `ArrowDown` or `ArrowUp`, increment/decrement the `activeIndex`, ensuring it wraps around. On `Enter`, trigger the navigation to the selected item's page (`navigate('/admin/tenants/' + selectedItem.slug)`). Apply a visual style to the active item.",
@@ -2645,7 +2651,7 @@
         "expansionPrompt": "Outline the steps to add keyboard navigation to a search results list. The process should include adding state for the active index, attaching a keydown listener to the input, implementing the arrow key logic with wrap-around, applying visual styling to the active item, and finally implementing 'Enter' key selection to trigger navigation."
       },
       {
-        "id": 35,
+        "id": "35",
         "title": "Testing: Unit Tests for `license.engine.ts`",
         "description": "Write a comprehensive Vitest test suite for the license engine, covering all critical happy paths, edge cases, and security scenarios.",
         "details": "Create `app/domains/license/license.engine.test.ts`. Use `vi.mock` to mock `tenant.service`. Write tests for: 1. Happy path: Active tenant, correct key, correct origin -> `{ valid: true, capabilities: [...] }`. 2. Tenant `PAST_DUE` -> `{ valid: false, ... }`. 3. Incorrect `origin` header -> `{ valid: false, ... }`. 4. Invalid `licenseKey` -> `{ valid: false, ... }`. Aim for 100% line and branch coverage for this critical file.",
@@ -2721,7 +2727,7 @@
         "updatedAt": "2025-12-02T23:30:50.411Z"
       },
       {
-        "id": 36,
+        "id": "36",
         "title": "Testing: Unit Tests for `tenant.service.ts`",
         "description": "Create unit tests for the Tenant Service, focusing on CRUD operations and validation logic.",
         "details": "Create `app/domains/tenant/tenant.service.test.ts`. Use an in-memory database or a test database. Test `createTenant`'s success and its failure on unique constraint violations. Test `findTenantBySlug` for found and not-found cases. Test `searchTenants` with various queries.",
@@ -2796,7 +2802,7 @@
         "expansionPrompt": "Generate subtasks for unit testing the tenant service. The process should cover setting up the test file with a Prisma mock, testing successful tenant creation, testing failure on unique constraint violations, testing found/not-found cases for `findTenantBySlug`, and testing the query construction for `searchTenants`."
       },
       {
-        "id": 37,
+        "id": "37",
         "title": "Testing: Integration Test for License Validation API",
         "description": "Create an integration test that calls the `/api/validate` endpoint and verifies its interaction with the database.",
         "details": "Using Vitest or another test runner, write a test that sends an actual HTTP request to the running application's `/api/validate` endpoint. The test should seed the database with a tenant, make a request with the tenant's license key, and assert the returned JSON is correct. Test both valid and invalid scenarios.",
@@ -2877,7 +2883,7 @@
         "updatedAt": "2025-12-03T00:20:32.831Z"
       },
       {
-        "id": 38,
+        "id": "38",
         "title": "Testing: E2E Test for Tenant Creation Flow",
         "description": "Create an end-to-end test that simulates a super admin creating a new tenant through the UI.",
         "details": "Use a framework like Playwright or Cypress. The test script will: 1. Navigate to the login page (once implemented) and log in. 2. Navigate to `/admin/tenants/new`. 3. Fill in the form fields with valid data. 4. Click the submit button. 5. Assert that the page redirects to `/admin/tenants`. 6. Assert that the new tenant's name appears in the tenant list.",
@@ -2953,7 +2959,7 @@
         "expansionPrompt": "Break down the task of creating an E2E test for tenant creation using Playwright. Steps should include setting up the spec file, creating a reusable login helper, writing the test steps to navigate and fill the form, submitting the form and asserting the redirect, and finally asserting that the new tenant appears in the list."
       },
       {
-        "id": 39,
+        "id": "39",
         "title": "UX Polish: Implement Global Loading Indicators",
         "description": "Improve user experience by adding global loading feedback during navigation and form submissions using Remix's built-in hooks.",
         "details": "In the root layout (`app/root.tsx`), use the `useNavigation` hook from Remix. When `navigation.state` is 'loading' or 'submitting', display a global loading indicator, such as a thin progress bar at the top of the page (e.g., nprogress). This provides immediate feedback for all data operations.",
@@ -3030,7 +3036,7 @@
         "expansionPrompt": "Generate subtasks for implementing a global loading indicator with NProgress in Remix. The steps should include installing the dependency, creating and importing its stylesheet, linking the CSS in the root layout, implementing the logic to show/hide the bar using `useNavigation` and `useEffect`, and configuring its appearance."
       },
       {
-        "id": 40,
+        "id": "40",
         "title": "Phase 1: Implement Tenant Service - Update & Delete",
         "description": "Implement the `updateTenant` and `deleteTenant` functions in the tenant service.",
         "details": "In `app/domains/tenant/tenant.service.ts`, add `async function updateTenant(id, data)` and `async function deleteTenant(id)`. The update function should validate the incoming data and use `prisma.tenant.update`. The delete function will use `prisma.tenant.delete`.",
@@ -3103,7 +3109,7 @@
         "expansionPrompt": "Break down the task of adding update and delete functionality to the tenant service. Steps should include defining a Zod schema for update data, implementing the `updateTenant` function with validation and error handling, implementing the `deleteTenant` function, and writing unit tests for both new functions."
       },
       {
-        "id": 41,
+        "id": "41",
         "title": "Phase 3: Tenant Edit Page - UI and Loader",
         "description": "Create the UI and data loader for the tenant editing page.",
         "details": "Create a dynamic route `app/routes/admin/tenants/$slug.tsx`. The loader will use `params.slug` to call `findTenantBySlug` and return the tenant data. The component will render a form, similar to the 'new' page, but pre-filled with the data from the loader.",
@@ -3178,7 +3184,7 @@
         "expansionPrompt": "Outline the steps to create a tenant edit page. This should include creating the dynamic route file, implementing a loader to fetch the tenant by its slug, structuring the main component to use the loader data, refactoring the existing 'new tenant' form into a reusable component, and finally using that component on the edit page with pre-filled data."
       },
       {
-        "id": 42,
+        "id": "42",
         "title": "Phase 3: Tenant Edit Page - Form Action",
         "description": "Implement the Remix action to handle updates to a tenant.",
         "details": "In `app/routes/admin/tenants/$slug.tsx`, export an `action` function. It will get the form data, validate it, and call the `updateTenant` service function with the tenant's ID and the new data. Redirect to the tenant list on success.",
@@ -3254,7 +3260,7 @@
         "expansionPrompt": "Generate subtasks for implementing the form action on the tenant edit page. The process should include defining the action to retrieve the tenant ID, parsing the form data, implementing validation with a Zod schema, handling validation errors, and finally calling the update service and redirecting on success."
       },
       {
-        "id": 43,
+        "id": "43",
         "title": "Phase 1: Documentation Structure with Schema.org",
         "description": "Create a basic structure for AEO/GEO documentation and embed structured data (JSON-LD) using Schema.org schemas.",
         "details": "Create a new route, e.g., `app/routes/docs.tsx`. In this route, output some basic documentation content. More importantly, include a `<script type=\"application/ld+json\">` tag in the head. The JSON inside should conform to a relevant Schema.org type, like `TechArticle`, describing the API.",
@@ -3330,7 +3336,7 @@
         "expansionPrompt": "Break down the task of creating a documentation page with Schema.org data. The steps should cover creating the new route file, adding basic documentation content, defining the `TechArticle` schema object in JavaScript, embedding it as a JSON-LD script, and adding a link to the new page in the main navigation."
       },
       {
-        "id": 44,
+        "id": "44",
         "title": "Risk Mitigation: Implement 'Offline Grace' Mode Fallback",
         "description": "Define a strategy for client applications to handle failures from the license validation API, allowing temporary access.",
         "details": "This task is primarily documentation and defining a contract. In the AEO documentation (`/docs`), specify a fallback behavior for consumers of the `/api/validate` endpoint. If the API is unreachable, the client should be allowed to operate in a 'grace mode' for a limited time (e.g., 24 hours), storing the timestamp of the last successful validation locally.",
@@ -3406,7 +3412,7 @@
         "expansionPrompt": "Break down the task of documenting an 'offline grace mode' strategy. The steps should include creating a new guide file, documenting the prerequisite of storing a success timestamp, detailing the client-side fallback logic for API failures, providing a clear pseudocode example, and linking to this new guide from the main API reference."
       },
       {
-        "id": 45,
+        "id": "45",
         "title": "Phase 3: Apply UX Heuristics - Form Feedback",
         "description": "Improve form submission experience by displaying specific success or error messages.",
         "details": "In the 'new' and 'edit' tenant actions, instead of always redirecting, return a success message on successful creation/update, or specific error messages on failure (e.g. 'Slug already exists'). Use `useActionData` on the client to display these messages in a toast or alert component.",
@@ -3481,7 +3487,7 @@
         "expansionPrompt": "Break down the task of improving form feedback. This should involve refactoring the 'new' and 'edit' tenant actions to return JSON, updating the corresponding UI components to display this feedback using `useActionData`, and finally integrating a toast notification library for a better user experience."
       },
       {
-        "id": 46,
+        "id": "46",
         "title": "Phase 1: Tenant Model - Add `licenseKey` Generation",
         "description": "Automate the generation of a unique `licenseKey` when a new tenant is created.",
         "details": "Modify the `createTenant` function in `tenant.service.ts`. Before saving the new tenant, generate a unique, random string to be used as the `licenseKey`. A simple approach is to use `crypto.randomBytes(16).toString('hex')`. Ensure this key is added to the data object before the `prisma.tenant.create` call.",
@@ -3555,7 +3561,7 @@
         "expansionPrompt": "Generate subtasks for automating license key generation. The process must include updating the Prisma schema, running a migration, importing the `crypto` module, implementing the key generation logic within the `createTenant` service, and updating tests to verify the new field."
       },
       {
-        "id": 47,
+        "id": "47",
         "title": "Phase 1: Tenant Model - Add `status` field",
         "description": "Add a `status` field to the Tenant model to track their payment/subscription status.",
         "details": "In `schema.prisma`, add `status String @default(\"ACTIVE\")` to the `Tenant` model. This could be an enum in the future (e.g., `ACTIVE`, `PAST_DUE`, `CANCELED`). Run `prisma migrate dev` to apply the change. The `createTenant` service should set a default status.",
@@ -3631,7 +3637,7 @@
         "expansionPrompt": "Break down the task of adding a `status` field to the Tenant model. The steps must include updating the Prisma schema, running the database migration, verifying related TypeScript types, updating the `createTenant` service to be explicit, and enhancing unit tests to check the new field."
       },
       {
-        "id": 48,
+        "id": "48",
         "title": "Phase 2: Integrate `status` check into License Validation",
         "description": "Update the `validateAccess` logic to deny access if a tenant's status is `PAST_DUE`.",
         "details": "In `license.engine.ts`, inside the `validateAccess` function, after fetching the tenant, add a check: `if (tenant.status === 'PAST_DUE') { return { valid: false, capabilities: [] }; }`. This enforces the business rule of blocking delinquent tenants.",
@@ -3707,7 +3713,7 @@
         "expansionPrompt": "Outline the steps for adding a status check to the license validation logic using a test-driven approach. Start by creating a failing unit test for a 'PAST_DUE' status, then implement the logic to make it pass, verify the fix, run regression tests, and finally update the documentation."
       },
       {
-        "id": 49,
+        "id": "49",
         "title": "Phase 3: UI to Display Tenant Status",
         "description": "Update the Tenant List and Detail pages to display the tenant's current status.",
         "details": "In the `app/routes/admin/tenants.tsx` list view, add a 'Status' column. Use conditional styling (e.g., Tailwind CSS) to render a badge with different colors based on the status string (`ACTIVE` -> green, `PAST_DUE` -> red). Also, display the status on the edit page `/admin/tenants/$slug.tsx`.",
@@ -3782,7 +3788,7 @@
         "expansionPrompt": "Break down the task of displaying tenant status in the UI. Steps should include creating a reusable `StatusBadge` component with conditional styling, ensuring loaders fetch the status field, adding the badge to the tenant list column, and also displaying it on the tenant detail page."
       },
       {
-        "id": 50,
+        "id": "50",
         "title": "Deployment: Prepare for Production Build",
         "description": "Configure the project for a production deployment, including setting up environment variables and build scripts.",
         "details": "Update `package.json` to ensure the `build` script (`remix build`) and `start` script (`remix-serve build`) are correct. Create a `.env.example` file listing all required environment variables (`DATABASE_URL`, `OPENAI_API_KEY`, etc.). Document the deployment process in the README.md.",
@@ -3857,14 +3863,12 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-03T00:53:32.155Z",
+      "lastModified": "2025-12-03T02:08:46.350Z",
       "taskCount": 50,
-      "completedCount": 19,
+      "completedCount": 20,
       "tags": [
         "master"
-      ],
-      "created": "2025-12-03T01:24:50.045Z",
-      "description": "Tasks for master context"
+      ]
     }
   }
 }

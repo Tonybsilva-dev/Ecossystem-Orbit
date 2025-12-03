@@ -7,9 +7,13 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-blue?style=for-the-badge&logo=typescript)
 ![CSS Framework](https://img.shields.io/badge/Tailwind%20CSS-4.1.17-38bdf8?style=for-the-badge&logo=tailwindcss)
 
-**Plataforma de gerenciamento centralizado para múltiplas instâncias SaaS - Multi-Tenant Architecture 🇧🇷**
+<br/>
 
 <img src="docs/assets/orbit-icon.png" width="200px" alt="orbit icon" title="orbit icon">
+
+<br />
+
+**Plataforma de gerenciamento centralizado para múltiplas instâncias SaaS - Multi-Tenant Architecture 🇧🇷**
 
 [Ver Demo](#) • [Documentação](./docs) • [API Docs](#)
 
