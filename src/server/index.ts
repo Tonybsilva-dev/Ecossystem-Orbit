@@ -14,14 +14,116 @@ app.all('/api/auth/*', (c) => {
   return auth.handler(c.req.raw);
 });
 
-app.get('/api/products', async (c) => {
-  try {
-    const products = await new PrismaClient().product.findMany();
-    return c.json(products);
-  } catch (error) {
-    return c.json({ error: 'Failed to fetch products' }, 500);
-  }
-});
+const prisma = new PrismaClient();
+
+// Middleware to extract tenant ID
+const getTenantId = (c: any) => {
+  const customHeader = c.req.header('X-Barbershop-ID');
+  // In a real app, this might also come from subdomain or auth token
+  return customHeader;
+};
+
+const routes = app
+  .get('/api/products', async (c) => {
+    const barbershopId = getTenantId(c);
+    const city = c.req.query('city');
+    const state = c.req.query('state');
+
+    try {
+      if (barbershopId) {
+        // Specific Tenant (Single Shop View)
+        const products = await prisma.product.findMany({
+          where: { barbershopId },
+        });
+        return c.json(products);
+      }
+
+      if (city && state) {
+        // Marketplace View (Filtered by Location)
+        // 1. Find Barbershops in this location
+        const shops = await prisma.barbershop.findMany({
+          where: {
+            city: { equals: city, mode: 'insensitive' }, // Case insensitive for better UX
+            state: { equals: state, mode: 'insensitive' },
+          },
+          select: { id: true },
+        });
+
+        const shopIds = shops.map((s) => s.id);
+
+        if (shopIds.length === 0) {
+          return c.json([]);
+        }
+
+        // 2. Find Products from these shops
+        const products = await prisma.product.findMany({
+          where: { barbershopId: { in: shopIds } },
+          include: {
+            barbershop: { select: { name: true, city: true } }, // Include shop info for display
+          },
+        });
+        return c.json(products);
+      }
+
+      return c.json({ error: 'Tenant ID or Location (City/State) required' }, 400);
+    } catch {
+      return c.json({ error: 'Failed to fetch products' }, 500);
+    }
+  })
+  .get('/api/barbershop', async (c) => {
+    // This endpoint can be used to "resolve" a tenant or check onboarding
+    // For now, if no tenant is passed, we check if ANY exists (for singleton onboarding check)
+    // If tenant is passed, we return that specific one.
+
+    const tenantId = getTenantId(c);
+
+    try {
+      if (tenantId) {
+        const shop = await prisma.barbershop.findUnique({ where: { id: tenantId } });
+        return c.json(shop || null);
+      }
+
+      // Fallback for onboarding check (singleton behavior for now)
+      // In strict SaaS, we wouldn't do this, but for the "Onboarding" flow transition:
+      const shop = await prisma.barbershop.findFirst();
+      return c.json(shop || null);
+    } catch (error) {
+      return c.json({ error: 'Failed to fetch barbershop config' }, 500);
+    }
+  })
+  .post('/api/barbershop', async (c) => {
+    try {
+      const body = await c.req.json();
+      const existing = await prisma.barbershop.findFirst();
+
+      // For this simplified onboarding, we only allow ONE shop creation or update the existing one.
+      // In a real SaaS, this would be a "Create Tenant" endpoint.
+
+      if (existing) {
+        const updated = await prisma.barbershop.update({
+          where: { id: existing.id },
+          data: {
+            ...body,
+            licenseStatus: body.licenseKey ? 'ACTIVE' : 'PENDING',
+          },
+        });
+        return c.json(updated);
+      } else {
+        const created = await prisma.barbershop.create({
+          data: {
+            ...body,
+            licenseStatus: body.licenseKey ? 'ACTIVE' : 'PENDING',
+          },
+        });
+        return c.json(created);
+      }
+    } catch (error) {
+      console.error(error);
+      return c.json({ error: 'Failed to save barbershop config' }, 500);
+    }
+  });
+
+export type AppType = typeof routes;
 
 const port = 3333;
 console.log(`Server is running on port ${port}`);

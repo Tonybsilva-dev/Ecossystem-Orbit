@@ -37,8 +37,64 @@ export const auth = betterAuth({
         type: 'string',
         required: false,
       },
+      barbershopId: {
+        type: 'string',
+        required: false,
+      },
     },
   },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          // Default logic if needed
+        },
+      },
+    },
+    session: {
+      create: {
+        before: async (session) => {
+          return { data: session };
+        },
+      },
+    },
+  },
+  plugins: [
+    {
+      id: 'barbershop-loader',
+      hooks: {
+        after: [
+          {
+            matcher: (context) => context.path.startsWith('/session'),
+            handler: async (context: any) => {
+              const response = context.response;
+
+              if (response && response.user && response.user.barbershopId) {
+                const shop = await prisma.barbershop.findUnique({
+                  where: { id: response.user.barbershopId },
+                  select: { licenseStatus: true, name: true, id: true },
+                });
+
+                if (shop) {
+                  return {
+                    ...context,
+                    response: {
+                      ...response,
+                      user: {
+                        ...response.user,
+                        barbershop: shop,
+                      },
+                    },
+                  };
+                }
+              }
+              return context;
+            },
+          },
+        ],
+      },
+    },
+  ],
 });
 
 // Since BetterAuth runs on server side typically (API routes), we need to ensure this is used correctly.

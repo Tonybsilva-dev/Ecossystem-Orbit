@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { ProductList } from './components/ProductList';
 import { CartDrawer } from './components/CartDrawer';
 import { useCartStore } from './cart.store';
-import { useSession } from '@/features/auth/client';
 import { ShoppingBag } from 'lucide-react';
+import { useMarketplaceStore } from './marketplace.store';
 
 interface Product {
   id: string;
@@ -20,20 +20,36 @@ export function ShopPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const { addItem, toggleCart, cartCount } = useCartStore();
-  const { data: session } = useSession();
+  const { location, setLocationModalOpen } = useMarketplaceStore();
 
   useEffect(() => {
-    fetch('/api/products')
+    if (!location) {
+      setLocationModalOpen(true);
+      setLoading(false); // Stop loading locally, wait for location
+      return;
+    }
+
+    setLoading(true);
+    const params = new URLSearchParams({
+      city: location.city,
+      state: location.state,
+    });
+
+    fetch(`/ api / products ? ${params.toString()} `)
       .then((res) => res.json())
       .then((data) => {
-        setProducts(data.map((p: any) => ({ ...p, price: Number(p.price) }))); // Prisma decimals needed number conversion for UI
+        if (Array.isArray(data)) {
+          setProducts(data.map((p: any) => ({ ...p, price: Number(p.price) })));
+        } else {
+          setProducts([]);
+        }
         setLoading(false);
       })
       .catch((err) => {
         console.error(err);
         setLoading(false);
       });
-  }, []);
+  }, [location?.city, location?.state, setLocationModalOpen]);
 
   return (
     <div className="min-h-screen bg-shop-900 bg-noise pb-20">

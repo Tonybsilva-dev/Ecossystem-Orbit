@@ -2,6 +2,8 @@ import { Outlet } from 'react-router';
 import { Menu } from 'lucide-react';
 import { useState } from 'react';
 import { Drawer } from '@/shared/ui/Drawer';
+import { LocationSelector } from '@/features/catalog/components/LocationSelector';
+import { Toaster } from 'sonner';
 
 export function AppLayout() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -27,6 +29,9 @@ export function AppLayout() {
       <main>
         <Outlet />
       </main>
+
+      <LocationSelector />
+      <Toaster position="top-right" theme="dark" richColors />
     </div>
   );
 }

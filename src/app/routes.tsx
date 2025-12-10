@@ -11,61 +11,80 @@ import { AppointmentsList } from '../features/shop-management/components/Appoint
 import { ShopPage } from '../features/catalog/ShopPage';
 import { CheckoutPage } from '../features/catalog/CheckoutPage';
 import { OrderSuccessPage } from '../features/catalog/OrderSuccessPage';
+import { OnboardingPage } from '../features/shop-management/OnboardingPage';
+
+import { RequireConfig } from '../features/shop-management/RequireConfig';
+import { RequireLicense } from '../features/shop-management/RequireLicense';
 
 export const router = createBrowserRouter([
-  // Public & User Routes (AppLayout)
   {
-    path: '/',
-    element: <AppLayout />,
-    children: [
-      {
-        index: true,
-        element: <Home />,
-      },
-      {
-        path: 'schedule',
-        element: (
-          <RequireRole allowedRoles={['USER', 'ADMIN']}>
-            <Schedule />
-          </RequireRole>
-        ),
-      },
-      {
-        path: 'loja',
-        element: <ShopPage />,
-      },
-      {
-        path: 'checkout',
-        element: <CheckoutPage />,
-      },
-      {
-        path: 'checkout/success',
-        element: <OrderSuccessPage />,
-      },
-    ],
-  },
-
-  // Protected Backoffice Routes (DashboardLayout)
-  {
-    path: 'dashboard',
+    path: '/onboarding',
     element: (
-      <RequireRole allowedRoles={['ADMIN', 'BARBER']}>
-        <DashboardLayout />
+      <RequireRole allowedRoles={['ADMIN', 'USER', 'BARBER']}>
+        <OnboardingPage />
       </RequireRole>
     ),
+  },
+  {
+    path: '/',
+    element: <RequireConfig />,
     children: [
       {
-        index: true,
-        element: <DashboardHome />,
+        path: '/',
+        element: <AppLayout />,
+        children: [
+          {
+            index: true,
+            element: <Home />,
+          },
+          {
+            path: 'schedule',
+            element: (
+              <RequireRole allowedRoles={['USER', 'ADMIN']}>
+                <Schedule />
+              </RequireRole>
+            ),
+          },
+          {
+            path: 'loja',
+            element: <ShopPage />,
+          },
+          {
+            path: 'checkout',
+            element: <CheckoutPage />,
+          },
+          {
+            path: 'checkout/success',
+            element: <OrderSuccessPage />,
+          },
+        ],
       },
+      // Admin/Dashboard Routes (also require config)
       {
-        path: 'appointments',
-        element: <AppointmentsList />,
+        path: '/dashboard',
+        element: (
+          <RequireRole allowedRoles={['ADMIN', 'BARBER']}>
+            <DashboardLayout />
+          </RequireRole>
+        ),
+        children: [
+          {
+            index: true,
+            element: <DashboardHome />,
+          },
+          {
+            element: <RequireLicense />,
+            children: [
+              {
+                path: 'appointments',
+                element: <AppointmentsList />,
+              },
+            ],
+          },
+        ],
       },
     ],
   },
-
-  // Auth Routes (AuthLayout)
   {
     path: '/login',
     element: <AuthLayout />,

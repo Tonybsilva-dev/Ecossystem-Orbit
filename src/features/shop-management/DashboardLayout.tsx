@@ -1,20 +1,26 @@
-import { Outlet, Link, useLocation } from 'react-router';
+import { signOut, useSession } from '@/features/auth/client';
+import { cn } from '@/shared/utils/cn';
 import {
   LayoutDashboard,
   CalendarDays,
   Users,
   Scissors,
   ShoppingBag,
-  LogOut,
   Settings,
+  LogOut,
+  ShieldAlert,
 } from 'lucide-react';
-import { cn } from '@/shared/utils/cn';
-import { signOut } from '@/features/auth/client';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate, Link, Outlet } from 'react-router';
+import { Toaster } from 'sonner';
 
 export function DashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { data: session } = useSession();
+
+  // @ts-expect-error - extended session type
+  const licenseStatus = session?.user?.barbershop?.licenseStatus;
+  const isLicenseInactive = licenseStatus && licenseStatus !== 'ACTIVE';
 
   const handleLogout = async () => {
     await signOut();
@@ -81,7 +87,20 @@ export function DashboardLayout() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto flex flex-col">
+        {/* Warning Banner */}
+        {isLicenseInactive && (
+          <div className="bg-red-500/10 border-b border-red-500/20 px-8 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-red-500">
+              <ShieldAlert size={18} />
+              <span className="text-sm font-bold">Licença Inativa ou Expirada</span>
+            </div>
+            <button className="text-xs bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-colors">
+              Regularizar Agora
+            </button>
+          </div>
+        )}
+
         <header className="h-16 border-b border-leather-800/30 bg-shop-900/50 backdrop-blur-sm sticky top-0 z-10 flex items-center justify-between px-8">
           <h2 className="font-serif text-lg text-chrome-100">
             {navItems.find((i) => i.href === location.pathname)?.label || 'Dashboard'}
@@ -94,10 +113,11 @@ export function DashboardLayout() {
           </div>
         </header>
 
-        <div className="p-8">
+        <div className="p-8 flex-1 flex flex-col">
           <Outlet />
         </div>
       </main>
+      <Toaster position="top-right" theme="dark" richColors />
     </div>
   );
 }
