@@ -1,0 +1,20 @@
+node_modules
+.env
+
+# EditorConfig
+.editorconfig
+
+# IDE
+.idea
+.vscode
+
+# Build
+build
+public/build
+
+# Logs
+logs
+
+# Other
+.DS_Store
+Thumbs.db
