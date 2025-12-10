@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router';
 import { Button } from '@/shared/ui/Button';
 import { Link } from 'react-router';
+import { Toaster } from 'sonner';
 
 export function AuthLayout() {
   return (
@@ -21,6 +22,7 @@ export function AuthLayout() {
 
         <Outlet />
       </div>
+      <Toaster position="top-center" theme="dark" richColors />
     </div>
   );
 }

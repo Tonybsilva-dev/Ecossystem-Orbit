@@ -31,7 +31,7 @@ export function AppLayout() {
       </main>
 
       <LocationSelector />
-      <Toaster position="top-right" theme="dark" richColors />
+      <Toaster position="top-center" theme="dark" richColors />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 const loginSchema = z.object({
   email: z.string().email('Digite um e-mail válido'),
@@ -38,6 +39,7 @@ export function LoginPage() {
         },
         {
           onSuccess: () => {
+            toast.success('Login realizado com sucesso!');
             navigate('/dashboard'); // Admin/Backoffice area
           },
           onError: (ctx) => {
@@ -59,6 +61,9 @@ export function LoginPage() {
         provider: 'google',
         callbackURL: '/schedule', // Users go to scheduling
       });
+      // Note: Social login redirects, so toast might not be seen unless persisted or handled on callback page.
+      // But for consistency we can try.
+      toast.success('Redirecionando...');
     } catch {
       setError('Erro ao conectar com Google.');
       setLoading(false);

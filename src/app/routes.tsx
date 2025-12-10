@@ -11,7 +11,7 @@ import { AppointmentsList } from '../features/shop-management/components/Appoint
 import { ShopPage } from '../features/catalog/ShopPage';
 import { CheckoutPage } from '../features/catalog/CheckoutPage';
 import { OrderSuccessPage } from '../features/catalog/OrderSuccessPage';
-import { OnboardingPage } from '../features/shop-management/OnboardingPage';
+import { OnboardingPage } from '../features/onboarding/OnboardingPage';
 
 import { RequireConfig } from '../features/shop-management/RequireConfig';
 import { RequireLicense } from '../features/shop-management/RequireLicense';

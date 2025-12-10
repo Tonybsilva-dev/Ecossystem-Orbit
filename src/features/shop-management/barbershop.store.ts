@@ -10,13 +10,23 @@ export interface BarbershopState {
   data: {
     id?: string;
     name: string;
-    cnpj?: string;
-    phone?: string;
-    address?: string;
-    city?: string;
-    state?: string;
-    licenseKey?: string;
-    licenseStatus: 'PENDING' | 'ACTIVE' | 'EXPIRED';
+    cnpj?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    number?: string | null;
+    complement?: string | null;
+    neighborhood?: string | null;
+    city?: string | null;
+    state?: string | null;
+    zipCode?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    licenseKey?: string | null;
+    licenseStatus: 'PENDING' | 'ACTIVE' | 'EXPIRED' | 'TRIAL' | string;
+    planType?: 'BASIC' | 'PRO' | 'ENTERPRISE' | 'TRIAL' | 'FREE' | string;
+    modules?: string[];
+    createdAt?: string;
+    updatedAt?: string;
   } | null;
   isLoading: boolean;
 

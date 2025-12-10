@@ -99,12 +99,17 @@ const routes = app
       // For this simplified onboarding, we only allow ONE shop creation or update the existing one.
       // In a real SaaS, this would be a "Create Tenant" endpoint.
 
+      const isTrial = body.licenseKey === 'TRIAL-VERSION';
+      const licenseStatus = isTrial ? 'TRIAL' : body.licenseKey ? 'ACTIVE' : 'PENDING';
+      const planType = isTrial ? 'FREE' : body.planType || 'BASIC';
+
       if (existing) {
         const updated = await prisma.barbershop.update({
           where: { id: existing.id },
           data: {
             ...body,
-            licenseStatus: body.licenseKey ? 'ACTIVE' : 'PENDING',
+            licenseStatus,
+            planType,
           },
         });
         return c.json(updated);
@@ -112,7 +117,8 @@ const routes = app
         const created = await prisma.barbershop.create({
           data: {
             ...body,
-            licenseStatus: body.licenseKey ? 'ACTIVE' : 'PENDING',
+            licenseStatus,
+            planType,
           },
         });
         return c.json(created);

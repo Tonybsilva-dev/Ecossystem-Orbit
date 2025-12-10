@@ -117,7 +117,7 @@ export function DashboardLayout() {
           <Outlet />
         </div>
       </main>
-      <Toaster position="top-right" theme="dark" richColors />
+      <Toaster position="top-center" theme="dark" richColors />
     </div>
   );
 }
