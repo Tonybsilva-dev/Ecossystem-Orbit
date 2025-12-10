@@ -9,6 +9,8 @@ import { DashboardLayout } from '../features/shop-management/DashboardLayout';
 import { DashboardHome } from '../features/shop-management/DashboardHome';
 import { AppointmentsList } from '../features/shop-management/components/AppointmentsList';
 import { ShopPage } from '../features/catalog/ShopPage';
+import { CheckoutPage } from '../features/catalog/CheckoutPage';
+import { OrderSuccessPage } from '../features/catalog/OrderSuccessPage';
 
 export const router = createBrowserRouter([
   // Public & User Routes (AppLayout)
@@ -31,6 +33,14 @@ export const router = createBrowserRouter([
       {
         path: 'loja',
         element: <ShopPage />,
+      },
+      {
+        path: 'checkout',
+        element: <CheckoutPage />,
+      },
+      {
+        path: 'checkout/success',
+        element: <OrderSuccessPage />,
       },
     ],
   },

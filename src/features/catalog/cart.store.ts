@@ -53,7 +53,7 @@ export const useCartStore = create<CartStore>()(
       },
 
       updateQuantity: (productId, quantity) => {
-        if (quantity <= 0) {
+        if (quantity < 1) {
           get().removeItem(productId);
           return;
         }

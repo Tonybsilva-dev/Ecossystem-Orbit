@@ -85,8 +85,8 @@ export function CartDrawer({ products }: CartDrawerProps) {
                   if (!product) return null;
 
                   return (
-                    <div key={item.productId} className="flex gap-4 items-start">
-                      <div className="w-20 h-20 bg-shop-800 rounded-sm overflow-hidden flex-shrink-0 border border-leather-800/30">
+                    <div key={item.productId} className="flex gap-5 items-center">
+                      <div className="w-24 h-24 bg-shop-800 rounded-sm overflow-hidden flex-shrink-0 border border-leather-800/30">
                         {product.image && (
                           <img
                             src={product.image}
@@ -95,9 +95,11 @@ export function CartDrawer({ products }: CartDrawerProps) {
                           />
                         )}
                       </div>
-                      <div className="flex-1">
-                        <h4 className="text-chrome-200 font-medium line-clamp-1">{product.name}</h4>
-                        <p className="text-leather-500 font-bold mt-1">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-chrome-200 font-medium truncate text-base">
+                          {product.name}
+                        </h4>
+                        <p className="text-leather-500 font-bold mt-1 text-lg">
                           {new Intl.NumberFormat('pt-BR', {
                             style: 'currency',
                             currency: 'BRL',
@@ -108,25 +110,26 @@ export function CartDrawer({ products }: CartDrawerProps) {
                           <div className="flex items-center border border-leather-800/30 rounded-sm bg-shop-800">
                             <button
                               onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                              className="px-2 py-1 text-chrome-400 hover:text-white"
+                              className="w-8 h-8 flex items-center justify-center text-chrome-400 hover:text-white transition-colors"
                             >
                               -
                             </button>
-                            <span className="px-2 text-sm text-chrome-200 w-8 text-center">
+                            <span className="px-2 text-sm text-chrome-200 w-8 text-center font-medium">
                               {item.quantity}
                             </span>
                             <button
                               onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                              className="px-2 py-1 text-chrome-400 hover:text-white"
+                              className="w-8 h-8 flex items-center justify-center text-chrome-400 hover:text-white transition-colors"
                             >
                               +
                             </button>
                           </div>
                           <button
                             onClick={() => removeItem(item.productId)}
-                            className="text-red-500 hover:text-red-400 p-1"
+                            className="text-red-500/70 hover:text-red-500 p-2 transition-colors hover:bg-red-500/10 rounded-sm"
+                            title="Remover item"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={18} />
                           </button>
                         </div>
                       </div>
