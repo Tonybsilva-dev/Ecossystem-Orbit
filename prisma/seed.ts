@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { PrismaClient } from "../app/generated/client/client";
 import { hashPassword } from "../app/core/auth/password.server";
 
@@ -51,6 +52,55 @@ async function main() {
     console.log(`🔑 Credentials: ${adminEmail} / ${adminPassword}`);
   } else {
     console.log(`ℹ️ Admin user already exists: ${existingUser.id}`);
+  }
+
+  // 3. Create BarberFlow Product
+  const bfSlug = "barberflow";
+  let product = await prisma.product.findUnique({
+    where: { slug: bfSlug },
+  });
+
+  if (!product) {
+    console.log("Creating BarberFlow product...");
+    product = await prisma.product.create({
+      data: {
+        name: "BarberFlow",
+        slug: bfSlug,
+        description: "Software de gestão para barbearias",
+        apiKey: "bf_live_" + Math.random().toString(36).substring(7),
+      },
+    });
+    console.log(`✅ Product created: ${product.id}`);
+  } else {
+    console.log(`ℹ️ Product already exists: ${product.id}`);
+  }
+
+  // 4. Create Plans
+  const plans = [
+    { name: "Free", price: 0.0, features: ["AGENDA_LIMITADA"] },
+    { name: "Basic", price: 29.9, features: ["AGENDA", "CLIENTES"] },
+    { name: "Pro", price: 59.9, features: ["AGENDA", "CLIENTES", "FINANCEIRO", "WHATSAPP"] },
+    { name: "Enterprise", price: 99.9, features: ["ALL"] },
+  ];
+
+  for (const p of plans) {
+    const existingPlan = await prisma.plan.findFirst({
+      where: { productId: product.id, name: p.name },
+    });
+
+    if (!existingPlan) {
+      await prisma.plan.create({
+        data: {
+          productId: product.id,
+          name: p.name,
+          price: p.price,
+          features: p.features,
+        },
+      });
+      console.log(`✅ Plan created: ${p.name}`);
+    } else {
+      console.log(`ℹ️ Plan exists: ${p.name}`);
+    }
   }
 
   console.log("🌱 Seed completed.");

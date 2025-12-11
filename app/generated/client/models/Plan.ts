@@ -20,52 +20,94 @@ export type PlanModel = runtime.Types.Result.DefaultSelection<Prisma.$PlanPayloa
 
 export type AggregatePlan = {
   _count: PlanCountAggregateOutputType | null
+  _avg: PlanAvgAggregateOutputType | null
+  _sum: PlanSumAggregateOutputType | null
   _min: PlanMinAggregateOutputType | null
   _max: PlanMaxAggregateOutputType | null
 }
 
+export type PlanAvgAggregateOutputType = {
+  price: runtime.Decimal | null
+}
+
+export type PlanSumAggregateOutputType = {
+  price: runtime.Decimal | null
+}
+
 export type PlanMinAggregateOutputType = {
   id: string | null
+  productId: string | null
   name: string | null
+  price: runtime.Decimal | null
+  interval: $Enums.PlanInterval | null
+  isActive: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
 
 export type PlanMaxAggregateOutputType = {
   id: string | null
+  productId: string | null
   name: string | null
+  price: runtime.Decimal | null
+  interval: $Enums.PlanInterval | null
+  isActive: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
 
 export type PlanCountAggregateOutputType = {
   id: number
+  productId: number
   name: number
+  price: number
+  interval: number
   features: number
+  isActive: number
   createdAt: number
   updatedAt: number
   _all: number
 }
 
 
+export type PlanAvgAggregateInputType = {
+  price?: true
+}
+
+export type PlanSumAggregateInputType = {
+  price?: true
+}
+
 export type PlanMinAggregateInputType = {
   id?: true
+  productId?: true
   name?: true
+  price?: true
+  interval?: true
+  isActive?: true
   createdAt?: true
   updatedAt?: true
 }
 
 export type PlanMaxAggregateInputType = {
   id?: true
+  productId?: true
   name?: true
+  price?: true
+  interval?: true
+  isActive?: true
   createdAt?: true
   updatedAt?: true
 }
 
 export type PlanCountAggregateInputType = {
   id?: true
+  productId?: true
   name?: true
+  price?: true
+  interval?: true
   features?: true
+  isActive?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -109,6 +151,18 @@ export type PlanAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: PlanAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: PlanSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: PlanMinAggregateInputType
@@ -139,17 +193,25 @@ export type PlanGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   _count?: PlanCountAggregateInputType | true
+  _avg?: PlanAvgAggregateInputType
+  _sum?: PlanSumAggregateInputType
   _min?: PlanMinAggregateInputType
   _max?: PlanMaxAggregateInputType
 }
 
 export type PlanGroupByOutputType = {
   id: string
+  productId: string
   name: string
+  price: runtime.Decimal
+  interval: $Enums.PlanInterval
   features: string[]
+  isActive: boolean
   createdAt: Date
   updatedAt: Date
   _count: PlanCountAggregateOutputType | null
+  _avg: PlanAvgAggregateOutputType | null
+  _sum: PlanSumAggregateOutputType | null
   _min: PlanMinAggregateOutputType | null
   _max: PlanMaxAggregateOutputType | null
 }
@@ -174,43 +236,64 @@ export type PlanWhereInput = {
   OR?: Prisma.PlanWhereInput[]
   NOT?: Prisma.PlanWhereInput | Prisma.PlanWhereInput[]
   id?: Prisma.StringFilter<"Plan"> | string
+  productId?: Prisma.StringFilter<"Plan"> | string
   name?: Prisma.StringFilter<"Plan"> | string
+  price?: Prisma.DecimalFilter<"Plan"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: Prisma.EnumPlanIntervalFilter<"Plan"> | $Enums.PlanInterval
   features?: Prisma.StringNullableListFilter<"Plan">
+  isActive?: Prisma.BoolFilter<"Plan"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Plan"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Plan"> | Date | string
-  tenants?: Prisma.TenantListRelationFilter
+  product?: Prisma.XOR<Prisma.ProductScalarRelationFilter, Prisma.ProductWhereInput>
+  subscriptions?: Prisma.SubscriptionListRelationFilter
 }
 
 export type PlanOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  productId?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  price?: Prisma.SortOrder
+  interval?: Prisma.SortOrder
   features?: Prisma.SortOrder
+  isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  tenants?: Prisma.TenantOrderByRelationAggregateInput
+  product?: Prisma.ProductOrderByWithRelationInput
+  subscriptions?: Prisma.SubscriptionOrderByRelationAggregateInput
 }
 
 export type PlanWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  name?: string
   AND?: Prisma.PlanWhereInput | Prisma.PlanWhereInput[]
   OR?: Prisma.PlanWhereInput[]
   NOT?: Prisma.PlanWhereInput | Prisma.PlanWhereInput[]
+  productId?: Prisma.StringFilter<"Plan"> | string
+  name?: Prisma.StringFilter<"Plan"> | string
+  price?: Prisma.DecimalFilter<"Plan"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: Prisma.EnumPlanIntervalFilter<"Plan"> | $Enums.PlanInterval
   features?: Prisma.StringNullableListFilter<"Plan">
+  isActive?: Prisma.BoolFilter<"Plan"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Plan"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Plan"> | Date | string
-  tenants?: Prisma.TenantListRelationFilter
-}, "id" | "name">
+  product?: Prisma.XOR<Prisma.ProductScalarRelationFilter, Prisma.ProductWhereInput>
+  subscriptions?: Prisma.SubscriptionListRelationFilter
+}, "id">
 
 export type PlanOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  productId?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  price?: Prisma.SortOrder
+  interval?: Prisma.SortOrder
   features?: Prisma.SortOrder
+  isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.PlanCountOrderByAggregateInput
+  _avg?: Prisma.PlanAvgOrderByAggregateInput
   _max?: Prisma.PlanMaxOrderByAggregateInput
   _min?: Prisma.PlanMinOrderByAggregateInput
+  _sum?: Prisma.PlanSumOrderByAggregateInput
 }
 
 export type PlanScalarWhereWithAggregatesInput = {
@@ -218,8 +301,12 @@ export type PlanScalarWhereWithAggregatesInput = {
   OR?: Prisma.PlanScalarWhereWithAggregatesInput[]
   NOT?: Prisma.PlanScalarWhereWithAggregatesInput | Prisma.PlanScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Plan"> | string
+  productId?: Prisma.StringWithAggregatesFilter<"Plan"> | string
   name?: Prisma.StringWithAggregatesFilter<"Plan"> | string
+  price?: Prisma.DecimalWithAggregatesFilter<"Plan"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: Prisma.EnumPlanIntervalWithAggregatesFilter<"Plan"> | $Enums.PlanInterval
   features?: Prisma.StringNullableListFilter<"Plan">
+  isActive?: Prisma.BoolWithAggregatesFilter<"Plan"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Plan"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Plan"> | Date | string
 }
@@ -227,43 +314,63 @@ export type PlanScalarWhereWithAggregatesInput = {
 export type PlanCreateInput = {
   id?: string
   name: string
+  price?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: $Enums.PlanInterval
   features?: Prisma.PlanCreatefeaturesInput | string[]
+  isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
-  tenants?: Prisma.TenantCreateNestedManyWithoutPlanInput
+  product: Prisma.ProductCreateNestedOneWithoutPlansInput
+  subscriptions?: Prisma.SubscriptionCreateNestedManyWithoutPlanInput
 }
 
 export type PlanUncheckedCreateInput = {
   id?: string
+  productId: string
   name: string
+  price?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: $Enums.PlanInterval
   features?: Prisma.PlanCreatefeaturesInput | string[]
+  isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
-  tenants?: Prisma.TenantUncheckedCreateNestedManyWithoutPlanInput
+  subscriptions?: Prisma.SubscriptionUncheckedCreateNestedManyWithoutPlanInput
 }
 
 export type PlanUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: Prisma.EnumPlanIntervalFieldUpdateOperationsInput | $Enums.PlanInterval
   features?: Prisma.PlanUpdatefeaturesInput | string[]
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  tenants?: Prisma.TenantUpdateManyWithoutPlanNestedInput
+  product?: Prisma.ProductUpdateOneRequiredWithoutPlansNestedInput
+  subscriptions?: Prisma.SubscriptionUpdateManyWithoutPlanNestedInput
 }
 
 export type PlanUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  productId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: Prisma.EnumPlanIntervalFieldUpdateOperationsInput | $Enums.PlanInterval
   features?: Prisma.PlanUpdatefeaturesInput | string[]
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  tenants?: Prisma.TenantUncheckedUpdateManyWithoutPlanNestedInput
+  subscriptions?: Prisma.SubscriptionUncheckedUpdateManyWithoutPlanNestedInput
 }
 
 export type PlanCreateManyInput = {
   id?: string
+  productId: string
   name: string
+  price?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: $Enums.PlanInterval
   features?: Prisma.PlanCreatefeaturesInput | string[]
+  isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -271,22 +378,34 @@ export type PlanCreateManyInput = {
 export type PlanUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: Prisma.EnumPlanIntervalFieldUpdateOperationsInput | $Enums.PlanInterval
   features?: Prisma.PlanUpdatefeaturesInput | string[]
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type PlanUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  productId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: Prisma.EnumPlanIntervalFieldUpdateOperationsInput | $Enums.PlanInterval
   features?: Prisma.PlanUpdatefeaturesInput | string[]
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type PlanNullableScalarRelationFilter = {
-  is?: Prisma.PlanWhereInput | null
-  isNot?: Prisma.PlanWhereInput | null
+export type PlanListRelationFilter = {
+  every?: Prisma.PlanWhereInput
+  some?: Prisma.PlanWhereInput
+  none?: Prisma.PlanWhereInput
+}
+
+export type PlanOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
 }
 
 export type StringNullableListFilter<$PrismaModel = never> = {
@@ -299,44 +418,107 @@ export type StringNullableListFilter<$PrismaModel = never> = {
 
 export type PlanCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  productId?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  price?: Prisma.SortOrder
+  interval?: Prisma.SortOrder
   features?: Prisma.SortOrder
+  isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
+export type PlanAvgOrderByAggregateInput = {
+  price?: Prisma.SortOrder
+}
+
 export type PlanMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  productId?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  price?: Prisma.SortOrder
+  interval?: Prisma.SortOrder
+  isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type PlanMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  productId?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  price?: Prisma.SortOrder
+  interval?: Prisma.SortOrder
+  isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
-export type PlanCreateNestedOneWithoutTenantsInput = {
-  create?: Prisma.XOR<Prisma.PlanCreateWithoutTenantsInput, Prisma.PlanUncheckedCreateWithoutTenantsInput>
-  connectOrCreate?: Prisma.PlanCreateOrConnectWithoutTenantsInput
-  connect?: Prisma.PlanWhereUniqueInput
+export type PlanSumOrderByAggregateInput = {
+  price?: Prisma.SortOrder
 }
 
-export type PlanUpdateOneWithoutTenantsNestedInput = {
-  create?: Prisma.XOR<Prisma.PlanCreateWithoutTenantsInput, Prisma.PlanUncheckedCreateWithoutTenantsInput>
-  connectOrCreate?: Prisma.PlanCreateOrConnectWithoutTenantsInput
-  upsert?: Prisma.PlanUpsertWithoutTenantsInput
-  disconnect?: Prisma.PlanWhereInput | boolean
-  delete?: Prisma.PlanWhereInput | boolean
-  connect?: Prisma.PlanWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.PlanUpdateToOneWithWhereWithoutTenantsInput, Prisma.PlanUpdateWithoutTenantsInput>, Prisma.PlanUncheckedUpdateWithoutTenantsInput>
+export type PlanScalarRelationFilter = {
+  is?: Prisma.PlanWhereInput
+  isNot?: Prisma.PlanWhereInput
+}
+
+export type PlanCreateNestedManyWithoutProductInput = {
+  create?: Prisma.XOR<Prisma.PlanCreateWithoutProductInput, Prisma.PlanUncheckedCreateWithoutProductInput> | Prisma.PlanCreateWithoutProductInput[] | Prisma.PlanUncheckedCreateWithoutProductInput[]
+  connectOrCreate?: Prisma.PlanCreateOrConnectWithoutProductInput | Prisma.PlanCreateOrConnectWithoutProductInput[]
+  createMany?: Prisma.PlanCreateManyProductInputEnvelope
+  connect?: Prisma.PlanWhereUniqueInput | Prisma.PlanWhereUniqueInput[]
+}
+
+export type PlanUncheckedCreateNestedManyWithoutProductInput = {
+  create?: Prisma.XOR<Prisma.PlanCreateWithoutProductInput, Prisma.PlanUncheckedCreateWithoutProductInput> | Prisma.PlanCreateWithoutProductInput[] | Prisma.PlanUncheckedCreateWithoutProductInput[]
+  connectOrCreate?: Prisma.PlanCreateOrConnectWithoutProductInput | Prisma.PlanCreateOrConnectWithoutProductInput[]
+  createMany?: Prisma.PlanCreateManyProductInputEnvelope
+  connect?: Prisma.PlanWhereUniqueInput | Prisma.PlanWhereUniqueInput[]
+}
+
+export type PlanUpdateManyWithoutProductNestedInput = {
+  create?: Prisma.XOR<Prisma.PlanCreateWithoutProductInput, Prisma.PlanUncheckedCreateWithoutProductInput> | Prisma.PlanCreateWithoutProductInput[] | Prisma.PlanUncheckedCreateWithoutProductInput[]
+  connectOrCreate?: Prisma.PlanCreateOrConnectWithoutProductInput | Prisma.PlanCreateOrConnectWithoutProductInput[]
+  upsert?: Prisma.PlanUpsertWithWhereUniqueWithoutProductInput | Prisma.PlanUpsertWithWhereUniqueWithoutProductInput[]
+  createMany?: Prisma.PlanCreateManyProductInputEnvelope
+  set?: Prisma.PlanWhereUniqueInput | Prisma.PlanWhereUniqueInput[]
+  disconnect?: Prisma.PlanWhereUniqueInput | Prisma.PlanWhereUniqueInput[]
+  delete?: Prisma.PlanWhereUniqueInput | Prisma.PlanWhereUniqueInput[]
+  connect?: Prisma.PlanWhereUniqueInput | Prisma.PlanWhereUniqueInput[]
+  update?: Prisma.PlanUpdateWithWhereUniqueWithoutProductInput | Prisma.PlanUpdateWithWhereUniqueWithoutProductInput[]
+  updateMany?: Prisma.PlanUpdateManyWithWhereWithoutProductInput | Prisma.PlanUpdateManyWithWhereWithoutProductInput[]
+  deleteMany?: Prisma.PlanScalarWhereInput | Prisma.PlanScalarWhereInput[]
+}
+
+export type PlanUncheckedUpdateManyWithoutProductNestedInput = {
+  create?: Prisma.XOR<Prisma.PlanCreateWithoutProductInput, Prisma.PlanUncheckedCreateWithoutProductInput> | Prisma.PlanCreateWithoutProductInput[] | Prisma.PlanUncheckedCreateWithoutProductInput[]
+  connectOrCreate?: Prisma.PlanCreateOrConnectWithoutProductInput | Prisma.PlanCreateOrConnectWithoutProductInput[]
+  upsert?: Prisma.PlanUpsertWithWhereUniqueWithoutProductInput | Prisma.PlanUpsertWithWhereUniqueWithoutProductInput[]
+  createMany?: Prisma.PlanCreateManyProductInputEnvelope
+  set?: Prisma.PlanWhereUniqueInput | Prisma.PlanWhereUniqueInput[]
+  disconnect?: Prisma.PlanWhereUniqueInput | Prisma.PlanWhereUniqueInput[]
+  delete?: Prisma.PlanWhereUniqueInput | Prisma.PlanWhereUniqueInput[]
+  connect?: Prisma.PlanWhereUniqueInput | Prisma.PlanWhereUniqueInput[]
+  update?: Prisma.PlanUpdateWithWhereUniqueWithoutProductInput | Prisma.PlanUpdateWithWhereUniqueWithoutProductInput[]
+  updateMany?: Prisma.PlanUpdateManyWithWhereWithoutProductInput | Prisma.PlanUpdateManyWithWhereWithoutProductInput[]
+  deleteMany?: Prisma.PlanScalarWhereInput | Prisma.PlanScalarWhereInput[]
 }
 
 export type PlanCreatefeaturesInput = {
   set: string[]
+}
+
+export type DecimalFieldUpdateOperationsInput = {
+  set?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  increment?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
+}
+
+export type EnumPlanIntervalFieldUpdateOperationsInput = {
+  set?: $Enums.PlanInterval
 }
 
 export type PlanUpdatefeaturesInput = {
@@ -344,50 +526,195 @@ export type PlanUpdatefeaturesInput = {
   push?: string | string[]
 }
 
-export type PlanCreateWithoutTenantsInput = {
-  id?: string
-  name: string
-  features?: Prisma.PlanCreatefeaturesInput | string[]
-  createdAt?: Date | string
-  updatedAt?: Date | string
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
 }
 
-export type PlanUncheckedCreateWithoutTenantsInput = {
-  id?: string
-  name: string
-  features?: Prisma.PlanCreatefeaturesInput | string[]
-  createdAt?: Date | string
-  updatedAt?: Date | string
+export type PlanCreateNestedOneWithoutSubscriptionsInput = {
+  create?: Prisma.XOR<Prisma.PlanCreateWithoutSubscriptionsInput, Prisma.PlanUncheckedCreateWithoutSubscriptionsInput>
+  connectOrCreate?: Prisma.PlanCreateOrConnectWithoutSubscriptionsInput
+  connect?: Prisma.PlanWhereUniqueInput
 }
 
-export type PlanCreateOrConnectWithoutTenantsInput = {
+export type PlanUpdateOneRequiredWithoutSubscriptionsNestedInput = {
+  create?: Prisma.XOR<Prisma.PlanCreateWithoutSubscriptionsInput, Prisma.PlanUncheckedCreateWithoutSubscriptionsInput>
+  connectOrCreate?: Prisma.PlanCreateOrConnectWithoutSubscriptionsInput
+  upsert?: Prisma.PlanUpsertWithoutSubscriptionsInput
+  connect?: Prisma.PlanWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PlanUpdateToOneWithWhereWithoutSubscriptionsInput, Prisma.PlanUpdateWithoutSubscriptionsInput>, Prisma.PlanUncheckedUpdateWithoutSubscriptionsInput>
+}
+
+export type PlanCreateWithoutProductInput = {
+  id?: string
+  name: string
+  price?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: $Enums.PlanInterval
+  features?: Prisma.PlanCreatefeaturesInput | string[]
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  subscriptions?: Prisma.SubscriptionCreateNestedManyWithoutPlanInput
+}
+
+export type PlanUncheckedCreateWithoutProductInput = {
+  id?: string
+  name: string
+  price?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: $Enums.PlanInterval
+  features?: Prisma.PlanCreatefeaturesInput | string[]
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  subscriptions?: Prisma.SubscriptionUncheckedCreateNestedManyWithoutPlanInput
+}
+
+export type PlanCreateOrConnectWithoutProductInput = {
   where: Prisma.PlanWhereUniqueInput
-  create: Prisma.XOR<Prisma.PlanCreateWithoutTenantsInput, Prisma.PlanUncheckedCreateWithoutTenantsInput>
+  create: Prisma.XOR<Prisma.PlanCreateWithoutProductInput, Prisma.PlanUncheckedCreateWithoutProductInput>
 }
 
-export type PlanUpsertWithoutTenantsInput = {
-  update: Prisma.XOR<Prisma.PlanUpdateWithoutTenantsInput, Prisma.PlanUncheckedUpdateWithoutTenantsInput>
-  create: Prisma.XOR<Prisma.PlanCreateWithoutTenantsInput, Prisma.PlanUncheckedCreateWithoutTenantsInput>
+export type PlanCreateManyProductInputEnvelope = {
+  data: Prisma.PlanCreateManyProductInput | Prisma.PlanCreateManyProductInput[]
+  skipDuplicates?: boolean
+}
+
+export type PlanUpsertWithWhereUniqueWithoutProductInput = {
+  where: Prisma.PlanWhereUniqueInput
+  update: Prisma.XOR<Prisma.PlanUpdateWithoutProductInput, Prisma.PlanUncheckedUpdateWithoutProductInput>
+  create: Prisma.XOR<Prisma.PlanCreateWithoutProductInput, Prisma.PlanUncheckedCreateWithoutProductInput>
+}
+
+export type PlanUpdateWithWhereUniqueWithoutProductInput = {
+  where: Prisma.PlanWhereUniqueInput
+  data: Prisma.XOR<Prisma.PlanUpdateWithoutProductInput, Prisma.PlanUncheckedUpdateWithoutProductInput>
+}
+
+export type PlanUpdateManyWithWhereWithoutProductInput = {
+  where: Prisma.PlanScalarWhereInput
+  data: Prisma.XOR<Prisma.PlanUpdateManyMutationInput, Prisma.PlanUncheckedUpdateManyWithoutProductInput>
+}
+
+export type PlanScalarWhereInput = {
+  AND?: Prisma.PlanScalarWhereInput | Prisma.PlanScalarWhereInput[]
+  OR?: Prisma.PlanScalarWhereInput[]
+  NOT?: Prisma.PlanScalarWhereInput | Prisma.PlanScalarWhereInput[]
+  id?: Prisma.StringFilter<"Plan"> | string
+  productId?: Prisma.StringFilter<"Plan"> | string
+  name?: Prisma.StringFilter<"Plan"> | string
+  price?: Prisma.DecimalFilter<"Plan"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: Prisma.EnumPlanIntervalFilter<"Plan"> | $Enums.PlanInterval
+  features?: Prisma.StringNullableListFilter<"Plan">
+  isActive?: Prisma.BoolFilter<"Plan"> | boolean
+  createdAt?: Prisma.DateTimeFilter<"Plan"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Plan"> | Date | string
+}
+
+export type PlanCreateWithoutSubscriptionsInput = {
+  id?: string
+  name: string
+  price?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: $Enums.PlanInterval
+  features?: Prisma.PlanCreatefeaturesInput | string[]
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  product: Prisma.ProductCreateNestedOneWithoutPlansInput
+}
+
+export type PlanUncheckedCreateWithoutSubscriptionsInput = {
+  id?: string
+  productId: string
+  name: string
+  price?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: $Enums.PlanInterval
+  features?: Prisma.PlanCreatefeaturesInput | string[]
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type PlanCreateOrConnectWithoutSubscriptionsInput = {
+  where: Prisma.PlanWhereUniqueInput
+  create: Prisma.XOR<Prisma.PlanCreateWithoutSubscriptionsInput, Prisma.PlanUncheckedCreateWithoutSubscriptionsInput>
+}
+
+export type PlanUpsertWithoutSubscriptionsInput = {
+  update: Prisma.XOR<Prisma.PlanUpdateWithoutSubscriptionsInput, Prisma.PlanUncheckedUpdateWithoutSubscriptionsInput>
+  create: Prisma.XOR<Prisma.PlanCreateWithoutSubscriptionsInput, Prisma.PlanUncheckedCreateWithoutSubscriptionsInput>
   where?: Prisma.PlanWhereInput
 }
 
-export type PlanUpdateToOneWithWhereWithoutTenantsInput = {
+export type PlanUpdateToOneWithWhereWithoutSubscriptionsInput = {
   where?: Prisma.PlanWhereInput
-  data: Prisma.XOR<Prisma.PlanUpdateWithoutTenantsInput, Prisma.PlanUncheckedUpdateWithoutTenantsInput>
+  data: Prisma.XOR<Prisma.PlanUpdateWithoutSubscriptionsInput, Prisma.PlanUncheckedUpdateWithoutSubscriptionsInput>
 }
 
-export type PlanUpdateWithoutTenantsInput = {
+export type PlanUpdateWithoutSubscriptionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: Prisma.EnumPlanIntervalFieldUpdateOperationsInput | $Enums.PlanInterval
   features?: Prisma.PlanUpdatefeaturesInput | string[]
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  product?: Prisma.ProductUpdateOneRequiredWithoutPlansNestedInput
+}
+
+export type PlanUncheckedUpdateWithoutSubscriptionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  productId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: Prisma.EnumPlanIntervalFieldUpdateOperationsInput | $Enums.PlanInterval
+  features?: Prisma.PlanUpdatefeaturesInput | string[]
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type PlanUncheckedUpdateWithoutTenantsInput = {
+export type PlanCreateManyProductInput = {
+  id?: string
+  name: string
+  price?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: $Enums.PlanInterval
+  features?: Prisma.PlanCreatefeaturesInput | string[]
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type PlanUpdateWithoutProductInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: Prisma.EnumPlanIntervalFieldUpdateOperationsInput | $Enums.PlanInterval
   features?: Prisma.PlanUpdatefeaturesInput | string[]
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  subscriptions?: Prisma.SubscriptionUpdateManyWithoutPlanNestedInput
+}
+
+export type PlanUncheckedUpdateWithoutProductInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: Prisma.EnumPlanIntervalFieldUpdateOperationsInput | $Enums.PlanInterval
+  features?: Prisma.PlanUpdatefeaturesInput | string[]
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  subscriptions?: Prisma.SubscriptionUncheckedUpdateManyWithoutPlanNestedInput
+}
+
+export type PlanUncheckedUpdateManyWithoutProductInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  interval?: Prisma.EnumPlanIntervalFieldUpdateOperationsInput | $Enums.PlanInterval
+  features?: Prisma.PlanUpdatefeaturesInput | string[]
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -398,11 +725,11 @@ export type PlanUncheckedUpdateWithoutTenantsInput = {
  */
 
 export type PlanCountOutputType = {
-  tenants: number
+  subscriptions: number
 }
 
 export type PlanCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  tenants?: boolean | PlanCountOutputTypeCountTenantsArgs
+  subscriptions?: boolean | PlanCountOutputTypeCountSubscriptionsArgs
 }
 
 /**
@@ -418,62 +745,91 @@ export type PlanCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensi
 /**
  * PlanCountOutputType without action
  */
-export type PlanCountOutputTypeCountTenantsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.TenantWhereInput
+export type PlanCountOutputTypeCountSubscriptionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SubscriptionWhereInput
 }
 
 
 export type PlanSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  productId?: boolean
   name?: boolean
+  price?: boolean
+  interval?: boolean
   features?: boolean
+  isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  tenants?: boolean | Prisma.Plan$tenantsArgs<ExtArgs>
+  product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
+  subscriptions?: boolean | Prisma.Plan$subscriptionsArgs<ExtArgs>
   _count?: boolean | Prisma.PlanCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["plan"]>
 
 export type PlanSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  productId?: boolean
   name?: boolean
+  price?: boolean
+  interval?: boolean
   features?: boolean
+  isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["plan"]>
 
 export type PlanSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  productId?: boolean
   name?: boolean
+  price?: boolean
+  interval?: boolean
   features?: boolean
+  isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["plan"]>
 
 export type PlanSelectScalar = {
   id?: boolean
+  productId?: boolean
   name?: boolean
+  price?: boolean
+  interval?: boolean
   features?: boolean
+  isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type PlanOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "features" | "createdAt" | "updatedAt", ExtArgs["result"]["plan"]>
+export type PlanOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "productId" | "name" | "price" | "interval" | "features" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["plan"]>
 export type PlanInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  tenants?: boolean | Prisma.Plan$tenantsArgs<ExtArgs>
+  product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
+  subscriptions?: boolean | Prisma.Plan$subscriptionsArgs<ExtArgs>
   _count?: boolean | Prisma.PlanCountOutputTypeDefaultArgs<ExtArgs>
 }
-export type PlanIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
-export type PlanIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type PlanIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
+}
+export type PlanIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
+}
 
 export type $PlanPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Plan"
   objects: {
-    tenants: Prisma.$TenantPayload<ExtArgs>[]
+    product: Prisma.$ProductPayload<ExtArgs>
+    subscriptions: Prisma.$SubscriptionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    productId: string
     name: string
+    price: runtime.Decimal
+    interval: $Enums.PlanInterval
     features: string[]
+    isActive: boolean
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["plan"]>
@@ -870,7 +1226,8 @@ readonly fields: PlanFieldRefs;
  */
 export interface Prisma__PlanClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  tenants<T extends Prisma.Plan$tenantsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Plan$tenantsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  product<T extends Prisma.ProductDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProductDefaultArgs<ExtArgs>>): Prisma.Prisma__ProductClient<runtime.Types.Result.GetResult<Prisma.$ProductPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  subscriptions<T extends Prisma.Plan$subscriptionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Plan$subscriptionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SubscriptionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -901,8 +1258,12 @@ export interface Prisma__PlanClient<T, Null = never, ExtArgs extends runtime.Typ
  */
 export interface PlanFieldRefs {
   readonly id: Prisma.FieldRef<"Plan", 'String'>
+  readonly productId: Prisma.FieldRef<"Plan", 'String'>
   readonly name: Prisma.FieldRef<"Plan", 'String'>
+  readonly price: Prisma.FieldRef<"Plan", 'Decimal'>
+  readonly interval: Prisma.FieldRef<"Plan", 'PlanInterval'>
   readonly features: Prisma.FieldRef<"Plan", 'String[]'>
+  readonly isActive: Prisma.FieldRef<"Plan", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"Plan", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Plan", 'DateTime'>
 }
@@ -1154,6 +1515,10 @@ export type PlanCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions
    */
   data: Prisma.PlanCreateManyInput | Prisma.PlanCreateManyInput[]
   skipDuplicates?: boolean
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PlanIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1224,6 +1589,10 @@ export type PlanUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions
    * Limit how many Plans to update.
    */
   limit?: number
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PlanIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1293,27 +1662,27 @@ export type PlanDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
 }
 
 /**
- * Plan.tenants
+ * Plan.subscriptions
  */
-export type Plan$tenantsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Plan$subscriptionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Tenant
+   * Select specific fields to fetch from the Subscription
    */
-  select?: Prisma.TenantSelect<ExtArgs> | null
+  select?: Prisma.SubscriptionSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Tenant
+   * Omit specific fields from the Subscription
    */
-  omit?: Prisma.TenantOmit<ExtArgs> | null
+  omit?: Prisma.SubscriptionOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.TenantInclude<ExtArgs> | null
-  where?: Prisma.TenantWhereInput
-  orderBy?: Prisma.TenantOrderByWithRelationInput | Prisma.TenantOrderByWithRelationInput[]
-  cursor?: Prisma.TenantWhereUniqueInput
+  include?: Prisma.SubscriptionInclude<ExtArgs> | null
+  where?: Prisma.SubscriptionWhereInput
+  orderBy?: Prisma.SubscriptionOrderByWithRelationInput | Prisma.SubscriptionOrderByWithRelationInput[]
+  cursor?: Prisma.SubscriptionWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.TenantScalarFieldEnum | Prisma.TenantScalarFieldEnum[]
+  distinct?: Prisma.SubscriptionScalarFieldEnum | Prisma.SubscriptionScalarFieldEnum[]
 }
 
 /**

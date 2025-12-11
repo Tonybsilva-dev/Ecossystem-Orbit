@@ -107,8 +107,18 @@ describe("Integration Tests: /api/validate", () => {
     it("deve retornar capabilities corretas quando tenant tem plano com features", async () => {
       // Arrange: Create plan with features and tenant
       const timestamp = Date.now();
+
+      const product = await prisma.product.create({
+        data: {
+          name: `Test Product ${timestamp}`,
+          slug: `test-product-${timestamp}`,
+          description: "Test Product",
+        }
+      });
+
       const plan = await prisma.plan.create({
         data: {
+          productId: product.id,
           name: `Test Plan Integration ${timestamp}`,
           features: ["COUPONS", "WHATSAPP", "EMAIL"],
         },
@@ -141,7 +151,9 @@ describe("Integration Tests: /api/validate", () => {
       expect(response.body.capabilities.length).toBe(3);
 
       // Cleanup
+      // Cleanup
       await prisma.plan.delete({ where: { id: plan.id } });
+      await prisma.product.delete({ where: { id: product.id } });
     });
   });
 

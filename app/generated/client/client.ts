@@ -29,8 +29,8 @@ export * from "./enums"
  * @example
  * ```
  * const prisma = new PrismaClient()
- * // Fetch zero or more Tenants
- * const tenants = await prisma.tenant.findMany()
+ * // Fetch zero or more Products
+ * const products = await prisma.product.findMany()
  * ```
  * 
  * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
@@ -45,15 +45,25 @@ path.join(__dirname, "libquery_engine-darwin-arm64.dylib.node")
 path.join(process.cwd(), "app/generated/client/libquery_engine-darwin-arm64.dylib.node")
 
 /**
- * Model Tenant
+ * Model Product
  * 
  */
-export type Tenant = Prisma.TenantModel
+export type Product = Prisma.ProductModel
 /**
  * Model Plan
  * 
  */
 export type Plan = Prisma.PlanModel
+/**
+ * Model Subscription
+ * 
+ */
+export type Subscription = Prisma.SubscriptionModel
+/**
+ * Model Tenant
+ * 
+ */
+export type Tenant = Prisma.TenantModel
 /**
  * Model TenantFeature
  * 

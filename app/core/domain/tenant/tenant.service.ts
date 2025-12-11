@@ -2,6 +2,7 @@ import { prisma } from "../../db/prisma.server";
 import type { CreateTenantInput, UpdateTenantInput } from "./tenant.schema";
 import { createTenantSchema, tenantSearchSchema } from "./tenant.schema";
 import { hashPassword } from "../../auth/password.server";
+import crypto from "node:crypto";
 
 export class TenantService {
   /**
@@ -15,7 +16,7 @@ export class TenantService {
   static async create(data: unknown) {
     // 1. Validar input usando Zod schema
     const validationResult = createTenantSchema.safeParse(data);
-    
+
     if (!validationResult.success) {
       const firstError = validationResult.error.errors[0];
       throw new Error(
@@ -30,12 +31,12 @@ export class TenantService {
 
     try {
       // 3. Criar tenant no banco de dados
+      // 3. Criar tenant no banco de dados
       const tenant = await prisma.tenant.create({
         data: {
           name: validatedData.name,
           slug: validatedData.slug,
           status: validatedData.status || "ACTIVE",
-          planId: validatedData.planId || null,
           users: {
             create: {
               email: validatedData.user.email,
@@ -44,10 +45,17 @@ export class TenantService {
               role: "OWNER",
             },
           },
+          subscriptions: validatedData.planId ? {
+            create: {
+              planId: validatedData.planId,
+              status: "ACTIVE",
+              licenseKey: crypto.randomUUID(), // Temporario, ideal usar crypto node
+            }
+          } : undefined
         },
         include: {
           users: true,
-          plan: true,
+          subscriptions: true,
         },
       });
 
@@ -111,7 +119,6 @@ export class TenantService {
         name: true,
         slug: true,
         status: true,
-        planId: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -177,6 +184,59 @@ export class TenantService {
    * // Retorna tenants como "Acme Corp", "acme-enterprise", etc.
    * ```
    */
+  /**
+   * Adiciona uma assinatura a um tenant com lógica de extensão/upgrade.
+   */
+  static async addSubscription(tenantId: string, planId: string) {
+    // 1. Obter detalhes do plano e produto
+    const plan = await prisma.plan.findUnique({
+      where: { id: planId },
+      include: { product: true },
+    });
+
+    if (!plan) throw new Error("Plan not found");
+
+    // 2. Verificar se já existe assinatura ATIVA para este PRODUTO
+    const existingSubscription = await prisma.subscription.findFirst({
+      where: {
+        tenantId,
+        plan: { productId: plan.productId },
+        status: "ACTIVE"
+      },
+      include: { plan: true }
+    });
+
+    // Lógica 1: Se já tem assinatura do MESMO plano -> Estender Validade (fingindo que tem expiresAt por enquanto, ou apenas ignorando duplicidade)
+    // Como o schema atual não tem expiresAt (ainda), vamos assumir que se já tem o mesmo plano ativo, não faz nada ou retorna a existente.
+    // SE for plano diferente (Upgrade/Downgrade) -> Inativa a anterior e cria nova.
+
+    if (existingSubscription) {
+      if (existingSubscription.planId === planId) {
+        // Mesmo plano: Estenderia a data aqui.
+        // Por enquanto, retornamos a existente para não duplicar.
+        return existingSubscription;
+      } else {
+        // Plano diferente (Upgrade/Downgrade):
+        // 1. Inativar anterior
+        await prisma.subscription.update({
+          where: { id: existingSubscription.id },
+          data: { status: "CANCELED" } // Ou "UPGRADED" se tiver esse status
+        });
+        // 2. Prosseguir para criar a nova
+      }
+    }
+
+    // 3. Criar nova assinatura
+    return prisma.subscription.create({
+      data: {
+        tenantId,
+        planId,
+        licenseKey: `LIC-${crypto.randomUUID().substring(0, 8).toUpperCase()}`,
+        status: "ACTIVE"
+      }
+    });
+  }
+
   static async searchTenants(query: string) {
     // 1. Validar input usando Zod schema
     const validationResult = tenantSearchSchema.safeParse({ query });
@@ -213,6 +273,12 @@ export class TenantService {
       orderBy: {
         name: "asc",
       },
+      include: {
+        users: { // Incluir usuários para mostrar email do dono na lista
+          where: { role: 'OWNER' },
+          take: 1
+        }
+      }
     });
 
     return tenants;

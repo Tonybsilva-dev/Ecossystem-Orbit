@@ -25,3 +25,22 @@ export const Status = {
 } as const
 
 export type Status = (typeof Status)[keyof typeof Status]
+
+
+export const PlanInterval = {
+  MONTHLY: 'MONTHLY',
+  YEARLY: 'YEARLY'
+} as const
+
+export type PlanInterval = (typeof PlanInterval)[keyof typeof PlanInterval]
+
+
+export const SubStatus = {
+  ACTIVE: 'ACTIVE',
+  EXPIRED: 'EXPIRED',
+  CANCELED: 'CANCELED',
+  TRIAL: 'TRIAL',
+  PAST_DUE: 'PAST_DUE'
+} as const
+
+export type SubStatus = (typeof SubStatus)[keyof typeof SubStatus]

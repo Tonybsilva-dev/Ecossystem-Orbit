@@ -29,7 +29,6 @@ export type TenantMinAggregateOutputType = {
   name: string | null
   slug: string | null
   status: $Enums.Status | null
-  planId: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -39,7 +38,6 @@ export type TenantMaxAggregateOutputType = {
   name: string | null
   slug: string | null
   status: $Enums.Status | null
-  planId: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -49,7 +47,6 @@ export type TenantCountAggregateOutputType = {
   name: number
   slug: number
   status: number
-  planId: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -61,7 +58,6 @@ export type TenantMinAggregateInputType = {
   name?: true
   slug?: true
   status?: true
-  planId?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -71,7 +67,6 @@ export type TenantMaxAggregateInputType = {
   name?: true
   slug?: true
   status?: true
-  planId?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -81,7 +76,6 @@ export type TenantCountAggregateInputType = {
   name?: true
   slug?: true
   status?: true
-  planId?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -164,7 +158,6 @@ export type TenantGroupByOutputType = {
   name: string
   slug: string
   status: $Enums.Status
-  planId: string | null
   createdAt: Date
   updatedAt: Date
   _count: TenantCountAggregateOutputType | null
@@ -195,10 +188,9 @@ export type TenantWhereInput = {
   name?: Prisma.StringFilter<"Tenant"> | string
   slug?: Prisma.StringFilter<"Tenant"> | string
   status?: Prisma.EnumStatusFilter<"Tenant"> | $Enums.Status
-  planId?: Prisma.StringNullableFilter<"Tenant"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Tenant"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Tenant"> | Date | string
-  plan?: Prisma.XOR<Prisma.PlanNullableScalarRelationFilter, Prisma.PlanWhereInput> | null
+  subscriptions?: Prisma.SubscriptionListRelationFilter
   users?: Prisma.UserListRelationFilter
   features?: Prisma.TenantFeatureListRelationFilter
 }
@@ -208,10 +200,9 @@ export type TenantOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  planId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  plan?: Prisma.PlanOrderByWithRelationInput
+  subscriptions?: Prisma.SubscriptionOrderByRelationAggregateInput
   users?: Prisma.UserOrderByRelationAggregateInput
   features?: Prisma.TenantFeatureOrderByRelationAggregateInput
 }
@@ -224,10 +215,9 @@ export type TenantWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.TenantWhereInput | Prisma.TenantWhereInput[]
   name?: Prisma.StringFilter<"Tenant"> | string
   status?: Prisma.EnumStatusFilter<"Tenant"> | $Enums.Status
-  planId?: Prisma.StringNullableFilter<"Tenant"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Tenant"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Tenant"> | Date | string
-  plan?: Prisma.XOR<Prisma.PlanNullableScalarRelationFilter, Prisma.PlanWhereInput> | null
+  subscriptions?: Prisma.SubscriptionListRelationFilter
   users?: Prisma.UserListRelationFilter
   features?: Prisma.TenantFeatureListRelationFilter
 }, "id" | "slug">
@@ -237,7 +227,6 @@ export type TenantOrderByWithAggregationInput = {
   name?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  planId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.TenantCountOrderByAggregateInput
@@ -253,7 +242,6 @@ export type TenantScalarWhereWithAggregatesInput = {
   name?: Prisma.StringWithAggregatesFilter<"Tenant"> | string
   slug?: Prisma.StringWithAggregatesFilter<"Tenant"> | string
   status?: Prisma.EnumStatusWithAggregatesFilter<"Tenant"> | $Enums.Status
-  planId?: Prisma.StringNullableWithAggregatesFilter<"Tenant"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Tenant"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Tenant"> | Date | string
 }
@@ -265,7 +253,7 @@ export type TenantCreateInput = {
   status?: $Enums.Status
   createdAt?: Date | string
   updatedAt?: Date | string
-  plan?: Prisma.PlanCreateNestedOneWithoutTenantsInput
+  subscriptions?: Prisma.SubscriptionCreateNestedManyWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
   features?: Prisma.TenantFeatureCreateNestedManyWithoutTenantInput
 }
@@ -275,9 +263,9 @@ export type TenantUncheckedCreateInput = {
   name: string
   slug: string
   status?: $Enums.Status
-  planId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  subscriptions?: Prisma.SubscriptionUncheckedCreateNestedManyWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
   features?: Prisma.TenantFeatureUncheckedCreateNestedManyWithoutTenantInput
 }
@@ -289,7 +277,7 @@ export type TenantUpdateInput = {
   status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  plan?: Prisma.PlanUpdateOneWithoutTenantsNestedInput
+  subscriptions?: Prisma.SubscriptionUpdateManyWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
   features?: Prisma.TenantFeatureUpdateManyWithoutTenantNestedInput
 }
@@ -299,9 +287,9 @@ export type TenantUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
-  planId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  subscriptions?: Prisma.SubscriptionUncheckedUpdateManyWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
   features?: Prisma.TenantFeatureUncheckedUpdateManyWithoutTenantNestedInput
 }
@@ -311,7 +299,6 @@ export type TenantCreateManyInput = {
   name: string
   slug: string
   status?: $Enums.Status
-  planId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -330,9 +317,13 @@ export type TenantUncheckedUpdateManyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
-  planId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type TenantScalarRelationFilter = {
+  is?: Prisma.TenantWhereInput
+  isNot?: Prisma.TenantWhereInput
 }
 
 export type TenantCountOrderByAggregateInput = {
@@ -340,7 +331,6 @@ export type TenantCountOrderByAggregateInput = {
   name?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  planId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -350,7 +340,6 @@ export type TenantMaxOrderByAggregateInput = {
   name?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  planId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -360,82 +349,26 @@ export type TenantMinOrderByAggregateInput = {
   name?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  planId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
-export type TenantListRelationFilter = {
-  every?: Prisma.TenantWhereInput
-  some?: Prisma.TenantWhereInput
-  none?: Prisma.TenantWhereInput
+export type TenantCreateNestedOneWithoutSubscriptionsInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutSubscriptionsInput, Prisma.TenantUncheckedCreateWithoutSubscriptionsInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutSubscriptionsInput
+  connect?: Prisma.TenantWhereUniqueInput
 }
 
-export type TenantOrderByRelationAggregateInput = {
-  _count?: Prisma.SortOrder
-}
-
-export type TenantScalarRelationFilter = {
-  is?: Prisma.TenantWhereInput
-  isNot?: Prisma.TenantWhereInput
-}
-
-export type StringFieldUpdateOperationsInput = {
-  set?: string
+export type TenantUpdateOneRequiredWithoutSubscriptionsNestedInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutSubscriptionsInput, Prisma.TenantUncheckedCreateWithoutSubscriptionsInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutSubscriptionsInput
+  upsert?: Prisma.TenantUpsertWithoutSubscriptionsInput
+  connect?: Prisma.TenantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutSubscriptionsInput, Prisma.TenantUpdateWithoutSubscriptionsInput>, Prisma.TenantUncheckedUpdateWithoutSubscriptionsInput>
 }
 
 export type EnumStatusFieldUpdateOperationsInput = {
   set?: $Enums.Status
-}
-
-export type DateTimeFieldUpdateOperationsInput = {
-  set?: Date | string
-}
-
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
-export type TenantCreateNestedManyWithoutPlanInput = {
-  create?: Prisma.XOR<Prisma.TenantCreateWithoutPlanInput, Prisma.TenantUncheckedCreateWithoutPlanInput> | Prisma.TenantCreateWithoutPlanInput[] | Prisma.TenantUncheckedCreateWithoutPlanInput[]
-  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutPlanInput | Prisma.TenantCreateOrConnectWithoutPlanInput[]
-  createMany?: Prisma.TenantCreateManyPlanInputEnvelope
-  connect?: Prisma.TenantWhereUniqueInput | Prisma.TenantWhereUniqueInput[]
-}
-
-export type TenantUncheckedCreateNestedManyWithoutPlanInput = {
-  create?: Prisma.XOR<Prisma.TenantCreateWithoutPlanInput, Prisma.TenantUncheckedCreateWithoutPlanInput> | Prisma.TenantCreateWithoutPlanInput[] | Prisma.TenantUncheckedCreateWithoutPlanInput[]
-  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutPlanInput | Prisma.TenantCreateOrConnectWithoutPlanInput[]
-  createMany?: Prisma.TenantCreateManyPlanInputEnvelope
-  connect?: Prisma.TenantWhereUniqueInput | Prisma.TenantWhereUniqueInput[]
-}
-
-export type TenantUpdateManyWithoutPlanNestedInput = {
-  create?: Prisma.XOR<Prisma.TenantCreateWithoutPlanInput, Prisma.TenantUncheckedCreateWithoutPlanInput> | Prisma.TenantCreateWithoutPlanInput[] | Prisma.TenantUncheckedCreateWithoutPlanInput[]
-  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutPlanInput | Prisma.TenantCreateOrConnectWithoutPlanInput[]
-  upsert?: Prisma.TenantUpsertWithWhereUniqueWithoutPlanInput | Prisma.TenantUpsertWithWhereUniqueWithoutPlanInput[]
-  createMany?: Prisma.TenantCreateManyPlanInputEnvelope
-  set?: Prisma.TenantWhereUniqueInput | Prisma.TenantWhereUniqueInput[]
-  disconnect?: Prisma.TenantWhereUniqueInput | Prisma.TenantWhereUniqueInput[]
-  delete?: Prisma.TenantWhereUniqueInput | Prisma.TenantWhereUniqueInput[]
-  connect?: Prisma.TenantWhereUniqueInput | Prisma.TenantWhereUniqueInput[]
-  update?: Prisma.TenantUpdateWithWhereUniqueWithoutPlanInput | Prisma.TenantUpdateWithWhereUniqueWithoutPlanInput[]
-  updateMany?: Prisma.TenantUpdateManyWithWhereWithoutPlanInput | Prisma.TenantUpdateManyWithWhereWithoutPlanInput[]
-  deleteMany?: Prisma.TenantScalarWhereInput | Prisma.TenantScalarWhereInput[]
-}
-
-export type TenantUncheckedUpdateManyWithoutPlanNestedInput = {
-  create?: Prisma.XOR<Prisma.TenantCreateWithoutPlanInput, Prisma.TenantUncheckedCreateWithoutPlanInput> | Prisma.TenantCreateWithoutPlanInput[] | Prisma.TenantUncheckedCreateWithoutPlanInput[]
-  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutPlanInput | Prisma.TenantCreateOrConnectWithoutPlanInput[]
-  upsert?: Prisma.TenantUpsertWithWhereUniqueWithoutPlanInput | Prisma.TenantUpsertWithWhereUniqueWithoutPlanInput[]
-  createMany?: Prisma.TenantCreateManyPlanInputEnvelope
-  set?: Prisma.TenantWhereUniqueInput | Prisma.TenantWhereUniqueInput[]
-  disconnect?: Prisma.TenantWhereUniqueInput | Prisma.TenantWhereUniqueInput[]
-  delete?: Prisma.TenantWhereUniqueInput | Prisma.TenantWhereUniqueInput[]
-  connect?: Prisma.TenantWhereUniqueInput | Prisma.TenantWhereUniqueInput[]
-  update?: Prisma.TenantUpdateWithWhereUniqueWithoutPlanInput | Prisma.TenantUpdateWithWhereUniqueWithoutPlanInput[]
-  updateMany?: Prisma.TenantUpdateManyWithWhereWithoutPlanInput | Prisma.TenantUpdateManyWithWhereWithoutPlanInput[]
-  deleteMany?: Prisma.TenantScalarWhereInput | Prisma.TenantScalarWhereInput[]
 }
 
 export type TenantCreateNestedOneWithoutFeaturesInput = {
@@ -466,7 +399,7 @@ export type TenantUpdateOneRequiredWithoutUsersNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutUsersInput, Prisma.TenantUpdateWithoutUsersInput>, Prisma.TenantUncheckedUpdateWithoutUsersInput>
 }
 
-export type TenantCreateWithoutPlanInput = {
+export type TenantCreateWithoutSubscriptionsInput = {
   id?: string
   name: string
   slug: string
@@ -477,7 +410,7 @@ export type TenantCreateWithoutPlanInput = {
   features?: Prisma.TenantFeatureCreateNestedManyWithoutTenantInput
 }
 
-export type TenantUncheckedCreateWithoutPlanInput = {
+export type TenantUncheckedCreateWithoutSubscriptionsInput = {
   id?: string
   name: string
   slug: string
@@ -488,43 +421,42 @@ export type TenantUncheckedCreateWithoutPlanInput = {
   features?: Prisma.TenantFeatureUncheckedCreateNestedManyWithoutTenantInput
 }
 
-export type TenantCreateOrConnectWithoutPlanInput = {
+export type TenantCreateOrConnectWithoutSubscriptionsInput = {
   where: Prisma.TenantWhereUniqueInput
-  create: Prisma.XOR<Prisma.TenantCreateWithoutPlanInput, Prisma.TenantUncheckedCreateWithoutPlanInput>
+  create: Prisma.XOR<Prisma.TenantCreateWithoutSubscriptionsInput, Prisma.TenantUncheckedCreateWithoutSubscriptionsInput>
 }
 
-export type TenantCreateManyPlanInputEnvelope = {
-  data: Prisma.TenantCreateManyPlanInput | Prisma.TenantCreateManyPlanInput[]
-  skipDuplicates?: boolean
+export type TenantUpsertWithoutSubscriptionsInput = {
+  update: Prisma.XOR<Prisma.TenantUpdateWithoutSubscriptionsInput, Prisma.TenantUncheckedUpdateWithoutSubscriptionsInput>
+  create: Prisma.XOR<Prisma.TenantCreateWithoutSubscriptionsInput, Prisma.TenantUncheckedCreateWithoutSubscriptionsInput>
+  where?: Prisma.TenantWhereInput
 }
 
-export type TenantUpsertWithWhereUniqueWithoutPlanInput = {
-  where: Prisma.TenantWhereUniqueInput
-  update: Prisma.XOR<Prisma.TenantUpdateWithoutPlanInput, Prisma.TenantUncheckedUpdateWithoutPlanInput>
-  create: Prisma.XOR<Prisma.TenantCreateWithoutPlanInput, Prisma.TenantUncheckedCreateWithoutPlanInput>
+export type TenantUpdateToOneWithWhereWithoutSubscriptionsInput = {
+  where?: Prisma.TenantWhereInput
+  data: Prisma.XOR<Prisma.TenantUpdateWithoutSubscriptionsInput, Prisma.TenantUncheckedUpdateWithoutSubscriptionsInput>
 }
 
-export type TenantUpdateWithWhereUniqueWithoutPlanInput = {
-  where: Prisma.TenantWhereUniqueInput
-  data: Prisma.XOR<Prisma.TenantUpdateWithoutPlanInput, Prisma.TenantUncheckedUpdateWithoutPlanInput>
+export type TenantUpdateWithoutSubscriptionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  features?: Prisma.TenantFeatureUpdateManyWithoutTenantNestedInput
 }
 
-export type TenantUpdateManyWithWhereWithoutPlanInput = {
-  where: Prisma.TenantScalarWhereInput
-  data: Prisma.XOR<Prisma.TenantUpdateManyMutationInput, Prisma.TenantUncheckedUpdateManyWithoutPlanInput>
-}
-
-export type TenantScalarWhereInput = {
-  AND?: Prisma.TenantScalarWhereInput | Prisma.TenantScalarWhereInput[]
-  OR?: Prisma.TenantScalarWhereInput[]
-  NOT?: Prisma.TenantScalarWhereInput | Prisma.TenantScalarWhereInput[]
-  id?: Prisma.StringFilter<"Tenant"> | string
-  name?: Prisma.StringFilter<"Tenant"> | string
-  slug?: Prisma.StringFilter<"Tenant"> | string
-  status?: Prisma.EnumStatusFilter<"Tenant"> | $Enums.Status
-  planId?: Prisma.StringNullableFilter<"Tenant"> | string | null
-  createdAt?: Prisma.DateTimeFilter<"Tenant"> | Date | string
-  updatedAt?: Prisma.DateTimeFilter<"Tenant"> | Date | string
+export type TenantUncheckedUpdateWithoutSubscriptionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  features?: Prisma.TenantFeatureUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutFeaturesInput = {
@@ -534,7 +466,7 @@ export type TenantCreateWithoutFeaturesInput = {
   status?: $Enums.Status
   createdAt?: Date | string
   updatedAt?: Date | string
-  plan?: Prisma.PlanCreateNestedOneWithoutTenantsInput
+  subscriptions?: Prisma.SubscriptionCreateNestedManyWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
 }
 
@@ -543,9 +475,9 @@ export type TenantUncheckedCreateWithoutFeaturesInput = {
   name: string
   slug: string
   status?: $Enums.Status
-  planId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  subscriptions?: Prisma.SubscriptionUncheckedCreateNestedManyWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
 }
 
@@ -572,7 +504,7 @@ export type TenantUpdateWithoutFeaturesInput = {
   status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  plan?: Prisma.PlanUpdateOneWithoutTenantsNestedInput
+  subscriptions?: Prisma.SubscriptionUpdateManyWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
 }
 
@@ -581,9 +513,9 @@ export type TenantUncheckedUpdateWithoutFeaturesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
-  planId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  subscriptions?: Prisma.SubscriptionUncheckedUpdateManyWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
 }
 
@@ -594,7 +526,7 @@ export type TenantCreateWithoutUsersInput = {
   status?: $Enums.Status
   createdAt?: Date | string
   updatedAt?: Date | string
-  plan?: Prisma.PlanCreateNestedOneWithoutTenantsInput
+  subscriptions?: Prisma.SubscriptionCreateNestedManyWithoutTenantInput
   features?: Prisma.TenantFeatureCreateNestedManyWithoutTenantInput
 }
 
@@ -603,9 +535,9 @@ export type TenantUncheckedCreateWithoutUsersInput = {
   name: string
   slug: string
   status?: $Enums.Status
-  planId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  subscriptions?: Prisma.SubscriptionUncheckedCreateNestedManyWithoutTenantInput
   features?: Prisma.TenantFeatureUncheckedCreateNestedManyWithoutTenantInput
 }
 
@@ -632,7 +564,7 @@ export type TenantUpdateWithoutUsersInput = {
   status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  plan?: Prisma.PlanUpdateOneWithoutTenantsNestedInput
+  subscriptions?: Prisma.SubscriptionUpdateManyWithoutTenantNestedInput
   features?: Prisma.TenantFeatureUpdateManyWithoutTenantNestedInput
 }
 
@@ -641,50 +573,10 @@ export type TenantUncheckedUpdateWithoutUsersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
-  planId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  subscriptions?: Prisma.SubscriptionUncheckedUpdateManyWithoutTenantNestedInput
   features?: Prisma.TenantFeatureUncheckedUpdateManyWithoutTenantNestedInput
-}
-
-export type TenantCreateManyPlanInput = {
-  id?: string
-  name: string
-  slug: string
-  status?: $Enums.Status
-  createdAt?: Date | string
-  updatedAt?: Date | string
-}
-
-export type TenantUpdateWithoutPlanInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
-  features?: Prisma.TenantFeatureUpdateManyWithoutTenantNestedInput
-}
-
-export type TenantUncheckedUpdateWithoutPlanInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
-  features?: Prisma.TenantFeatureUncheckedUpdateManyWithoutTenantNestedInput
-}
-
-export type TenantUncheckedUpdateManyWithoutPlanInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -693,11 +585,13 @@ export type TenantUncheckedUpdateManyWithoutPlanInput = {
  */
 
 export type TenantCountOutputType = {
+  subscriptions: number
   users: number
   features: number
 }
 
 export type TenantCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  subscriptions?: boolean | TenantCountOutputTypeCountSubscriptionsArgs
   users?: boolean | TenantCountOutputTypeCountUsersArgs
   features?: boolean | TenantCountOutputTypeCountFeaturesArgs
 }
@@ -710,6 +604,13 @@ export type TenantCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Exten
    * Select specific fields to fetch from the TenantCountOutputType
    */
   select?: Prisma.TenantCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountSubscriptionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SubscriptionWhereInput
 }
 
 /**
@@ -732,10 +633,9 @@ export type TenantSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   name?: boolean
   slug?: boolean
   status?: boolean
-  planId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  plan?: boolean | Prisma.Tenant$planArgs<ExtArgs>
+  subscriptions?: boolean | Prisma.Tenant$subscriptionsArgs<ExtArgs>
   users?: boolean | Prisma.Tenant$usersArgs<ExtArgs>
   features?: boolean | Prisma.Tenant$featuresArgs<ExtArgs>
   _count?: boolean | Prisma.TenantCountOutputTypeDefaultArgs<ExtArgs>
@@ -746,10 +646,8 @@ export type TenantSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   name?: boolean
   slug?: boolean
   status?: boolean
-  planId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  plan?: boolean | Prisma.Tenant$planArgs<ExtArgs>
 }, ExtArgs["result"]["tenant"]>
 
 export type TenantSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -757,10 +655,8 @@ export type TenantSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   name?: boolean
   slug?: boolean
   status?: boolean
-  planId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  plan?: boolean | Prisma.Tenant$planArgs<ExtArgs>
 }, ExtArgs["result"]["tenant"]>
 
 export type TenantSelectScalar = {
@@ -768,29 +664,24 @@ export type TenantSelectScalar = {
   name?: boolean
   slug?: boolean
   status?: boolean
-  planId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type TenantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "status" | "planId" | "createdAt" | "updatedAt", ExtArgs["result"]["tenant"]>
+export type TenantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["tenant"]>
 export type TenantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  plan?: boolean | Prisma.Tenant$planArgs<ExtArgs>
+  subscriptions?: boolean | Prisma.Tenant$subscriptionsArgs<ExtArgs>
   users?: boolean | Prisma.Tenant$usersArgs<ExtArgs>
   features?: boolean | Prisma.Tenant$featuresArgs<ExtArgs>
   _count?: boolean | Prisma.TenantCountOutputTypeDefaultArgs<ExtArgs>
 }
-export type TenantIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  plan?: boolean | Prisma.Tenant$planArgs<ExtArgs>
-}
-export type TenantIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  plan?: boolean | Prisma.Tenant$planArgs<ExtArgs>
-}
+export type TenantIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type TenantIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
 
 export type $TenantPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Tenant"
   objects: {
-    plan: Prisma.$PlanPayload<ExtArgs> | null
+    subscriptions: Prisma.$SubscriptionPayload<ExtArgs>[]
     users: Prisma.$UserPayload<ExtArgs>[]
     features: Prisma.$TenantFeaturePayload<ExtArgs>[]
   }
@@ -799,7 +690,6 @@ export type $TenantPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     name: string
     slug: string
     status: $Enums.Status
-    planId: string | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["tenant"]>
@@ -1196,7 +1086,7 @@ readonly fields: TenantFieldRefs;
  */
 export interface Prisma__TenantClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  plan<T extends Prisma.Tenant$planArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$planArgs<ExtArgs>>): Prisma.Prisma__PlanClient<runtime.Types.Result.GetResult<Prisma.$PlanPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  subscriptions<T extends Prisma.Tenant$subscriptionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$subscriptionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SubscriptionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   users<T extends Prisma.Tenant$usersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$usersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   features<T extends Prisma.Tenant$featuresArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$featuresArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TenantFeaturePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -1232,7 +1122,6 @@ export interface TenantFieldRefs {
   readonly name: Prisma.FieldRef<"Tenant", 'String'>
   readonly slug: Prisma.FieldRef<"Tenant", 'String'>
   readonly status: Prisma.FieldRef<"Tenant", 'Status'>
-  readonly planId: Prisma.FieldRef<"Tenant", 'String'>
   readonly createdAt: Prisma.FieldRef<"Tenant", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Tenant", 'DateTime'>
 }
@@ -1484,10 +1373,6 @@ export type TenantCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensio
    */
   data: Prisma.TenantCreateManyInput | Prisma.TenantCreateManyInput[]
   skipDuplicates?: boolean
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.TenantIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1558,10 +1443,6 @@ export type TenantUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensio
    * Limit how many Tenants to update.
    */
   limit?: number
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.TenantIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1631,22 +1512,27 @@ export type TenantDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Intern
 }
 
 /**
- * Tenant.plan
+ * Tenant.subscriptions
  */
-export type Tenant$planArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Tenant$subscriptionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Plan
+   * Select specific fields to fetch from the Subscription
    */
-  select?: Prisma.PlanSelect<ExtArgs> | null
+  select?: Prisma.SubscriptionSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Plan
+   * Omit specific fields from the Subscription
    */
-  omit?: Prisma.PlanOmit<ExtArgs> | null
+  omit?: Prisma.SubscriptionOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.PlanInclude<ExtArgs> | null
-  where?: Prisma.PlanWhereInput
+  include?: Prisma.SubscriptionInclude<ExtArgs> | null
+  where?: Prisma.SubscriptionWhereInput
+  orderBy?: Prisma.SubscriptionOrderByWithRelationInput | Prisma.SubscriptionOrderByWithRelationInput[]
+  cursor?: Prisma.SubscriptionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SubscriptionScalarFieldEnum | Prisma.SubscriptionScalarFieldEnum[]
 }
 
 /**

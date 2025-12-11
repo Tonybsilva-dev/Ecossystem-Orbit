@@ -75,14 +75,16 @@ describe("TenantService.create", () => {
     const tenant = await TenantService.create(validData);
 
     expect(tenant).toBeDefined();
-    expect(tenant.planId).toBeNull();
+    // planId was removed, check if subscriptions created (if applicable) or just tenant created
+    expect(tenant.users).toBeDefined();
+    expect(tenant.subscriptions).toBeDefined();
   });
 
   it("deve rejeitar criação com slug duplicado", async () => {
     // Usar timestamp para garantir slug único mesmo em execução paralela
     const timestamp = Date.now();
     const uniqueSlug = `test-duplicate-slug-${timestamp}`;
-    
+
     const validData: CreateTenantInput = {
       name: "Test Tenant",
       slug: uniqueSlug,
@@ -94,7 +96,7 @@ describe("TenantService.create", () => {
 
     // Criar primeiro tenant
     const firstTenant = await TenantService.create(validData);
-    
+
     // Verificar que o primeiro tenant foi criado
     expect(firstTenant).toBeDefined();
     expect(firstTenant.slug).toBe(uniqueSlug);
@@ -127,7 +129,7 @@ describe("TenantService.create", () => {
     const uniqueEmail = `test-duplicate-email-${timestamp}@example.com`;
     const uniqueSlug1 = `test-tenant-1-${timestamp}`;
     const uniqueSlug2 = `test-tenant-2-${timestamp}`;
-    
+
     const validData: CreateTenantInput = {
       name: "Test Tenant",
       slug: uniqueSlug1,
@@ -139,7 +141,7 @@ describe("TenantService.create", () => {
 
     // Criar primeiro tenant
     const firstTenant = await TenantService.create(validData);
-    
+
     // Verificar que o primeiro tenant foi criado
     expect(firstTenant).toBeDefined();
     expect(firstTenant.users[0].email).toBe(uniqueEmail);
@@ -536,12 +538,10 @@ describe("TenantService.findTenantBySlug", () => {
     expect(foundTenant).toHaveProperty("name");
     expect(foundTenant).toHaveProperty("slug");
     expect(foundTenant).toHaveProperty("status");
-    expect(foundTenant).toHaveProperty("planId");
     expect(foundTenant).toHaveProperty("createdAt");
     expect(foundTenant).toHaveProperty("updatedAt");
     // Verificar que campos não selecionados não estão presentes
     expect(foundTenant).not.toHaveProperty("users");
-    expect(foundTenant).not.toHaveProperty("plan");
     expect(foundTenant).not.toHaveProperty("features");
   });
 
@@ -621,14 +621,14 @@ describe("TenantService.getAllTenants", () => {
 
     expect(tenants).toBeDefined();
     expect(Array.isArray(tenants)).toBe(true);
-    
+
     // Filtrar apenas os tenants de teste criados neste teste
-    const testTenants = tenants.filter((t) => 
-      t.slug === "test-tenant-1" || 
-      t.slug === "test-tenant-2" || 
+    const testTenants = tenants.filter((t) =>
+      t.slug === "test-tenant-1" ||
+      t.slug === "test-tenant-2" ||
       t.slug === "test-tenant-3"
     );
-    
+
     expect(testTenants.length).toBe(3);
 
     // Verificar que os tenants criados estão na lista
