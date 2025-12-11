@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/shared/ui/Button';
 import { signIn } from './client';
-import { useNavigate } from 'react-router';
+import { useNavigate, Link } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -141,6 +141,11 @@ export function LoginPage() {
             {loading ? 'Acessando...' : 'Acessar Backoffice'}
           </Button>
         </form>
+        <div className="text-center">
+          <Link to="/register" className="text-xs text-chrome-400 hover:text-chrome-200 underline">
+            Quer se tornar um parceiro? Crie sua conta
+          </Link>
+        </div>
       </div>
     </div>
   );

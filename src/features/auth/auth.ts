@@ -47,7 +47,30 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
-          // Default logic if needed
+          // Sync with Orbit Control Plane
+          try {
+            const orbitApi = process.env.ORBIT_API_URL || 'http://localhost:5173/api';
+            const orbitSecret = process.env.ORBIT_API_SECRET; // Ensure this is set in .env
+
+            if (orbitSecret && user.email) {
+              // Fire and forget - or await if critical
+              await fetch(`${orbitApi}/tenants/sync`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${orbitSecret}`,
+                  'X-Tenant-Id': user.id, // Context isolation
+                },
+                body: JSON.stringify({
+                  name: user.name || user.email.split('@')[0], // Default name
+                  email: user.email,
+                  externalId: user.id,
+                }),
+              });
+            }
+          } catch (e) {
+            console.error('Failed to sync with Orbit:', e);
+          }
         },
       },
     },
@@ -72,7 +95,13 @@ export const auth = betterAuth({
               if (response && response.user && response.user.barbershopId) {
                 const shop = await prisma.barbershop.findUnique({
                   where: { id: response.user.barbershopId },
-                  select: { licenseStatus: true, name: true, id: true },
+                  select: {
+                    licenseStatus: true,
+                    name: true,
+                    id: true,
+                    planType: true,
+                    modules: true,
+                  },
                 });
 
                 if (shop) {

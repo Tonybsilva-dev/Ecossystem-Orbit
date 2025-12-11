@@ -4,7 +4,10 @@ import { hc } from 'hono/client';
 import type { AppType } from '../../server';
 
 // Client for Hono API
-const client = hc<AppType>('http://localhost:5180');
+// Client for Hono API with Credentials for Session persistence
+const client = hc<AppType>('/', {
+  fetch: (input, init) => fetch(input, { ...init, credentials: 'include' }),
+});
 
 export interface BarbershopState {
   data: {

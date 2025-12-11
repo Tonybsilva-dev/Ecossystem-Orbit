@@ -80,7 +80,8 @@ export function OnboardingPage() {
     try {
       await updateBarbershop(data);
       toast.success('Configuração concluída com sucesso!');
-      navigate('/login');
+      // Force reload to refresh session with new Role and BarbershopID
+      window.location.href = '/dashboard/subscription';
     } catch (error) {
       console.error(error);
       toast.error('Erro ao salvar configurações.');

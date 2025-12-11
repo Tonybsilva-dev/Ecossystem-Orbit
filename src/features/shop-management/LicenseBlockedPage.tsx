@@ -20,7 +20,12 @@ export function LicenseBlockedPage() {
         <Button variant="outline" onClick={() => window.history.back()}>
           Voltar
         </Button>
-        <Button variant="default">Ativar Licença Agora</Button>
+        <Button
+          variant="default"
+          onClick={() => (window.location.href = '/dashboard/subscription')}
+        >
+          Ativar Licença Agora
+        </Button>
       </div>
 
       <div className="mt-12 p-4 bg-shop-800/50 rounded-lg border border-leather-800/30 max-w-xl">

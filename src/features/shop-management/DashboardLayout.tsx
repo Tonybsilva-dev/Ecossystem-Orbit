@@ -101,7 +101,7 @@ export function DashboardLayout() {
           </div>
         )}
 
-        <header className="h-16 border-b border-leather-800/30 bg-shop-900/50 backdrop-blur-sm sticky top-0 z-10 flex items-center justify-between px-8">
+        <header className="h-16 min-h-[4rem] border-b border-leather-800/30 bg-shop-900/50 backdrop-blur-sm sticky top-0 z-10 flex items-center justify-between px-8">
           <h2 className="font-serif text-lg text-chrome-100">
             {navItems.find((i) => i.href === location.pathname)?.label || 'Dashboard'}
           </h2>

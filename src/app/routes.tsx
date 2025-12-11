@@ -3,6 +3,7 @@ import { Home } from '../features/home/Home';
 import { AppLayout } from './AppLayout';
 import { AuthLayout } from './AuthLayout';
 import { LoginPage } from '../features/auth/LoginPage';
+import { RegisterPage } from '../features/auth/RegisterPage';
 import { RequireRole } from '../features/auth/RequireRole';
 import { Component as Schedule } from '../features/scheduling/routes';
 import { DashboardLayout } from '../features/shop-management/DashboardLayout';
@@ -12,6 +13,7 @@ import { ShopPage } from '../features/catalog/ShopPage';
 import { CheckoutPage } from '../features/catalog/CheckoutPage';
 import { OrderSuccessPage } from '../features/catalog/OrderSuccessPage';
 import { OnboardingPage } from '../features/onboarding/OnboardingPage';
+import { SubscriptionPage } from '../features/subscription/SubscriptionPage';
 
 import { RequireConfig } from '../features/shop-management/RequireConfig';
 import { RequireLicense } from '../features/shop-management/RequireLicense';
@@ -73,6 +75,10 @@ export const router = createBrowserRouter([
             element: <DashboardHome />,
           },
           {
+            path: 'subscription',
+            element: <SubscriptionPage />,
+          },
+          {
             element: <RequireLicense />,
             children: [
               {
@@ -86,12 +92,15 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: '/login',
     element: <AuthLayout />,
     children: [
       {
-        index: true,
+        path: '/login',
         element: <LoginPage />,
+      },
+      {
+        path: '/register',
+        element: <RegisterPage />,
       },
     ],
   },

@@ -10,6 +10,7 @@ datasource db {
 model Barbershop {
   id            String        @id @default(uuid())
   name          String
+  slug          String?       @unique
   cnpj          String?
   phone         String?
   address       String?
