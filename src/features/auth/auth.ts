@@ -92,25 +92,39 @@ export const auth = betterAuth({
             handler: async (context: any) => {
               const response = context.response;
 
-              if (response && response.user && response.user.barbershopId) {
-                const shop = await prisma.barbershop.findUnique({
-                  where: { id: response.user.barbershopId },
+              if (response && response.user) {
+                // Always fetch fresh user data including role and barbershopId
+                const dbUser = await prisma.user.findUnique({
+                  where: { id: response.user.id },
                   select: {
-                    licenseStatus: true,
-                    name: true,
-                    id: true,
-                    planType: true,
-                    modules: true,
+                    role: true,
+                    barbershopId: true,
                   },
                 });
 
-                if (shop) {
+                let shop = null;
+                if (dbUser?.barbershopId) {
+                  shop = await prisma.barbershop.findUnique({
+                    where: { id: dbUser.barbershopId },
+                    select: {
+                      licenseStatus: true,
+                      name: true,
+                      id: true,
+                      planType: true,
+                      modules: true,
+                    },
+                  });
+                }
+
+                if (dbUser || shop) {
                   return {
                     ...context,
                     response: {
                       ...response,
                       user: {
                         ...response.user,
+                        role: dbUser?.role || response.user.role,
+                        barbershopId: dbUser?.barbershopId || response.user.barbershopId, // Ensure ID is sync
                         barbershop: shop,
                       },
                     },
