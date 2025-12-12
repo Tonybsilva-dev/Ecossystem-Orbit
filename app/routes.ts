@@ -12,4 +12,5 @@ export default [
   ]),
   route("api/validate", "routes/api.validate.ts"),
   route("api/products/:slug", "routes/api.products.$slug.ts"),
+  route("api/subscriptions", "routes/api.subscriptions.ts"),
 ] satisfies RouteConfig;
