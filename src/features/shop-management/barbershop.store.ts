@@ -69,6 +69,7 @@ export const useBarbershopStore = create<BarbershopState>()(
           }
         } catch (error) {
           console.error('Failed to update barbershop:', error);
+          throw error;
         } finally {
           set({ isLoading: false });
         }

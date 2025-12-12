@@ -17,12 +17,17 @@ export function RequireConfig() {
   const isLoading = shopLoading || authLoading;
 
   useEffect(() => {
-    if (!isLoading && !data && location.pathname !== '/onboarding') {
-      if (session) {
+    if (!isLoading && location.pathname !== '/onboarding') {
+      // Priority Check: If user is logged in but has no barbershopId, force onboarding
+      if (session && !session.user.barbershopId) {
+        navigate('/onboarding');
+        return;
+      }
+
+      // Secondary Check: If store data failed to load (and we expect it), redirect
+      if (!data && session) {
         navigate('/onboarding');
       }
-      // If no session, we stay here (render Outlet).
-      // Ideally, the Home page handles the "empty" state or shows a generic landing.
     }
   }, [isLoading, data, session, navigate, location.pathname]);
 

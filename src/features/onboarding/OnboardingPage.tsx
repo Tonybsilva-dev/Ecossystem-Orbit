@@ -1,7 +1,7 @@
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useNavigate } from 'react-router';
+// import { useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -16,26 +16,33 @@ import { AddressStep } from './components/AddressStep';
 import { LocationMapStep } from './components/LocationMapStep';
 import { LicenseStep } from './components/LicenseStep';
 
-const schema = z.object({
-  name: z.string().min(3, 'Nome muito curto'),
-  cnpj: z.string().optional(),
-  phone: z.string().optional(),
-  address: z.string().min(5, 'Endereço obrigatório'),
-  number: z.string().min(1, 'Número obrigatório'),
-  neighborhood: z.string().min(3, 'Bairro obrigatório'),
-  complement: z.string().optional(),
-  state: z.string().min(2, 'Selecione um estado'),
-  city: z.string().min(2, 'Selecione uma cidade'),
-  zipCode: z.string().min(8, 'CEP obrigatório'),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  licenseKey: z.string().min(5, 'Chave inválida'),
-});
+const schema = z
+  .object({
+    name: z.string().min(3, 'Nome muito curto'),
+    cnpj: z.string().optional(),
+    phone: z.string().optional(),
+    address: z.string().min(5, 'Endereço obrigatório'),
+    number: z.string().min(1, 'Número obrigatório'),
+    neighborhood: z.string().min(3, 'Bairro obrigatório'),
+    complement: z.string().optional(),
+    state: z.string().min(2, 'Selecione um estado'),
+    city: z.string().min(2, 'Selecione uma cidade'),
+    zipCode: z.string().min(8, 'CEP obrigatório'),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
+    licenseKey: z.string().optional(), // Now optional because user may choose Plan instead
+    planId: z.string().optional(),
+    interval: z.enum(['MONTHLY', 'YEARLY']).optional(),
+  })
+  .refine((data) => data.licenseKey || data.planId, {
+    message: 'Você deve ativar uma licença ou escolher um plano.',
+    path: ['licenseKey'],
+  });
 
 export type OnboardingFormData = z.infer<typeof schema>;
 
 export function OnboardingPage() {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const { updateBarbershop, isLoading } = useBarbershopStore();
   const { step, nextStep, prevStep } = useOnboardingStore();
 
@@ -53,6 +60,8 @@ export function OnboardingPage() {
       state: '',
       city: '',
       licenseKey: '',
+      planId: '',
+      interval: 'MONTHLY',
     },
     mode: 'onChange',
   });
@@ -81,7 +90,7 @@ export function OnboardingPage() {
       await updateBarbershop(data);
       toast.success('Configuração concluída com sucesso!');
       // Force reload to refresh session with new Role and BarbershopID
-      window.location.href = '/dashboard/subscription';
+      window.location.href = '/dashboard';
     } catch (error) {
       console.error(error);
       toast.error('Erro ao salvar configurações.');
