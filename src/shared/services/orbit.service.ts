@@ -16,7 +16,7 @@ export interface Product {
   plans: Plan[];
 }
 
-const ORBIT_API_URL = import.meta.env.VITE_ORBIT_API_URL || 'http://localhost:5173'; // Default to Orbit dev port
+const ORBIT_API_URL = import.meta.env.VITE_ORBIT_API_URL || 'http://localhost:5173'; // Orbit usually runs on 5174 if 5173 is taken
 
 export const OrbitService = {
   getPlans: async (slug: string): Promise<Product | null> => {
@@ -29,6 +29,29 @@ export const OrbitService = {
       return await response.json();
     } catch (error) {
       console.error('OrbitService Error:', error);
+      return null;
+    }
+  },
+
+  createSubscription: async (data: {
+    tenantName: string;
+    email: string;
+    planId: string;
+    slug?: string;
+  }): Promise<{ licenseKey: string } | null> => {
+    try {
+      const response = await fetch(`${ORBIT_API_URL}/api/subscriptions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create subscription via Orbit');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('OrbitService Subscription Error:', error);
       return null;
     }
   },
