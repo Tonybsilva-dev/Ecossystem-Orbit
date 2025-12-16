@@ -41,7 +41,20 @@ export class ProductService {
   }
 
   static async createProduct(data: { name: string; slug: string; description?: string; logo?: string; apiKey?: string }) {
-    const apiKey = data.apiKey || `pk_${crypto.randomUUID().replace(/-/g, '')}`;
+    let apiKey = data.apiKey;
+
+    if (!apiKey) {
+      const initials = data.name
+        .split(' ')
+        .map(word => word[0])
+        .join('')
+        .toLowerCase()
+        .substring(0, 4); // Max 4 chars for initials
+
+      const randomSuffix = crypto.randomBytes(3).toString('hex').substring(0, 5); // 5 chars hex
+      apiKey = `${initials}_live_${randomSuffix}`;
+    }
+
     return prisma.product.create({
       data: { ...data, apiKey },
     });
@@ -62,9 +75,11 @@ export class ProductService {
 
     if (hasSubs > 0) throw new Error("Cannot delete product with active subscriptions.");
 
-    return prisma.product.delete({
-      where: { id },
-    });
+    return prisma.$transaction([
+      prisma.plan.deleteMany({ where: { productId: id } }),
+      prisma.feature.deleteMany({ where: { productId: id } }),
+      prisma.product.delete({ where: { id } })
+    ]);
   }
 
   // --- Plan Management ---
