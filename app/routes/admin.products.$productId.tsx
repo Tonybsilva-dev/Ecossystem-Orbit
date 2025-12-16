@@ -1,5 +1,5 @@
-import { type ActionFunctionArgs, type LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useFetcher, useNavigate, Link } from "react-router";
+import { type ActionFunctionArgs, type LoaderFunctionArgs, redirect } from "react-router";
+import { useLoaderData, useFetcher, useNavigate, Link, useSubmit } from "react-router";
 import { useState, useEffect } from "react";
 import { ProductService } from "../core/domain/product/product.service";
 
@@ -52,7 +52,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       if (intent === "delete_product") {
         const id = String(formData.get("id"));
         await ProductService.deleteProduct(id);
-        return { redirect: "/admin/products" };
+        return redirect("/admin/products");
       }
     }
 
@@ -243,15 +243,17 @@ export default function ProductDetails() {
     }
   };
 
+  const submit = useSubmit();
+
   const handleDelete = () => {
     if (!deleteConfirmation) return;
 
     if (deleteConfirmation.type === 'PLAN') {
       fetcher.submit({ intent: "delete_plan", id: deleteConfirmation.id }, { method: "delete" });
     } else if (deleteConfirmation.type === 'PRODUCT') {
-      fetcher.submit({ intent: "delete_product", id: deleteConfirmation.id }, { method: "delete" });
+      submit({ intent: "delete_product", id: deleteConfirmation.id }, { method: "delete" });
     }
-    // Dialog will close via useEffect when fetcher returns success
+    // Dialog will close via unmount or useEffect when fetcher returns success
   };
 
   return (
@@ -280,13 +282,24 @@ export default function ProductDetails() {
               <h1 className="text-2xl font-bold text-text-primary mb-1">{product.name}</h1>
               <p className="text-sm text-text-secondary max-w-2xl">{product.description}</p>
             </div>
-            <button
-              onClick={openProductModal}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-btn bg-panel hover:bg-panel/80 text-xs text-text-secondary hover:text-white border border-transparent hover:border-quantum/30 transition-all font-mono"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-              EDIT_CONFIG
-            </button>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={openProductModal}
+                className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-btn bg-panel hover:bg-panel/80 text-xs text-text-secondary hover:text-white border border-transparent hover:border-quantum/30 transition-all font-mono"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                EDIT_CONFIG
+              </button>
+              <button
+                onClick={() => setDeleteConfirmation({ type: 'PRODUCT', id: product.id })}
+                className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-btn bg-panel hover:bg-error/10 text-xs text-error/80 hover:text-error border border-transparent hover:border-error/30 transition-all font-mono"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                DELETE_PRODUCT
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 mt-4">
@@ -651,7 +664,8 @@ export default function ProductDetails() {
                 <h3 className="text-xl font-bold text-white mb-2">Confirm Deletion</h3>
                 <p className="text-sm text-text-secondary mb-6">
                   Are you sure you want to permanently delete this {deleteConfirmation.type === 'PLAN' ? 'Plan' : 'Product'}? <br />
-                  <span className="text-error font-bold block mt-1">This action cannot be undone.</span>
+                  <span className="text-error font-bold block mt-1">This will also delete associated plans and features.</span>
+                  <span className="text-error/80 text-xs block mt-1">This action cannot be undone.</span>
                 </p>
 
                 <div className="flex gap-3 justify-center">
