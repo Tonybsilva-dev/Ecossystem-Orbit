@@ -1,4 +1,5 @@
 import { prisma } from "../../db/prisma.server";
+import crypto from "node:crypto";
 import type { PlanInterval } from "../../../generated/client/enums";
 
 export class ProductService {
@@ -40,8 +41,9 @@ export class ProductService {
   }
 
   static async createProduct(data: { name: string; slug: string; description?: string; logo?: string; apiKey?: string }) {
+    const apiKey = data.apiKey || `pk_${crypto.randomUUID().replace(/-/g, '')}`;
     return prisma.product.create({
-      data,
+      data: { ...data, apiKey },
     });
   }
 
