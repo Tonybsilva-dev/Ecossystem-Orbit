@@ -28,6 +28,11 @@ export type Product = Prisma.ProductModel
  */
 export type Plan = Prisma.PlanModel
 /**
+ * Model Feature
+ * 
+ */
+export type Feature = Prisma.FeatureModel
+/**
  * Model Subscription
  * 
  */

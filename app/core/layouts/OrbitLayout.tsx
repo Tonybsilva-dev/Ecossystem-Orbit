@@ -95,7 +95,7 @@ export function OrbitLayout({ children }: { children: React.ReactNode }) {
         {/* Scrollable Content */}
         <div className="flex-1 overflow-auto p-6 bg-void relative">
           {/* Grid Pattern Background */}
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 pointer-events-none"></div>
+          <div className="fixed inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 pointer-events-none"></div>
           <div className="relative z-10 max-w-6xl mx-auto">
             {children}
           </div>

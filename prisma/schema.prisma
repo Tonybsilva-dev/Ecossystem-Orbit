@@ -36,7 +36,9 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  plans Plan[]
+  plans     Plan[]
+  features  Feature[] // Features catalog
+
 
   @@map("products")
 }
@@ -52,15 +54,33 @@ model Plan {
   name      String
   price     Decimal      @db.Decimal(10, 2) @default(0.00)
   interval  PlanInterval @default(MONTHLY)
-  features  String[]     // Array of feature strings (e.g., ['COUPONS', 'WHATSAPP'])
+  features  String[]     // Legacy: Array of feature strings
+  limits    Json?        @default("{}") // New: Quota limits
   isActive  Boolean      @default(true)
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 
   product       Product        @relation(fields: [productId], references: [id])
   subscriptions Subscription[]
+  includedFeatures Feature[]   @relation("PlanFeatures")
 
   @@map("plans")
+}
+
+model Feature {
+  id        String   @id @default(uuid())
+  productId String
+  key       String
+  name      String
+  description String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product   Product  @relation(fields: [productId], references: [id])
+  plans     Plan[]   @relation("PlanFeatures")
+
+  @@unique([productId, key])
+  @@map("features")
 }
 
 model Subscription {

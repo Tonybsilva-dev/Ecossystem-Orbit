@@ -171,7 +171,7 @@ npx prisma generate
 npm run dev
 ```
 
-Aplicação disponível em `http://localhost:5173`
+Aplicação disponível em `http://localhost:5179`
 
 ### Testes
 

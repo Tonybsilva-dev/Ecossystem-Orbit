@@ -68,6 +68,7 @@ export async function validateAccess(
   return {
     valid: true,
     capabilities,
+    limits: subscription.plan.limits,
   };
 }
 
@@ -77,7 +78,7 @@ export async function validateAccessWithResolver(
 ): Promise<ValidateAccessOutput> {
   const subscription = await prisma.subscription.findUnique({
     where: { licenseKey: input.licenseKey },
-    include: { tenant: true }
+    include: { tenant: true, plan: true }
   });
 
   if (!subscription || (subscription.status !== "ACTIVE" && subscription.status !== "TRIAL") || subscription.tenant.status !== "ACTIVE") {
@@ -89,6 +90,7 @@ export async function validateAccessWithResolver(
   return {
     valid: true,
     capabilities,
+    limits: subscription.plan.limits,
   };
 }
 

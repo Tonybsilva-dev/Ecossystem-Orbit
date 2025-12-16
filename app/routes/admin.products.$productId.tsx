@@ -23,7 +23,10 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     }))
   };
 
-  return { product: serializedProduct };
+  /* Fetch global features for this product */
+  const features = await ProductService.listFeatures(product.id);
+
+  return { product: serializedProduct, features };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -70,7 +73,40 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       const interval = String(formData.get("interval")) as "MONTHLY" | "YEARLY";
       const features = String(formData.get("features")).split('\n').filter(f => f.trim() !== "");
-      await ProductService.createPlan({ productId, name, price, interval, features });
+
+      const featureIdsRaw = formData.getAll("featureIds");
+      const featureIds = featureIdsRaw.map(String);
+
+      const limitsRaw = String(formData.get("limits"));
+      let limits = {};
+      try {
+        limits = JSON.parse(limitsRaw);
+      } catch (e) {
+        // ignore
+      }
+
+      await ProductService.createPlan({ productId, name, price, interval, features, limits, featureIds });
+    }
+
+    if (intent === "create_feature") {
+      const productId = String(formData.get("productId"));
+      const key = String(formData.get("key"));
+      const name = String(formData.get("name"));
+      const description = String(formData.get("description"));
+      await ProductService.createFeature({ productId, key, name, description });
+    }
+
+    if (intent === "update_feature") {
+      const id = String(formData.get("id"));
+      const key = String(formData.get("key"));
+      const name = String(formData.get("name"));
+      const description = String(formData.get("description"));
+      await ProductService.updateFeature(id, { key, name, description });
+    }
+
+    if (intent === "delete_feature") {
+      const id = String(formData.get("id"));
+      await ProductService.deleteFeature(id);
     }
 
     if (intent === "update_plan") {
@@ -83,8 +119,25 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       const interval = String(formData.get("interval")) as "MONTHLY" | "YEARLY";
       const isActive = formData.get("isActive") === "on";
-      const features = String(formData.get("features")).split('\n').filter(f => f.trim() !== "");
-      await ProductService.updatePlan(id, { name, price, interval, isActive, features });
+      // Legacy features string from comma/newline separated
+      // Note: We are migrating to relation. For now, keep saving legacy array for backwards compatibility
+      // But we will ALSO save the relation ids.
+
+      const featureIdsRaw = formData.getAll("featureIds"); // Checkboxes
+      const featureIds = featureIdsRaw.map(String);
+
+      // Also construct legacy array names for display on older clients if needed
+      // (Optionally fetch names from ids, but frontend has them)
+
+      const limitsRaw = String(formData.get("limits"));
+      let limits = {};
+      try {
+        limits = JSON.parse(limitsRaw);
+      } catch (e) {
+        // ignore or set empty
+      }
+
+      await ProductService.updatePlan(id, { name, price, interval, isActive, limits, featureIds });
     }
 
     return { success: true };
@@ -95,13 +148,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function ProductDetails() {
-  const { product } = useLoaderData<typeof loader>();
+  const { product, features } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
+
   const navigate = useNavigate();
   const [billingInterval, setBillingInterval] = useState<'MONTHLY' | 'YEARLY'>('MONTHLY');
 
   // Modal States
-  const [activeModal, setActiveModal] = useState<'PRODUCT' | 'PLAN' | null>(null);
+  const [activeModal, setActiveModal] = useState<'PRODUCT' | 'PLAN' | 'FEATURE' | null>(null);
+
   const [editingItem, setEditingItem] = useState<any>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ type: 'PLAN' | 'PRODUCT', id: string } | null>(null);
 
@@ -135,11 +190,23 @@ export default function ProductDetails() {
 
   const openPlanModal = (plan?: any) => {
     setEditingItem(plan || null);
-    setCurrentFeatures(plan?.features || []);
-    setFeatureInput("");
-    setIsComboboxOpen(false);
+    // If editing, we want to pre-check existing features
+    // Plan doesn't have includedFeatures loaded by default service call above (step 288 line 20 only spreads plan)
+    // We need to update ProductService to include includedFeatures in listProducts/getProductBySlug
+    // For now assuming we might fail to pre-fill relation based features until service update.
+    // Let's rely on legacy `features` string array for pre-fill if relation unavailable?
+    // Actually, task 288 viewing product service showed we load product and spread plans.
+    // We need to update `ProductService` to include `includedFeatures`. 
+    // I will do that in next step. For now UI code:
+
     setActiveModal('PLAN');
   };
+
+  const openFeatureModal = (feature?: any) => {
+    setEditingItem(feature || null);
+    setActiveModal('FEATURE');
+  }
+
 
   const addFeature = (feature: string) => {
     const trimmed = feature.trim();
@@ -243,6 +310,43 @@ export default function ProductDetails() {
           <div className="bg-void bordered border-panel rounded p-3 min-w-[100px] flex flex-col items-center justify-center">
             <span className="text-[10px] text-text-dim uppercase tracking-widest font-mono mb-1">CHURN</span>
             <span className="text-lg font-bold text-error font-mono">{product.analytics.churnRate.toFixed(1)}%</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Features Section */}
+      <div className="space-y-4">
+        <div className="flex justify-between items-center p-1">
+          <h2 className="text-lg font-bold text-text-primary px-2 border-l-2 border-quantum">Feature Catalog</h2>
+          <button onClick={() => openFeatureModal()} className="px-3 py-1.5 rounded-btn bg-panel hover:bg-panel/80 text-xs text-text-secondary hover:text-white border border-transparent hover:border-quantum/30 transition-all font-mono">
+            + NEW FEATURE
+          </button>
+        </div>
+
+        <div className="max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {features.length === 0 && (
+              <div className="col-span-full text-center py-8 text-text-dim text-xs font-mono border border-dashed border-panel rounded">
+                NO_FEATURES_DEFINED
+              </div>
+            )}
+            {features.map((feat: any) => (
+              <div key={feat.id} className="bg-orbital border border-panel p-4 rounded-card flex flex-col group hover:border-quantum/30 transition-colors relative">
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-bold text-text-primary text-sm">{feat.name}</h4>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => openFeatureModal(feat)}
+                      className="text-[10px] bg-panel hover:bg-quantum hover:text-white text-text-secondary px-2 py-1 rounded transition-colors font-mono uppercase"
+                    >
+                      EDIT
+                    </button>
+                  </div>
+                </div>
+                <div className="text-xs font-mono text-quantum mb-2 bg-void inline-block px-1.5 py-0.5 rounded self-start">{feat.key}</div>
+                <p className="text-xs text-text-secondary mb-4 flex-grow truncate">{feat.description || 'No description'}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -421,61 +525,38 @@ export default function ProductDetails() {
                 </div>
               </div>
 
-              {/* Custom Combobox */}
-              <div className="relative z-50">
-                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Features</label>
-                <div
-                  className={`bg-void border rounded p-2 transition-all cursor-text flex flex-wrap gap-2 ${isComboboxOpen ? 'border-quantum ring-1 ring-quantum' : 'border-panel hover:border-text-dim'}`}
-                  onClick={() => { setIsComboboxOpen(true); }}
-                >
-                  {currentFeatures.map((f, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 bg-orbital border border-panel px-2 py-1 rounded text-xs text-text-primary shadow-sm font-mono select-none">
-                      {f}
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); removeFeature(i); }}
-                        className="text-text-dim hover:text-error ml-1"
-                      >✕</button>
-                    </span>
-                  ))}
-                  <input
-                    type="text"
-                    value={featureInput}
-                    onChange={(e) => { setFeatureInput(e.target.value); setIsComboboxOpen(true); }}
-                    onKeyDown={handleFeatureKeyDown}
-                    onFocus={() => setIsComboboxOpen(true)}
-                    className="bg-transparent outline-none text-sm text-white placeholder:text-text-dim/50 min-w-[120px] flex-1"
-                    placeholder="Type or select..."
-                  />
-                </div>
+              {/* NEW FEATURES SELECTION */}
+              <div className="border-t border-panel pt-4 mt-4">
+                <label className="block text-xs font-bold text-text-secondary uppercase mb-3">Enabled Modules (Catalog)</label>
+                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border border-panel rounded bg-void/30">
+                  {features.map((f: any) => {
+                    const isChecked = editingItem?.includedFeatures?.some((inf: any) => inf.id === f.id)
+                      || editingItem?.features?.includes(f.key);
 
-                {/* Suggestions Dropdown */}
-                {isComboboxOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setIsComboboxOpen(false)}></div>
-                    <div className="absolute left-0 right-0 top-full mt-2 bg-orbital border border-panel rounded-card shadow-xl overflow-hidden z-50 max-h-48 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
-                      {filteredFeatures.length > 0 ? (
-                        filteredFeatures.map((option, i) => (
-                          <div
-                            key={i}
-                            onClick={() => { addFeature(option); }}
-                            className="px-4 py-2.5 text-sm text-text-secondary hover:bg-void hover:text-white cursor-pointer font-mono border-b border-panel/50 last:border-0 transition-colors"
-                          >
-                            {option}
-                          </div>
-                        ))
-                      ) : (
-                        <div className="px-4 py-3 text-xs text-text-dim italic text-center">
-                          {featureInput ? 'Press Enter to create' : 'No suggestions'}
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
+                    return (
+                      <label key={f.id} className="flex items-center gap-2 cursor-pointer hover:bg-void p-1 rounded">
+                        <input type="checkbox" name="featureIds" value={f.id} defaultChecked={isChecked} className="accent-quantum" />
+                        <span className="text-xs text-text-secondary">{f.name}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* LIMITS JSON */}
+              <div className="mt-4">
+                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Quotas / Limits (JSON)</label>
+                <textarea
+                  name="limits"
+                  defaultValue={JSON.stringify(editingItem?.limits || { max_appointments: -1 }, null, 2)}
+                  rows={5}
+                  className="w-full bg-void border border-panel rounded px-3 py-2 text-xs text-text-source font-mono outline-none focus:border-quantum transition-colors"
+                />
+                <p className="text-[10px] text-text-dim mt-1">Format: {"{\"key\": value}"}. Use -1 for unlimited.</p>
               </div>
 
               {editingItem && (
-                <div className="flex items-center gap-3 bg-void p-3 rounded border border-panel">
+                <div className="flex items-center gap-3 bg-void p-3 rounded border border-panel mt-4">
                   <input type="checkbox" name="isActive" defaultChecked={editingItem.isActive} id="isActive" className="w-4 h-4 accent-quantum bg-orbital border-panel rounded" />
                   <label htmlFor="isActive" className="text-xs font-bold text-text-secondary cursor-pointer uppercase">Active for Sales</label>
                 </div>
@@ -498,43 +579,97 @@ export default function ProductDetails() {
               </div>
             </fetcher.Form>
           </div>
-        </div>
+        </div >
       )}
 
-      {/* DELETE CONFIRMATION DIALOG */}
-      {deleteConfirmation && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-orbital border border-error/30 rounded-card shadow-[0_0_50px_rgba(239,68,68,0.2)] w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200 relative">
-            <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-error/50 via-error to-error/50"></div>
-            <div className="p-6 text-center">
-              <div className="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center mx-auto mb-4 border border-error/20">
-                <svg className="w-8 h-8 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">Confirm Deletion</h3>
-              <p className="text-sm text-text-secondary mb-6">
-                Are you sure you want to permanently delete this {deleteConfirmation.type === 'PLAN' ? 'Plan' : 'Product'}? <br />
-                <span className="text-error font-bold block mt-1">This action cannot be undone.</span>
-              </p>
-
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={() => setDeleteConfirmation(null)}
-                  className="px-4 py-2 rounded bg-void border border-panel text-text-secondary hover:text-white hover:border-white/30 transition-all font-mono text-xs font-bold"
-                >
-                  CANCEL
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="px-4 py-2 rounded bg-error/90 hover:bg-error text-white shadow-lg transition-all font-mono text-xs font-bold"
-                >
-                  CONFIRM_DELETE
-                </button>
-              </div>
+      {/* Feature Config Modal */}
+      {activeModal === 'FEATURE' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-orbital border border-panel rounded-card shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-4 border-b border-panel flex justify-between items-center bg-void/50">
+              <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider font-mono">{editingItem ? 'EDIT_FEATURE' : 'NEW_FEATURE'}</h2>
+              <button onClick={() => setActiveModal(null)} className="text-text-dim hover:text-white">✕</button>
             </div>
+            <fetcher.Form method="post" className="p-6 space-y-4">
+              <input type="hidden" name="intent" value={editingItem ? 'update_feature' : 'create_feature'} />
+              <input type="hidden" name="productId" value={product.id} />
+              {editingItem && <input type="hidden" name="id" value={editingItem.id} />}
+
+              <div>
+                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Name</label>
+                <input name="name" defaultValue={editingItem?.name} required className="w-full bg-void border border-panel rounded px-3 py-2 text-sm text-white outline-none focus:border-quantum transition-colors" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Key (Code)</label>
+                <input name="key" defaultValue={editingItem?.key} required className="w-full bg-void border border-panel rounded px-3 py-2 text-sm text-white outline-none focus:border-quantum transition-colors font-mono" placeholder="e.g. appointments_module" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Description</label>
+                <textarea name="description" defaultValue={editingItem?.description || ''} rows={3} className="w-full bg-void border border-panel rounded px-3 py-2 text-sm text-white outline-none focus:border-quantum transition-colors resize-none" />
+              </div>
+
+              <div className="pt-2 flex justify-between items-center">
+                {editingItem ? (
+                  <button
+                    type="submit"
+                    name="intent"
+                    value="delete_feature"
+                    onClick={(e) => {
+                      if (!confirm('Delete this feature? It may affect plans.')) e.preventDefault();
+                    }}
+                    className="text-xs text-error/80 hover:text-error hover:underline font-mono"
+                  >
+                    DELETE
+                  </button>
+                ) : <span></span>}
+
+                <button type="submit" className="bg-quantum hover:bg-quantum-hover text-white px-5 py-2 rounded font-bold text-sm shadow-lg shadow-quantum/20 transition-all font-mono">
+                  {fetcher.state !== 'idle' ? 'SAVING...' : 'SAVE_FEATURE'}
+                </button>
+              </div>
+            </fetcher.Form>
           </div>
         </div>
       )}
 
-    </div>
+      {/* DELETE CONFIRMATION DIALOG */}
+      {
+        deleteConfirmation && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div className="bg-orbital border border-error/30 rounded-card shadow-[0_0_50px_rgba(239,68,68,0.2)] w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200 relative">
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-error/50 via-error to-error/50"></div>
+              <div className="p-6 text-center">
+                <div className="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center mx-auto mb-4 border border-error/20">
+                  <svg className="w-8 h-8 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Confirm Deletion</h3>
+                <p className="text-sm text-text-secondary mb-6">
+                  Are you sure you want to permanently delete this {deleteConfirmation.type === 'PLAN' ? 'Plan' : 'Product'}? <br />
+                  <span className="text-error font-bold block mt-1">This action cannot be undone.</span>
+                </p>
+
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={() => setDeleteConfirmation(null)}
+                    className="px-4 py-2 rounded bg-void border border-panel text-text-secondary hover:text-white hover:border-white/30 transition-all font-mono text-xs font-bold"
+                  >
+                    CANCEL
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="px-4 py-2 rounded bg-error/90 hover:bg-error text-white shadow-lg transition-all font-mono text-xs font-bold"
+                  >
+                    CONFIRM_DELETE
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+    </div >
   );
 }

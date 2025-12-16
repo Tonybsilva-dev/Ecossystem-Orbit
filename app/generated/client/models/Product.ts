@@ -207,6 +207,7 @@ export type ProductWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Product"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Product"> | Date | string
   plans?: Prisma.PlanListRelationFilter
+  features?: Prisma.FeatureListRelationFilter
 }
 
 export type ProductOrderByWithRelationInput = {
@@ -219,6 +220,7 @@ export type ProductOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   plans?: Prisma.PlanOrderByRelationAggregateInput
+  features?: Prisma.FeatureOrderByRelationAggregateInput
 }
 
 export type ProductWhereUniqueInput = Prisma.AtLeast<{
@@ -234,6 +236,7 @@ export type ProductWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Product"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Product"> | Date | string
   plans?: Prisma.PlanListRelationFilter
+  features?: Prisma.FeatureListRelationFilter
 }, "id" | "slug" | "apiKey">
 
 export type ProductOrderByWithAggregationInput = {
@@ -274,6 +277,7 @@ export type ProductCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   plans?: Prisma.PlanCreateNestedManyWithoutProductInput
+  features?: Prisma.FeatureCreateNestedManyWithoutProductInput
 }
 
 export type ProductUncheckedCreateInput = {
@@ -286,6 +290,7 @@ export type ProductUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   plans?: Prisma.PlanUncheckedCreateNestedManyWithoutProductInput
+  features?: Prisma.FeatureUncheckedCreateNestedManyWithoutProductInput
 }
 
 export type ProductUpdateInput = {
@@ -298,6 +303,7 @@ export type ProductUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   plans?: Prisma.PlanUpdateManyWithoutProductNestedInput
+  features?: Prisma.FeatureUpdateManyWithoutProductNestedInput
 }
 
 export type ProductUncheckedUpdateInput = {
@@ -310,6 +316,7 @@ export type ProductUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   plans?: Prisma.PlanUncheckedUpdateManyWithoutProductNestedInput
+  features?: Prisma.FeatureUncheckedUpdateManyWithoutProductNestedInput
 }
 
 export type ProductCreateManyInput = {
@@ -409,6 +416,20 @@ export type ProductUpdateOneRequiredWithoutPlansNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ProductUpdateToOneWithWhereWithoutPlansInput, Prisma.ProductUpdateWithoutPlansInput>, Prisma.ProductUncheckedUpdateWithoutPlansInput>
 }
 
+export type ProductCreateNestedOneWithoutFeaturesInput = {
+  create?: Prisma.XOR<Prisma.ProductCreateWithoutFeaturesInput, Prisma.ProductUncheckedCreateWithoutFeaturesInput>
+  connectOrCreate?: Prisma.ProductCreateOrConnectWithoutFeaturesInput
+  connect?: Prisma.ProductWhereUniqueInput
+}
+
+export type ProductUpdateOneRequiredWithoutFeaturesNestedInput = {
+  create?: Prisma.XOR<Prisma.ProductCreateWithoutFeaturesInput, Prisma.ProductUncheckedCreateWithoutFeaturesInput>
+  connectOrCreate?: Prisma.ProductCreateOrConnectWithoutFeaturesInput
+  upsert?: Prisma.ProductUpsertWithoutFeaturesInput
+  connect?: Prisma.ProductWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ProductUpdateToOneWithWhereWithoutFeaturesInput, Prisma.ProductUpdateWithoutFeaturesInput>, Prisma.ProductUncheckedUpdateWithoutFeaturesInput>
+}
+
 export type ProductCreateWithoutPlansInput = {
   id?: string
   name: string
@@ -418,6 +439,7 @@ export type ProductCreateWithoutPlansInput = {
   apiKey?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  features?: Prisma.FeatureCreateNestedManyWithoutProductInput
 }
 
 export type ProductUncheckedCreateWithoutPlansInput = {
@@ -429,6 +451,7 @@ export type ProductUncheckedCreateWithoutPlansInput = {
   apiKey?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  features?: Prisma.FeatureUncheckedCreateNestedManyWithoutProductInput
 }
 
 export type ProductCreateOrConnectWithoutPlansInput = {
@@ -456,6 +479,7 @@ export type ProductUpdateWithoutPlansInput = {
   apiKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  features?: Prisma.FeatureUpdateManyWithoutProductNestedInput
 }
 
 export type ProductUncheckedUpdateWithoutPlansInput = {
@@ -467,6 +491,71 @@ export type ProductUncheckedUpdateWithoutPlansInput = {
   apiKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  features?: Prisma.FeatureUncheckedUpdateManyWithoutProductNestedInput
+}
+
+export type ProductCreateWithoutFeaturesInput = {
+  id?: string
+  name: string
+  slug: string
+  description?: string | null
+  logo?: string | null
+  apiKey?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  plans?: Prisma.PlanCreateNestedManyWithoutProductInput
+}
+
+export type ProductUncheckedCreateWithoutFeaturesInput = {
+  id?: string
+  name: string
+  slug: string
+  description?: string | null
+  logo?: string | null
+  apiKey?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  plans?: Prisma.PlanUncheckedCreateNestedManyWithoutProductInput
+}
+
+export type ProductCreateOrConnectWithoutFeaturesInput = {
+  where: Prisma.ProductWhereUniqueInput
+  create: Prisma.XOR<Prisma.ProductCreateWithoutFeaturesInput, Prisma.ProductUncheckedCreateWithoutFeaturesInput>
+}
+
+export type ProductUpsertWithoutFeaturesInput = {
+  update: Prisma.XOR<Prisma.ProductUpdateWithoutFeaturesInput, Prisma.ProductUncheckedUpdateWithoutFeaturesInput>
+  create: Prisma.XOR<Prisma.ProductCreateWithoutFeaturesInput, Prisma.ProductUncheckedCreateWithoutFeaturesInput>
+  where?: Prisma.ProductWhereInput
+}
+
+export type ProductUpdateToOneWithWhereWithoutFeaturesInput = {
+  where?: Prisma.ProductWhereInput
+  data: Prisma.XOR<Prisma.ProductUpdateWithoutFeaturesInput, Prisma.ProductUncheckedUpdateWithoutFeaturesInput>
+}
+
+export type ProductUpdateWithoutFeaturesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  apiKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  plans?: Prisma.PlanUpdateManyWithoutProductNestedInput
+}
+
+export type ProductUncheckedUpdateWithoutFeaturesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  apiKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  plans?: Prisma.PlanUncheckedUpdateManyWithoutProductNestedInput
 }
 
 
@@ -476,10 +565,12 @@ export type ProductUncheckedUpdateWithoutPlansInput = {
 
 export type ProductCountOutputType = {
   plans: number
+  features: number
 }
 
 export type ProductCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   plans?: boolean | ProductCountOutputTypeCountPlansArgs
+  features?: boolean | ProductCountOutputTypeCountFeaturesArgs
 }
 
 /**
@@ -499,6 +590,13 @@ export type ProductCountOutputTypeCountPlansArgs<ExtArgs extends runtime.Types.E
   where?: Prisma.PlanWhereInput
 }
 
+/**
+ * ProductCountOutputType without action
+ */
+export type ProductCountOutputTypeCountFeaturesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.FeatureWhereInput
+}
+
 
 export type ProductSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -510,6 +608,7 @@ export type ProductSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   createdAt?: boolean
   updatedAt?: boolean
   plans?: boolean | Prisma.Product$plansArgs<ExtArgs>
+  features?: boolean | Prisma.Product$featuresArgs<ExtArgs>
   _count?: boolean | Prisma.ProductCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["product"]>
 
@@ -549,6 +648,7 @@ export type ProductSelectScalar = {
 export type ProductOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "description" | "logo" | "apiKey" | "createdAt" | "updatedAt", ExtArgs["result"]["product"]>
 export type ProductInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   plans?: boolean | Prisma.Product$plansArgs<ExtArgs>
+  features?: boolean | Prisma.Product$featuresArgs<ExtArgs>
   _count?: boolean | Prisma.ProductCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ProductIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -558,6 +658,7 @@ export type $ProductPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
   name: "Product"
   objects: {
     plans: Prisma.$PlanPayload<ExtArgs>[]
+    features: Prisma.$FeaturePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -963,6 +1064,7 @@ readonly fields: ProductFieldRefs;
 export interface Prisma__ProductClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   plans<T extends Prisma.Product$plansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Product$plansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  features<T extends Prisma.Product$featuresArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Product$featuresArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FeaturePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1409,6 +1511,30 @@ export type Product$plansArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   take?: number
   skip?: number
   distinct?: Prisma.PlanScalarFieldEnum | Prisma.PlanScalarFieldEnum[]
+}
+
+/**
+ * Product.features
+ */
+export type Product$featuresArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Feature
+   */
+  select?: Prisma.FeatureSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Feature
+   */
+  omit?: Prisma.FeatureOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FeatureInclude<ExtArgs> | null
+  where?: Prisma.FeatureWhereInput
+  orderBy?: Prisma.FeatureOrderByWithRelationInput | Prisma.FeatureOrderByWithRelationInput[]
+  cursor?: Prisma.FeatureWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.FeatureScalarFieldEnum | Prisma.FeatureScalarFieldEnum[]
 }
 
 /**

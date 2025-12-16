@@ -10,6 +10,7 @@
  */
 export type * from './models/Product'
 export type * from './models/Plan'
+export type * from './models/Feature'
 export type * from './models/Subscription'
 export type * from './models/Tenant'
 export type * from './models/TenantFeature'

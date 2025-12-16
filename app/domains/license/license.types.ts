@@ -29,6 +29,7 @@ export type Capability = string;
 export interface ValidateAccessOutput {
   valid: boolean;
   capabilities: Capability[];
+  limits?: any;
 }
 
 /**

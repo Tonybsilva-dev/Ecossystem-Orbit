@@ -20,6 +20,7 @@ export class ProductService {
         plans: {
           where: { isActive: true },
           orderBy: { price: "asc" },
+          include: { includedFeatures: true }
         },
       },
     });
@@ -32,6 +33,7 @@ export class ProductService {
         plans: {
           where: { isActive: true },
           orderBy: { price: "asc" },
+          include: { includedFeatures: true }
         },
       },
     });
@@ -65,22 +67,40 @@ export class ProductService {
 
   // --- Plan Management ---
 
-  static async createPlan(data: { productId: string; name: string; price: number; interval: PlanInterval; features: string[] }) {
-    return prisma.plan.create({
+  static async createPlan(data: { productId: string; name: string; price: number; interval: PlanInterval; features: string[]; limits?: any; featureIds?: string[] }) {
+    const { features, limits, featureIds, ...rest } = data;
+
+    const plan = await prisma.plan.create({
       data: {
-        ...data,
-        price: data.price, // Prisma Decimal handles number/string
+        ...rest,
+        price: rest.price,
+        features: features, // Legacy
+        limits: limits || {},
+        includedFeatures: featureIds ? {
+          connect: featureIds.map(id => ({ id }))
+        } : undefined
       },
     });
+    return plan;
   }
 
-  static async updatePlan(id: string, data: { name?: string; price?: number; interval?: PlanInterval; features?: string[]; isActive?: boolean }) {
+  static async updatePlan(id: string, data: { name?: string; price?: number; interval?: PlanInterval; features?: string[]; isActive?: boolean; limits?: any; featureIds?: string[] }) {
+    const { features, limits, featureIds, ...rest } = data;
+    const updateData: any = { ...rest };
+
+    if (features !== undefined) updateData.features = features;
+    if (limits !== undefined) updateData.limits = limits;
+    if (rest.price !== undefined) updateData.price = rest.price;
+
+    if (featureIds) {
+      updateData.includedFeatures = {
+        set: featureIds.map(fid => ({ id: fid }))
+      };
+    }
+
     return prisma.plan.update({
       where: { id },
-      data: {
-        ...data,
-        price: data.price,
-      },
+      data: updateData,
     });
   }
 
@@ -95,6 +115,37 @@ export class ProductService {
     }
 
     return prisma.plan.delete({ where: { id } });
+  }
+
+  // --- Feature Management ---
+
+  static async listFeatures(productId: string) {
+    return prisma.feature.findMany({
+      where: { productId },
+      orderBy: { name: 'asc' }
+    });
+  }
+
+  static async createFeature(data: { productId: string; key: string; name: string; description?: string }) {
+    return prisma.feature.create({
+      data
+    });
+  }
+
+  static async updateFeature(id: string, data: { key?: string; name?: string; description?: string }) {
+    return prisma.feature.update({
+      where: { id },
+      data
+    });
+  }
+
+  static async deleteFeature(id: string) {
+    // Check if used in plans? 
+    // If we delete a feature, we might need to remove it from plans or error out.
+    // For now, let's just delete (cascade likely handles relation, but safety first).
+    return prisma.feature.delete({
+      where: { id }
+    });
   }
 
   // --- Analytics ---

@@ -59,6 +59,7 @@ export async function loader({ request }: Route.LoaderArgs) {
         {
           valid: true,
           capabilities: result.capabilities,
+          limits: result.limits,
         },
         {
           status: 200,

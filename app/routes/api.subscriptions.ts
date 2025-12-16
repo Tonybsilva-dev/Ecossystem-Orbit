@@ -9,7 +9,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   try {
     const body = await request.json();
-    const { tenantName, email, planId, slug } = body;
+    const { tenantName, email, planId, slug, interval } = body;
 
     // 1. Basic Validation
     if (!tenantName || !email || !planId) {
@@ -62,7 +62,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     // 6. Create Subscription
     const now = new Date();
     const expiresAt = new Date();
-    if (plan.interval === "MONTHLY") expiresAt.setMonth(expiresAt.getMonth() + 1);
+    // Default to plan interval if not overridden, or verify valid override
+    const effectiveInterval = (interval === "YEARLY" || interval === "MONTHLY") ? interval : plan.interval;
+
+    if (effectiveInterval === "MONTHLY") expiresAt.setMonth(expiresAt.getMonth() + 1);
     else expiresAt.setFullYear(expiresAt.getFullYear() + 1);
 
     const subscription = await prisma.subscription.create({
@@ -80,7 +83,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       licenseKey: subscription.licenseKey,
       plan: {
         name: plan.name,
-        features: plan.features
+        features: plan.features,
+        limits: plan.limits
       }
     });
 
