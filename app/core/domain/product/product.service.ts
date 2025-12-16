@@ -13,12 +13,12 @@ export class ProductService {
     });
   }
 
-  static async getProductBySlug(slug: string) {
+  static async getProductBySlug(slug: string, includeInactive = false) {
     return prisma.product.findUnique({
       where: { slug },
       include: {
         plans: {
-          where: { isActive: true },
+          where: includeInactive ? undefined : { isActive: true },
           orderBy: { price: "asc" },
           include: { includedFeatures: true }
         },
@@ -26,12 +26,12 @@ export class ProductService {
     });
   }
 
-  static async getProductById(id: string) {
+  static async getProductById(id: string, includeInactive = false) {
     return prisma.product.findUnique({
       where: { id },
       include: {
         plans: {
-          where: { isActive: true },
+          where: includeInactive ? undefined : { isActive: true },
           orderBy: { price: "asc" },
           include: { includedFeatures: true }
         },
