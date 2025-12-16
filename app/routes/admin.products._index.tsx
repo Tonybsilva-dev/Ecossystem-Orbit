@@ -38,6 +38,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 };
 
+export const handle = {
+  breadcrumb: () => [
+    { label: 'Products' }
+  ]
+};
+
 export default function AdminProducts() {
   const { products } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();

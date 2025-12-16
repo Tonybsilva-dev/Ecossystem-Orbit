@@ -1,4 +1,4 @@
-import { Link, useLocation, Form, useSubmit } from "react-router";
+import { Link, useLocation, Form, useSubmit, useMatches } from "react-router";
 import {
   LayoutDashboard,
   Box,
@@ -8,9 +8,11 @@ import {
   Layers,
   Activity
 } from "lucide-react";
+import React from "react";
 
 export function OrbitLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const matches = useMatches();
 
   const navItems = [
     { icon: LayoutDashboard, label: 'Overview', href: '/admin' },
@@ -80,10 +82,48 @@ export function OrbitLayout({ children }: { children: React.ReactNode }) {
         {/* Compact Header */}
         <header className="h-12 border-b border-panel bg-orbital/50 backdrop-blur-sm sticky top-0 z-20 flex items-center justify-between px-6 shrink-0">
           <div className="flex items-center gap-2 text-sm text-text-secondary">
-            <span className="text-text-dim">/</span>
-            <span className="text-text-primary font-medium">
-              {navItems.find(i => i.href === location.pathname)?.label || 'Dashboard'}
-            </span>
+            {(() => {
+              // Hybrid Strategy: Matches -> Handle OR NavItem -> Crumb
+              const crumbs = matches.flatMap((match) => {
+                const handle = match.handle as { breadcrumb: (data: any) => { label: string; href?: string }[] } | undefined;
+
+                // 1. Priority: Explicit Handle
+                if (handle?.breadcrumb) {
+                  return handle.breadcrumb(match.data);
+                }
+
+                // 2. Fallback: Auto-detect from Sidebar NavItems
+                const navItem = navItems.find((item) => item.href === match.pathname);
+                if (navItem) {
+                  return [{ label: navItem.label, href: navItem.href }];
+                }
+
+                return [];
+              });
+
+              // Safety Fallback (if absolutely nothing matched, e.g. 404 or unmapped root)
+              if (crumbs.length === 0) {
+                return (
+                  <span className="text-text-primary font-medium">Dashboard</span>
+                )
+              }
+
+              // Render crumbs
+              return crumbs.map((crumb, index) => (
+                <React.Fragment key={index}>
+                  <span className="text-text-dim">/</span>
+                  {crumb.href ? (
+                    <Link to={crumb.href} className="text-text-secondary hover:text-white transition-colors">
+                      {crumb.label}
+                    </Link>
+                  ) : (
+                    <span className="text-text-primary font-medium">
+                      {crumb.label}
+                    </span>
+                  )}
+                </React.Fragment>
+              ));
+            })()}
           </div>
 
           <div className="flex items-center gap-3">

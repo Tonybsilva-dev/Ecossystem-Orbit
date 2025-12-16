@@ -7,6 +7,12 @@ export async function loader({ request }: Route.LoaderArgs) {
   return await requireAdmin(request);
 }
 
+export const handle = {
+  breadcrumb: () => [
+    { label: 'Dashboard', href: '/admin' }
+  ]
+};
+
 export default function AdminLayout() {
   return (
     <OrbitLayout>

@@ -7,7 +7,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { productId } = params;
   if (!productId) throw new Error("Product ID required");
 
-  const product = await ProductService.getProductBySlug(productId).catch(() => null) || await ProductService.getProductById(productId);
+  const product = await ProductService.getProductBySlug(productId, true).catch(() => null) || await ProductService.getProductById(productId, true);
 
   if (!product) throw new Response("Not Found", { status: 404 });
 
@@ -27,6 +27,13 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   const features = await ProductService.listFeatures(product.id);
 
   return { product: serializedProduct, features };
+};
+
+export const handle = {
+  breadcrumb: (data: { product: any }) => [
+    { label: 'Products', href: '/admin/products' },
+    { label: data.product.name }
+  ]
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -249,12 +256,9 @@ export default function ProductDetails() {
 
   return (
     <div className="p-0 font-sans max-w-6xl mx-auto space-y-6">
-      {/* Breadcrumb / Back */}
-      <div className="flex items-center gap-2 text-text-dim text-xs uppercase tracking-widest font-mono">
-        <Link to="/admin/products" className="hover:text-quantum transition-colors">Products</Link>
-        <span>/</span>
-        <span className="text-text-secondary">{product.name}</span>
-      </div>
+      {/* Breadcrumb Removed (Moved to Global Header) */}
+
+      {/* Product Hero */}
 
       {/* Product Hero */}
       <div className="bg-orbital border border-panel rounded-card p-6 flex flex-col md:flex-row gap-6 relative overflow-hidden group">
