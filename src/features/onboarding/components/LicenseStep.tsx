@@ -10,7 +10,7 @@ interface LicenseStepProps {
   onTrialSelect: () => void;
 }
 
-export function LicenseStep({ onTrialSelect }: LicenseStepProps) {
+export function LicenseStep(_props: LicenseStepProps) {
   const {
     register,
     setValue,
@@ -82,7 +82,7 @@ export function LicenseStep({ onTrialSelect }: LicenseStepProps) {
           </div>
 
           {/* CAROUSEL CONTAINER */}
-          <div className="relative w-full overflow-x-auto pb-8 pt-4 px-4 snap-x snap-mandatory flex justify-start md:justify-center gap-6 no-scrollbar mask-linear-fade">
+          <div className="relative w-full overflow-x-auto pb-8 pt-4 px-4 snap-x snap-mandatory flex justify-start gap-6 no-scrollbar mask-linear-fade">
             {product?.plans
               .filter((p) => p.interval === billingInterval || Number(p.price) === 0)
               .map((plan) => (

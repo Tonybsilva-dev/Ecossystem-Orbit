@@ -26,6 +26,7 @@ model Barbershop {
   licenseStatus LicenseStatus @default(PENDING)
   planType      PlanType      @default(BASIC)
   modules       String[]
+  limits        Json?         // Synced from Orbit
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   appointments  Appointment[]

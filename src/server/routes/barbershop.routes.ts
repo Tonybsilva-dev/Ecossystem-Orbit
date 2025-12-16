@@ -58,12 +58,12 @@ export const barbershopRouter = new Hono()
       let planType = isTrial ? 'FREE' : 'BASIC';
       let modules: string[] = [];
       let finalLicenseKey = body.licenseKey;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let limits: any = {};
 
       if (isNewSubscription) {
         // Create Subscription in ORBIT
         try {
-          // In a real app, user email comes from session.user.email
-          // We might need to fetch user details if not in session payload fully
           const user = await prisma.user.findUnique({ where: { id: session.user.id } });
 
           if (!user || (!user.email && !session.user.email)) {
@@ -72,12 +72,14 @@ export const barbershopRouter = new Hono()
 
           const subscriptionData = {
             tenantName: body.name || existing?.name || 'New Barbershop',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             email: user.email || (session.user as any).email,
             planId: body.planId,
             slug: existing?.slug || generateSlug(body.name),
+            interval: body.interval, // Pass the selected interval (MONTHLY or YEARLY)
           };
 
-          const orbitUrl = process.env.ORBIT_API_URL || 'http://localhost:5173';
+          const orbitUrl = process.env.ORBIT_API_URL || 'http://localhost:5179';
 
           const response = await fetch(`${orbitUrl}/api/subscriptions`, {
             method: 'POST',
@@ -97,15 +99,14 @@ export const barbershopRouter = new Hono()
           // data should contain { licenseKey, plan, ... }
           finalLicenseKey = data.licenseKey;
           licenseStatus = 'ACTIVE';
-          // Map Orbit plan names/features to local types if needed, or store Plan ID
-          // For now, we assume local types logic or just store modules
+
           const planName = data.plan?.name?.toUpperCase() || 'BASIC';
-          // Simple mapping for this specific codebase enum
           if (planName.includes('PRO')) planType = 'PRO';
           else if (planName.includes('ENTERPRISE')) planType = 'ENTERPRISE';
           else planType = 'BASIC';
 
           modules = data.plan?.features || [];
+          limits = data.plan?.limits || {};
         } catch (error) {
           console.error('Orbit Subscription Creation Error:', error);
           return c.json({ error: 'Failed to communicate with Licensing Server.' }, 500);
@@ -113,7 +114,7 @@ export const barbershopRouter = new Hono()
       } else if (!isTrial && body.licenseKey) {
         // Validate Existing License
         try {
-          const orbitUrl = process.env.ORBIT_API_URL || 'http://localhost:5173';
+          const orbitUrl = process.env.ORBIT_API_URL || 'http://localhost:5179'; // Ensure port 5179
           const response = await fetch(`${orbitUrl}/api/validate?licenseKey=${body.licenseKey}`, {
             headers: { Origin: 'http://localhost:3333' },
           });
@@ -123,6 +124,9 @@ export const barbershopRouter = new Hono()
             if (data.valid) {
               licenseStatus = 'ACTIVE';
               modules = data.capabilities;
+              // Validation endpoint currently returns capabilities (features).
+              // We might need to update validate endpoint to return limits too.
+              // For now, limits will be empty on validation if not updated.
             } else {
               return c.json({ error: 'Licença inválida ou inativa.' }, 400);
             }
@@ -140,7 +144,8 @@ export const barbershopRouter = new Hono()
       const licenseStatusEnum = licenseStatus as 'TRIAL' | 'PENDING' | 'ACTIVE' | 'EXPIRED';
       const planTypeEnum = planType as 'FREE' | 'BASIC' | 'PRO' | 'ENTERPRISE' | 'TRIAL';
 
-      const { planId, interval, ...validBody } = body;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { planId: _planId, interval: _interval, ...validBody } = body;
 
       let shop;
       if (existing) {
@@ -158,6 +163,7 @@ export const barbershopRouter = new Hono()
             licenseStatus: licenseStatusEnum,
             planType: planTypeEnum,
             modules,
+            limits,
           },
         });
       } else {
@@ -171,6 +177,7 @@ export const barbershopRouter = new Hono()
             licenseStatus: licenseStatusEnum,
             planType: planTypeEnum,
             modules,
+            limits,
           },
         });
       }

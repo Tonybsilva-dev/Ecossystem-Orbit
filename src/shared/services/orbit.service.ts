@@ -16,7 +16,7 @@ export interface Product {
   plans: Plan[];
 }
 
-const ORBIT_API_URL = import.meta.env.VITE_ORBIT_API_URL || 'http://localhost:5173'; // Orbit usually runs on 5174 if 5173 is taken
+const ORBIT_API_URL = import.meta.env.VITE_ORBIT_API_URL || 'http://localhost:5179'; // Orbit usually runs on 5179
 
 export const OrbitService = {
   getPlans: async (slug: string): Promise<Product | null> => {

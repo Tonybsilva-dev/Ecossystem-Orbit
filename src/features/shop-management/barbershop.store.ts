@@ -6,7 +6,8 @@ import type { AppType } from '../../server';
 // Client for Hono API
 // Client for Hono API with Credentials for Session persistence
 const client = hc<AppType>('/', {
-  fetch: (input, init) => fetch(input, { ...init, credentials: 'include' }),
+  fetch: (input: RequestInfo | URL, init?: RequestInit) =>
+    fetch(input, { ...init, credentials: 'include' }),
 });
 
 export interface BarbershopState {
@@ -62,6 +63,7 @@ export const useBarbershopStore = create<BarbershopState>()(
       updateBarbershop: async (newData) => {
         set({ isLoading: true });
         try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const res = await client.api.barbershop.$post({ json: newData as any });
           if (res.ok) {
             const updated = await res.json();

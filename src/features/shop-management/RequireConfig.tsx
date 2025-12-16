@@ -19,7 +19,8 @@ export function RequireConfig() {
   useEffect(() => {
     if (!isLoading && location.pathname !== '/onboarding') {
       // Priority Check: If user is logged in but has no barbershopId, force onboarding
-      if (session && !session.user.barbershopId) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (session && !(session.user as any).barbershopId) {
         navigate('/onboarding');
         return;
       }

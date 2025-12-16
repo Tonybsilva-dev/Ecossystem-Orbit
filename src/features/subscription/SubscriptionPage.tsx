@@ -23,9 +23,6 @@ export const SubscriptionPage = () => {
     loadPlans();
   }, []);
 
-  const toggleBilling = () =>
-    setBillingInterval((prev) => (prev === 'MONTHLY' ? 'YEARLY' : 'MONTHLY'));
-
   if (loading)
     return (
       <div className="flex items-center justify-center h-full min-h-[400px]">
