@@ -122,9 +122,10 @@ export const SubscriptionPage = () => {
                 Investimento
               </span>
               <div className="flex items-baseline gap-1">
-                <span className="text-sm text-chrome-500 font-serif">R$</span>
                 <span className="text-5xl font-bold text-chrome-100 tracking-tighter">
-                  {Number(plan.price).toFixed(2)}
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                    Number(plan.price),
+                  )}
                 </span>
                 <span className="text-chrome-500 text-sm font-medium">
                   /{plan.interval === 'MONTHLY' ? 'mês' : 'ano'}

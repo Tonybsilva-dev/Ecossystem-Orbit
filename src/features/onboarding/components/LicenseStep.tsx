@@ -113,9 +113,11 @@ export function LicenseStep(_props: LicenseStepProps) {
                     </div>
 
                     <div className="flex items-baseline gap-1 mb-6 border-b border-white/5 pb-4">
-                      <span className="text-sm text-chrome-500">R$</span>
                       <span className="text-4xl font-bold text-chrome-100">
-                        {Number(plan.price).toFixed(0)}
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        }).format(Number(plan.price))}
                       </span>
                       <span className="text-xs text-chrome-500">
                         /{plan.interval === 'MONTHLY' ? 'mês' : 'ano'}
