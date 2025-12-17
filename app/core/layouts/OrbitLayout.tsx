@@ -6,6 +6,7 @@ import {
   Settings,
   LogOut,
   Layers,
+  CreditCard,
   Activity
 } from "lucide-react";
 import React from "react";
@@ -18,6 +19,7 @@ export function OrbitLayout({ children }: { children: React.ReactNode }) {
     { icon: LayoutDashboard, label: 'Overview', href: '/admin' },
     { icon: Box, label: 'Products', href: '/admin/products' },
     { icon: Users, label: 'Tenants', href: '/admin/tenants' },
+    { icon: CreditCard, label: 'Subscriptions', href: '/admin/subscriptions' },
     { icon: Activity, label: 'Analytics', href: '/admin/analytics' },
   ];
 
