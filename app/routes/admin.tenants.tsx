@@ -3,6 +3,7 @@ import { useLoaderData, Form, useNavigation } from "react-router";
 import { prisma } from "../core/db/prisma.server";
 import { TenantService } from "../core/domain/tenant/tenant.service";
 import { Users, Plus, ChevronRight, Activity, ShieldCheck, CreditCard, Search } from "lucide-react";
+import { useEffect } from "react";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const [tenants, products] = await Promise.all([
@@ -26,7 +27,26 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     })
   ]);
 
-  return { tenants, products };
+  const transformedTenants = tenants.map(t => ({
+    ...t,
+    subscriptions: t.subscriptions.map(s => ({
+      ...s,
+      plan: {
+        ...s.plan,
+        price: s.plan.price.toString()
+      }
+    }))
+  }));
+
+  const transformedProducts = products.map(p => ({
+    ...p,
+    plans: p.plans.map(plan => ({
+      ...plan,
+      price: plan.price.toString()
+    }))
+  }));
+
+  return { tenants: transformedTenants, products: transformedProducts };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -51,6 +71,20 @@ export default function AdminTenants() {
   const { tenants, products } = useLoaderData<typeof loader>();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const details = document.querySelectorAll('details.group\\/details');
+      details.forEach((detail) => {
+        if (detail.hasAttribute('open') && !detail.contains(event.target as Node)) {
+          detail.removeAttribute('open');
+        }
+      });
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   return (
     <div className="p-0 font-sans max-w-7xl mx-auto space-y-8">
@@ -108,8 +142,8 @@ export default function AdminTenants() {
                   </td>
                   <td className="p-4">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] font-mono font-bold tracking-wide uppercase border ${tenant.status === 'ACTIVE'
-                        ? 'bg-success/10 text-success border-success/20'
-                        : 'bg-text-dim/10 text-text-dim border-text-dim/20'
+                      ? 'bg-success/10 text-success border-success/20'
+                      : 'bg-text-dim/10 text-text-dim border-text-dim/20'
                       }`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${tenant.status === 'ACTIVE' ? 'bg-success animate-pulse' : 'bg-text-dim'}`}></span>
                       {tenant.status}
@@ -158,7 +192,7 @@ export default function AdminTenants() {
                                     <optgroup key={product.id} label={product.name} className="bg-orbital text-white font-bold">
                                       {product.plans.map(plan => (
                                         <option key={plan.id} value={plan.id} className="bg-orbital text-text-secondary font-normal">
-                                          {product.name} :: {plan.name} — ${Number(plan.price).toFixed(2)}
+                                          {product.name} :: {plan.name} — ${Number(plan.price.toString()).toFixed(2)}
                                         </option>
                                       ))}
                                     </optgroup>
