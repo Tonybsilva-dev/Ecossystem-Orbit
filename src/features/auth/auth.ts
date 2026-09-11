@@ -49,7 +49,7 @@ export const auth = betterAuth({
         after: async (user) => {
           // Sync with Orbit Control Plane
           try {
-            const orbitApi = process.env.ORBIT_API_URL || 'http://localhost:5179/api';
+            const orbitApi = process.env.ORBIT_API_URL || 'http://localhost:4001';
             const orbitSecret = process.env.ORBIT_API_SECRET; // Ensure this is set in .env
 
             if (orbitSecret && user.email) {

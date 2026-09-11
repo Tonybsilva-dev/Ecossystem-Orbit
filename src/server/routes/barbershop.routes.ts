@@ -79,9 +79,9 @@ export const barbershopRouter = new Hono()
             interval: body.interval, // Pass the selected interval (MONTHLY or YEARLY)
           };
 
-          const orbitUrl = process.env.ORBIT_API_URL || 'http://localhost:5179';
+          const orbitUrl = process.env.ORBIT_API_URL || 'http://localhost:4001';
 
-          const response = await fetch(`${orbitUrl}/api/subscriptions`, {
+          const response = await fetch(`${orbitUrl}/subscriptions`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(subscriptionData),
@@ -114,8 +114,8 @@ export const barbershopRouter = new Hono()
       } else if (!isTrial && body.licenseKey) {
         // Validate Existing License
         try {
-          const orbitUrl = process.env.ORBIT_API_URL || 'http://localhost:5179'; // Ensure port 5179
-          const response = await fetch(`${orbitUrl}/api/validate?licenseKey=${body.licenseKey}`, {
+          const orbitUrl = process.env.ORBIT_API_URL || 'http://localhost:4001';
+          const response = await fetch(`${orbitUrl}/validate?licenseKey=${body.licenseKey}`, {
             headers: { Origin: 'http://localhost:3333' },
           });
 

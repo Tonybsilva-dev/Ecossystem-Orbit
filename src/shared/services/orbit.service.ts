@@ -16,12 +16,12 @@ export interface Product {
   plans: Plan[];
 }
 
-const ORBIT_API_URL = import.meta.env.VITE_ORBIT_API_URL || 'http://localhost:5179'; // Orbit usually runs on 5179
+const ORBIT_API_URL = import.meta.env.VITE_ORBIT_API_URL || 'http://localhost:4001'; // api-orbit
 
 export const OrbitService = {
   getPlans: async (slug: string): Promise<Product | null> => {
     try {
-      const response = await fetch(`${ORBIT_API_URL}/api/products/${slug}`);
+      const response = await fetch(`${ORBIT_API_URL}/products/${slug}`);
       if (!response.ok) {
         if (response.status === 404) return null;
         throw new Error('Failed to fetch plans');
@@ -40,7 +40,7 @@ export const OrbitService = {
     slug?: string;
   }): Promise<{ licenseKey: string } | null> => {
     try {
-      const response = await fetch(`${ORBIT_API_URL}/api/subscriptions`, {
+      const response = await fetch(`${ORBIT_API_URL}/subscriptions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

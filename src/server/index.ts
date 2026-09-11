@@ -1,4 +1,5 @@
 import { serve } from '@hono/node-server';
+import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { auth } from '../features/auth/auth'; // Import your auth instance
 import { cors } from 'hono/cors';
@@ -21,11 +22,17 @@ const routes = app
 
 export type AppType = typeof routes;
 
+if (process.env.NODE_ENV === 'production') {
+  app.use('/*', serveStatic({ root: './dist' }));
+  app.get('*', serveStatic({ path: './dist/index.html' }));
+}
+
 const port = Number(process.env.SERVER_PORT) || 3333;
-console.log(`Server is running on port ${port}`);
+const hostname = process.env.HOST || '0.0.0.0';
+console.log(`Server is running on ${hostname}:${port}`);
 
 serve({
   fetch: app.fetch,
   port,
-  hostname: '127.0.0.1',
+  hostname,
 });

@@ -113,6 +113,7 @@ Uma aplicação web robusta (PWA) que combina **Agendamento Inteligente**, **E-c
 - **Auth**: BetterAuth (RBAC System)
 - **API**: Hono (Node Server)
 - **Validação**: Zod
+- **Licenciamento**: Integração com [`api-orbit`](https://github.com/[USUARIO]/api-orbit) — control plane que valida a licença da barbearia, resolve planos/features e sincroniza o tenant no signup
 
 ### State & UX
 
@@ -126,9 +127,10 @@ Uma aplicação web robusta (PWA) que combina **Agendamento Inteligente**, **E-c
 
 ### Pré-requisitos
 
-- Node.js 18+
-- npm ou pnpm
+- Node.js 20+
+- pnpm
 - Banco de dados PostgreSQL (Local ou Supabase)
+- [`api-orbit`](https://github.com/[USUARIO]/api-orbit) rodando (licenciamento e planos dependem dele)
 
 ### Instalação
 
@@ -140,12 +142,12 @@ git clone https://github.com/Tonybsilva-dev/barber-flow.git
 cd barber-flow
 
 # Instale as dependências
-npm install
+pnpm install
 ```
 
 ### Configuração do Ambiente
 
-Crie um arquivo `.env` na raiz:
+Crie um arquivo `.env` na raiz (veja `.env.example`):
 
 ```env
 DATABASE_URL="postgresql://user:pass@host:5432/db"
@@ -153,17 +155,23 @@ BETTER_AUTH_SECRET="sua_chave_secreta"
 BETTER_AUTH_URL="http://localhost:5180"
 GOOGLE_CLIENT_ID="..."
 GOOGLE_CLIENT_SECRET="..."
+
+# api-orbit (control plane de tenants/licenças)
+ORBIT_API_URL="http://localhost:4001"
+ORBIT_API_SECRET="mesma-chave-do-api-orbit"
+VITE_ORBIT_API_URL="http://localhost:4001"
+SERVER_PORT="3333"
 ```
 
 ### Desenvolvimento
 
 ```bash
 # Setup do Banco
-npx prisma db push
-npm run db:seed # Popula produtos e usuários iniciais
+pnpm db:push
+pnpm db:seed # Popula barbearia inicial
 
 # Inicie o servidor de desenvolvimento (Frontend + Backend)
-npm run dev
+pnpm dev
 ```
 
 Aplicação disponível em `http://localhost:5180`
