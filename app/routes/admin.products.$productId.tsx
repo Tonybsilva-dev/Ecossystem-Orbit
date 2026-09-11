@@ -1,30 +1,35 @@
 import { type ActionFunctionArgs, type LoaderFunctionArgs, redirect } from "react-router";
 import { useLoaderData, useFetcher, useNavigate, Link, useSubmit } from "react-router";
 import { useState, useEffect } from "react";
-import { ProductService } from "../core/domain/product/product.service";
+import { orbitApi } from "../core/orbit-api/orbit-api.server";
+
+interface ProductDetail {
+  id: string;
+  name: string;
+  plans: { id: string; price: string; [key: string]: unknown }[];
+  [key: string]: unknown;
+}
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { productId } = params;
   if (!productId) throw new Error("Product ID required");
 
-  const product = await ProductService.getProductBySlug(productId, true).catch(() => null) || await ProductService.getProductById(productId, true);
+  const product = await orbitApi.get<ProductDetail>(`/products/${productId}/full`).catch(() => null);
 
   if (!product) throw new Response("Not Found", { status: 404 });
 
-  const analytics = await ProductService.getProductAnalytics(product.id);
+  const analytics = await orbitApi.get(`/products/${product.id}/analytics`);
 
-  // Fix serialization of Decimal for client
   const serializedProduct = {
     ...product,
     analytics,
-    plans: product.plans.map(p => ({
+    plans: product.plans.map((p) => ({
       ...p,
-      price: Number(p.price) // Convert Decimal to Number for safe JSON serialization
-    }))
+      price: Number(p.price), // Decimal chega como string via JSON; front usa Number
+    })),
   };
 
-  /* Fetch global features for this product */
-  const features = await ProductService.listFeatures(product.id);
+  const features = await orbitApi.get(`/products/${product.id}/features`);
 
   return { product: serializedProduct, features };
 };
@@ -45,13 +50,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (request.method === "DELETE") {
       if (intent === "delete_plan") {
         const id = String(formData.get("id"));
-        await ProductService.deletePlan(id);
+        await orbitApi.delete(`/plans/${id}`);
         return { success: true };
       }
 
       if (intent === "delete_product") {
         const id = String(formData.get("id"));
-        await ProductService.deleteProduct(id);
+        await orbitApi.delete(`/products/${id}`);
         return redirect("/admin/products");
       }
     }
@@ -62,10 +67,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       const slug = String(formData.get("slug"));
       const description = String(formData.get("description"));
       const logo = String(formData.get("logo"));
-      await ProductService.updateProduct(id, { name, slug, description, logo });
+      await orbitApi.patch(`/products/${id}`, { name, slug, description, logo });
     }
 
-    // delete_product handled in DELETE method block above for semantic correctness, 
+    // delete_product handled in DELETE method block above for semantic correctness,
     // but we can keep it here for fallback/POST support if needed, or remove it to enforce DELETE.
     // For now, let's keep the logic clean and move product deletion to DELETE method too if we update that button.
 
@@ -92,7 +97,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         // ignore
       }
 
-      await ProductService.createPlan({ productId, name, price, interval, features, limits, featureIds });
+      await orbitApi.post(`/products/${productId}/plans`, { name, price, interval, features, limits, featureIds });
     }
 
     if (intent === "create_feature") {
@@ -100,7 +105,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       const key = String(formData.get("key"));
       const name = String(formData.get("name"));
       const description = String(formData.get("description"));
-      await ProductService.createFeature({ productId, key, name, description });
+      await orbitApi.post(`/products/${productId}/features`, { key, name, description });
     }
 
     if (intent === "update_feature") {
@@ -108,12 +113,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       const key = String(formData.get("key"));
       const name = String(formData.get("name"));
       const description = String(formData.get("description"));
-      await ProductService.updateFeature(id, { key, name, description });
+      await orbitApi.patch(`/features/${id}`, { key, name, description });
     }
 
     if (intent === "delete_feature") {
       const id = String(formData.get("id"));
-      await ProductService.deleteFeature(id);
+      await orbitApi.delete(`/features/${id}`);
     }
 
     if (intent === "update_plan") {
@@ -144,7 +149,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         // ignore or set empty
       }
 
-      await ProductService.updatePlan(id, { name, price, interval, isActive, limits, featureIds });
+      await orbitApi.patch(`/plans/${id}`, { name, price, interval, isActive, limits, featureIds });
     }
 
     return { success: true };

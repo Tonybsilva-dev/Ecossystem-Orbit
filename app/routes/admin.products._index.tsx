@@ -1,13 +1,20 @@
 import { type ActionFunctionArgs, type LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useFetcher, useNavigate } from "react-router";
 import { useState, useEffect } from "react";
-import { ProductService } from "../core/domain/product/product.service";
+import { orbitApi } from "../core/orbit-api/orbit-api.server";
 import { Box, Plus, Search, Activity, Users } from "lucide-react";
 
+interface ProductListItem {
+  id: string;
+  name: string;
+  slug: string;
+  [key: string]: unknown;
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const products = await ProductService.listProducts();
+  const products = await orbitApi.get<ProductListItem[]>("/products");
   const productsWithAnalytics = await Promise.all(products.map(async (p) => {
-    const analytics = await ProductService.getProductAnalytics(p.id);
+    const analytics = await orbitApi.get(`/products/${p.id}/analytics`);
     return { ...p, analytics };
   }));
 
@@ -24,12 +31,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       const slug = String(formData.get("slug"));
       const description = String(formData.get("description"));
       const logo = String(formData.get("logo"));
-      await ProductService.createProduct({ name, slug, description, logo });
+      await orbitApi.post("/products", { name, slug, description, logo });
     }
     // ... maintain existing logic
     if (intent === "delete_product") {
       const id = String(formData.get("id"));
-      await ProductService.deleteProduct(id);
+      await orbitApi.delete(`/products/${id}`);
     }
     return { success: true };
   } catch (error) {

@@ -1,22 +1,38 @@
-FROM node:20-alpine AS development-dependencies-env
-COPY . /app
-WORKDIR /app
-RUN npm ci
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
-FROM node:20-alpine AS production-dependencies-env
-COPY ./package.json package-lock.json /app/
+# ---- Dependencies (full, incl. devDeps) ----
+FROM base AS development-dependencies-env
 WORKDIR /app
-RUN npm ci --omit=dev
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
-FROM node:20-alpine AS build-env
-COPY . /app/
-COPY --from=development-dependencies-env /app/node_modules /app/node_modules
+# ---- Production-only dependencies (lean, no devDeps) ----
+FROM base AS production-dependencies-env
 WORKDIR /app
-RUN npm run build
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
-FROM node:20-alpine
-COPY ./package.json package-lock.json /app/
-COPY --from=production-dependencies-env /app/node_modules /app/node_modules
-COPY --from=build-env /app/build /app/build
+# ---- Build ----
+FROM base AS build-env
 WORKDIR /app
-CMD ["npm", "run", "start"]
+COPY . .
+COPY --from=development-dependencies-env /app/node_modules ./node_modules
+RUN pnpm run build
+
+# ---- Runtime ----
+FROM base AS runtime
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+WORKDIR /app
+
+COPY --chown=appuser:appgroup --from=production-dependencies-env /app/node_modules ./node_modules
+COPY --chown=appuser:appgroup --from=build-env /app/build ./build
+COPY --chown=appuser:appgroup package.json ./
+
+ENV NODE_ENV=production
+ENV PORT=5179
+EXPOSE 5179
+
+USER appuser
+
+CMD ["node_modules/.bin/react-router-serve", "./build/server/index.js"]

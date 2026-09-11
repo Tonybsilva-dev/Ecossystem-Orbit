@@ -1,6 +1,6 @@
 import { type LoaderFunctionArgs, type ActionFunctionArgs, redirect } from "react-router";
 import { useLoaderData, Form, useNavigation, useSearchParams, Link, useSubmit } from "react-router";
-import { SubscriptionService } from "../core/domain/subscription/subscription.service";
+import { orbitApi } from "../core/orbit-api/orbit-api.server";
 import {
   CreditCard,
   Search,
@@ -17,7 +17,11 @@ import {
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { clsx } from "clsx";
-import { prisma } from "../core/db/prisma.server";
+
+interface SubscriptionListResponse {
+  subscriptions: unknown[];
+  pagination: { total: number; page: number; limit: number; totalPages: number };
+}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
@@ -27,44 +31,21 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const status = url.searchParams.get("status") || "";
   const subscriptionId = url.searchParams.get("subscriptionId");
 
+  const query = new URLSearchParams({ page: String(page), limit: "10", search, productId, status });
+
   const [productsData, subscriptionsData] = await Promise.all([
-    prisma.product.findMany({ select: { id: true, name: true } }),
-    SubscriptionService.listSubscriptions({
-      page,
-      limit: 10,
-      search,
-      productId,
-      status
-    })
+    orbitApi.get<{ id: string; name: string }[]>("/products"),
+    orbitApi.get<SubscriptionListResponse>(`/subscriptions?${query}`),
   ]);
 
-  // Transform subscriptions to ensure decimal serialization
-  const transformedSubscriptions = subscriptionsData.subscriptions.map(sub => ({
-    ...sub,
-    plan: {
-      ...sub.plan,
-      price: sub.plan.price.toString()
-    }
-  }));
+  const { subscriptions, pagination } = subscriptionsData;
 
-  const { pagination } = subscriptionsData;
-
-  let selectedSubscription = null;
-  if (subscriptionId) {
-    const sub = await SubscriptionService.getSubscriptionById(subscriptionId);
-    if (sub) {
-      selectedSubscription = {
-        ...sub,
-        plan: {
-          ...sub.plan,
-          price: sub.plan.price.toString()
-        }
-      };
-    }
-  }
+  const selectedSubscription = subscriptionId
+    ? await orbitApi.get(`/subscriptions/${subscriptionId}`).catch(() => null)
+    : null;
 
   return {
-    subscriptions: transformedSubscriptions,
+    subscriptions,
     pagination,
     selectedSubscription,
     search,
@@ -81,7 +62,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (!subscriptionId) return null;
 
   if (intent === "cancel_subscription") {
-    await SubscriptionService.cancelSubscription(subscriptionId);
+    await orbitApi.post(`/subscriptions/${subscriptionId}/cancel`);
     // If we're on the drawer, redirect there. Else just back to list
     const referer = request.headers.get("referer");
     if (referer && referer.includes("subscriptionId=")) {
@@ -91,7 +72,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   if (intent === "delete_subscription") {
-    await SubscriptionService.deleteSubscription(subscriptionId);
+    await orbitApi.delete(`/subscriptions/${subscriptionId}`);
     // Redirect to removing the param if we deleted the open one, or just refresh list
     return redirect("/admin/subscriptions");
   }

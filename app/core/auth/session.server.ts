@@ -58,16 +58,8 @@ export async function logout(request: Request) {
 export async function requireAdmin(request: Request) {
   const userId = await requireUserId(request);
 
-  // We need to fetch the user to check the role
-  // This introduces a circular dependency if we import prisma here directly if not careful,
-  // but usually it's fine in Remix server files.
-  // Better to import prisma from db.server
-  const { prisma } = await import("../db/prisma.server");
-
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: true },
-  });
+  const { orbitApi } = await import("../orbit-api/orbit-api.server");
+  const user = await orbitApi.get<{ role: string }>(`/auth/users/${userId}`).catch(() => null);
 
   if (!user || (user.role !== "OWNER" && user.role !== "ADMIN")) {
     throw redirect("/"); // Redirect to home/dashboard if not admin

@@ -1,52 +1,30 @@
 import { type LoaderFunctionArgs, type ActionFunctionArgs, redirect } from "react-router";
 import { useLoaderData, Form, useNavigation } from "react-router";
-import { prisma } from "../core/db/prisma.server";
-import { TenantService } from "../core/domain/tenant/tenant.service";
+import { orbitApi } from "../core/orbit-api/orbit-api.server";
 import { Users, Plus, ChevronRight, Activity, ShieldCheck, CreditCard, Search } from "lucide-react";
 import { useEffect } from "react";
 
+interface TenantListItem {
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
+  subscriptions: { id: string; plan: { name: string; price: string; product: { name: string } } }[];
+}
+
+interface ProductWithPlans {
+  id: string;
+  name: string;
+  plans: { id: string; name: string; price: string }[];
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const [tenants, products] = await Promise.all([
-    prisma.tenant.findMany({
-      include: {
-        users: { take: 1, where: { role: 'OWNER' } },
-        subscriptions: {
-          include: {
-            plan: {
-              include: {
-                product: true
-              }
-            }
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    }),
-    prisma.product.findMany({
-      include: { plans: true }
-    })
+    orbitApi.get<TenantListItem[]>("/tenants"),
+    orbitApi.get<ProductWithPlans[]>("/products"),
   ]);
 
-  const transformedTenants = tenants.map(t => ({
-    ...t,
-    subscriptions: t.subscriptions.map(s => ({
-      ...s,
-      plan: {
-        ...s.plan,
-        price: s.plan.price.toString()
-      }
-    }))
-  }));
-
-  const transformedProducts = products.map(p => ({
-    ...p,
-    plans: p.plans.map(plan => ({
-      ...plan,
-      price: plan.price.toString()
-    }))
-  }));
-
-  return { tenants: transformedTenants, products: transformedProducts };
+  return { tenants, products };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -59,7 +37,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (!tenantId || !planId) return null;
 
-    await TenantService.addSubscription(tenantId, planId);
+    await orbitApi.post(`/tenants/${tenantId}/subscriptions`, { planId });
 
     return redirect("/admin/tenants");
   }

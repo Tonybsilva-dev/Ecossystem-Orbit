@@ -3,8 +3,7 @@ import type { Route } from "./+types/login";
 import { z } from "zod";
 import { getZodConstraint, parseWithZod } from "@conform-to/zod";
 import { useForm } from "@conform-to/react";
-import { prisma } from "../core/db/prisma.server";
-import { verifyPassword } from "../core/auth/password.server";
+import { orbitApi, OrbitApiError } from "../core/orbit-api/orbit-api.server";
 import { createUserSession } from "../core/auth/session.server";
 
 export const meta: Route.MetaFunction = () => {
@@ -26,25 +25,17 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
   const { email, password } = submission.value;
 
-  const user = await prisma.user.findUnique({
-    where: { email },
-  });
-
-  if (!user || !user.passwordHash) {
-    return submission.reply({
-      formErrors: ["Invalid email or password"],
-    });
+  try {
+    const user = await orbitApi.post<{ userId: string }>("/auth/login", { email, password });
+    return createUserSession(user.userId, "/admin");
+  } catch (error) {
+    if (error instanceof OrbitApiError && error.status === 401) {
+      return submission.reply({
+        formErrors: ["Invalid email or password"],
+      });
+    }
+    throw error;
   }
-
-  const isValid = await verifyPassword(password, user.passwordHash);
-
-  if (!isValid) {
-    return submission.reply({
-      formErrors: ["Invalid email or password"],
-    });
-  }
-
-  return createUserSession(user.id, "/admin");
 };
 
 export default function Login() {

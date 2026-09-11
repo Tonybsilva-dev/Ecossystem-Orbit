@@ -35,6 +35,13 @@ Uma **plataforma SaaS Multi-Tenant** completa que atua em 3 frentes principais:
 2. **Licensing Engine**: Sistema de segurança que valida permissões e assinaturas com latência < 200ms, incluindo feature flags e controle de acesso.
 3. **AI Orchestration (AIO)**: Interface unificada para comunicação com LLMs e Agentes, com retry automático e fallback entre providers.
 
+A plataforma é dividida em dois serviços:
+
+- **`web/orbit`** (este repositório): UI administrativa — o painel onde o operador gerencia tenants, planos, assinaturas e kill switch.
+- **[`api-orbit`](https://github.com/[USUARIO]/api-orbit)**: control plane real — toda a lógica de negócio (tenant, license, produtos/planos, AI Orchestration) e o único serviço com acesso ao banco de dados.
+
+Este app não acessa banco de dados nem contém regras de negócio — é um consumidor HTTP autenticado (secret compartilhado) de `api-orbit`.
+
 ### 💰 Valor do Projeto
 
 **Plataforma Enterprise** - Desenvolvida para gerenciar múltiplas instâncias SaaS de forma centralizada, com arquitetura preparada para escalar e transformar em modelo SaaS completo.
@@ -73,11 +80,10 @@ Uma **plataforma SaaS Multi-Tenant** completa que atua em 3 frentes principais:
 
 ### Arquitetura e Performance
 
-- ✅ **Domain-Driven Design (DDD)**: Separação clara de domínios (Tenant, License, AI) com responsabilidades bem definidas
-- ✅ **State Management**: Zustand para estado de UI + React Query (TanStack Query) para dados do servidor
+- ✅ **Separação UI / Control Plane**: este app é puramente apresentação — toda regra de negócio e persistência vive em `api-orbit`
+- ✅ **Cliente HTTP tipado**: `app/core/orbit-api` centraliza as chamadas server-to-server pra `api-orbit`, com secret compartilhado
 - ✅ **Lazy Loading**: Carregamento otimizado de componentes e rotas
 - ✅ **Code Splitting**: Chunks otimizados para performance
-- ✅ **Persistência Inteligente**: Prisma ORM com singleton pattern para conexões eficientes
 
 ### SEO e Acessibilidade
 
@@ -101,22 +107,18 @@ Uma **plataforma SaaS Multi-Tenant** completa que atua em 3 frentes principais:
 ### Core
 
 - **Framework**: React Router v7 com TypeScript
-- **Arquitetura**: Domain-Driven Design (DDD) com separação de responsabilidades
 - **Estilo**: Tailwind CSS v4 com Design System customizado
 - **Animações**: Transições nativas do Tailwind CSS
 
 ### Backend & Dados
 
-- **Database**: **PostgreSQL** (via Prisma ORM)
-- **ORM**: **Prisma** (Migrations, Type Safety, Query Builder)
-- **Authentication**: Sistema customizado com bcryptjs e sessões
-- **State Management**: Zustand (UI State) + React Query (Server State)
+- **Sem banco próprio**: todo dado vive em `api-orbit`; este app só guarda a sessão do admin (cookie)
+- **Authentication**: Sessão via cookie (`app/core/auth/session.server.ts`); credenciais validadas em `api-orbit` (`POST /auth/login`)
+- **Integração**: Cliente HTTP (`app/core/orbit-api`) com secret compartilhado (`ORBIT_API_SECRET`)
 
 ### AI & Integrações
 
-- **AI SDK**: Vercel AI SDK com suporte a múltiplos providers
-- **Providers**: OpenAI (GPT-4o) e Google Gemini (1.5 Flash)
-- **Retry Logic**: Implementação customizada com backoff exponencial
+- Orquestração de IA (OpenAI + Google Gemini, retry/fallback) vive em `api-orbit` — este app não faz chamadas de IA diretamente
 
 ### Deploy & Infra
 
@@ -130,9 +132,9 @@ Uma **plataforma SaaS Multi-Tenant** completa que atua em 3 frentes principais:
 
 ### Pré-requisitos
 
-- Node.js 18+
-- npm ou pnpm
-- PostgreSQL 14+ (local ou remoto)
+- Node.js 20+
+- pnpm
+- [`api-orbit`](https://github.com/[USUARIO]/api-orbit) rodando (control plane — sem ele o login e todas as telas admin não funcionam)
 
 ### Instalação
 
@@ -144,31 +146,21 @@ git clone https://github.com/[USUARIO]/orbit.git
 cd orbit
 
 # Instale as dependências
-npm install
+pnpm install
 
 # Configure as variáveis de ambiente
 cp .env.example .env
-# Preencha com suas credenciais:
-# - DATABASE_URL (PostgreSQL)
-# - OPENAI_API_KEY (opcional, para AI Client)
-# - GOOGLE_GEMINI_API_KEY (opcional, para AI Client fallback)
-```
-
-### Configuração do Banco de Dados
-
-```bash
-# Execute as migrations do Prisma
-npx prisma migrate dev
-
-# (Opcional) Gere o Prisma Client
-npx prisma generate
+# Preencha:
+# - SESSION_SECRET
+# - ORBIT_API_URL (endereço do api-orbit, ex: http://localhost:4001)
+# - ORBIT_API_SECRET (mesma chave configurada em api-orbit)
 ```
 
 ### Desenvolvimento
 
 ```bash
 # Inicie o servidor de desenvolvimento
-npm run dev
+pnpm dev
 ```
 
 Aplicação disponível em `http://localhost:5179`
@@ -177,26 +169,26 @@ Aplicação disponível em `http://localhost:5179`
 
 ```bash
 # Execute todos os testes
-npm test
+pnpm test
 
 # Execute testes em modo watch
-npm test -- --watch
+pnpm test -- --watch
 
 # Execute testes com UI
-npm run test:ui
+pnpm run test:ui
 
 # Execute testes uma vez
-npm run test:run
+pnpm run test:run
 ```
 
 ### Build para Produção
 
 ```bash
 # Crie o build otimizado
-npm run build
+pnpm run build
 
 # Inicie o servidor de produção
-npm start
+pnpm start
 ```
 
 ---
@@ -206,44 +198,26 @@ npm start
 ```
 app/
 ├── components/          # Componentes UI reutilizáveis (Design System)
-├── core/               # Infraestrutura central
-│   ├── ai/             # AI Client (legado, migrando para domains/ai)
-│   ├── auth/           # Autenticação e sessões
-│   ├── constants/      # Constantes globais (Cache-Control, etc)
-│   ├── db/             # Prisma Client singleton
-│   ├── domain/         # Domínios core (Tenant service)
-│   ├── security/       # Security headers e sanitização
-│   ├── seo/            # Schema.org e SEO
-│   ├── utils/          # Utilitários gerais
-│   └── validation/     # Configuração Zod com mensagens PT-BR
-├── domains/            # Lógica de Negócios (DDD)
-│   ├── tenant/         # Gerenciamento de Tenants
-│   │   ├── tenant.service.ts
-│   │   ├── tenant.schema.ts
-│   │   └── tenant.service.test.ts
-│   ├── license/        # Engine de Licenciamento
-│   │   ├── license.engine.ts
-│   │   ├── license.types.ts
-│   │   └── license.engine.test.ts
-│   └── ai/             # AI Orchestration
-│       ├── ai.client.ts
-│       └── ai.client.integration.test.ts
-├── routes/             # Rotas da Aplicação (React Router)
-│   ├── admin.tsx       # Layout do Painel Administrativo
-│   ├── api.validate.ts # Endpoint de Validação de Licença
-│   ├── home.tsx        # Página inicial
-│   └── login.tsx       # Autenticação
-├── root.tsx            # Root component com providers
+├── core/                # Infraestrutura central
+│   ├── auth/            # Sessão do admin (cookie) e login
+│   ├── constants/       # Constantes globais (Cache-Control, etc)
+│   ├── orbit-api/       # Cliente HTTP pra api-orbit (server-to-server)
+│   ├── security/        # Security headers e sanitização
+│   ├── seo/             # Schema.org e SEO
+│   ├── utils/           # Utilitários gerais
+│   └── validation/      # Configuração Zod com mensagens PT-BR
+├── routes/              # Rotas da Aplicação (React Router)
+│   ├── admin.tsx        # Layout do Painel Administrativo
+│   ├── admin.tenants.tsx        # Tenants + kill switch (via api-orbit)
+│   ├── admin.subscriptions.tsx  # Assinaturas (via api-orbit)
+│   ├── admin.products.*.tsx     # Produtos/planos/features (via api-orbit)
+│   ├── home.tsx         # Página inicial
+│   └── login.tsx        # Autenticação (via api-orbit)
+├── root.tsx             # Root component com providers
 └── entry.client.tsx     # Client entry point
-prisma/
-├── schema.prisma       # Schema do banco de dados
-└── migrations/         # Migrations do Prisma
-docs/
-└── orbit/             # Documentação de requisitos e testes
-    ├── tenant/
-    ├── license/
-    └── ai/
 ```
+
+Regras de negócio, Prisma e migrations vivem em [`api-orbit`](https://github.com/[USUARIO]/api-orbit) — este repositório não tem acesso a banco.
 
 ---
 
@@ -275,6 +249,8 @@ docs/
 ---
 
 ## 📊 Funcionalidades Detalhadas
+
+> As funcionalidades abaixo descrevem a plataforma como um todo. A implementação (endpoints, banco, regras) vive em [`api-orbit`](https://github.com/[USUARIO]/api-orbit) — este app consome tudo via HTTP. Documentação completa da API está no README de lá.
 
 ### 1. Gerenciamento de Tenants
 
@@ -415,25 +391,22 @@ railway up
 # Build da imagem
 docker build -t orbit .
 
-# Run do container
-docker run -p 3000:3000 \
-  -e DATABASE_URL="postgresql://..." \
-  -e OPENAI_API_KEY="..." \
+# Run do container (api-orbit precisa estar acessível)
+docker run -p 5179:5179 \
+  -e SESSION_SECRET="..." \
+  -e ORBIT_API_URL="http://api-orbit:4001" \
+  -e ORBIT_API_SECRET="..." \
   orbit
 ```
+
+Veja `docker/docker-compose.yml` na raiz do monorepo pra subir `orbit` + `api-orbit` + Postgres juntos.
 
 ### Variáveis de Ambiente Necessárias
 
 ```env
-# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/orbit"
-
-# AI Providers (opcional)
-OPENAI_API_KEY="sk-..."
-GOOGLE_GEMINI_API_KEY="..."
-
-# Session (gerado automaticamente em produção)
 SESSION_SECRET="..."
+ORBIT_API_URL="http://localhost:4001"
+ORBIT_API_SECRET="..."
 ```
 
 ---
