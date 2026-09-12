@@ -1,0 +1,14 @@
+.react-router
+build
+node_modules
+README.md
+.env
+.env.*
+!.env.example
+.git
+.vscode
+.idea
+*.log
+.DS_Store
+._*
+**/._*

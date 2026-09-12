@@ -1,0 +1,242 @@
+---
+description: Architecture Guidelines - Zustand + React Query separation of concerns
+globs: src/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# Architecture Guidelines - Zustand + React Query
+
+## Objetivo
+
+Separar responsabilidades: **Zustand** para estado de UI/componentes, **React Query (TanStack Query)** para requisições HTTP e cache de dados do servidor.
+
+## Princípios
+
+- **Zustand**: Estado de UI, preferências do usuário, estado local de componentes, formulários (não persistido)
+- **React Query**: Cache de dados do servidor, sincronização, refetch automático, background updates, paginação
+- **Services**: Apenas funções puras que retornam Promises (sem gerenciar estado)
+
+## Padrões
+
+### ✅ DO: Separar Estado de UI e Dados do Servidor
+
+```ts
+// ✅ DO: Zustand apenas para estado de UI
+interface ProfileUIState {
+  isEditing: boolean;
+  isUploading: boolean;
+  showDeleteConfirm: boolean;
+  setEditing: (editing: boolean) => void;
+  setUploading: (uploading: boolean) => void;
+}
+
+export const useProfileUIStore = create<ProfileUIState>()(
+  devtools((set) => ({
+    isEditing: false,
+    isUploading: false,
+    showDeleteConfirm: false,
+    setEditing: (editing) => set({ isEditing: editing }),
+    setUploading: (uploading) => set({ isUploading: uploading }),
+  }))
+);
+
+// ✅ DO: React Query para dados do servidor
+export function useProfile() {
+  return useQuery({
+    queryKey: ['profile'],
+    queryFn: () => ProfileService.getProfile(),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
+}
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (data: UpdateProfileRequest) => ProfileService.updateProfile(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      toast.success('Perfil atualizado com sucesso!');
+    },
+  });
+}
+```
+
+### ❌ DON'T: Misturar Requisições no Zustand
+
+```ts
+// ❌ DON'T: Store Zustand fazendo requisições HTTP
+export const useProfileStore = create<ProfileState>()(
+  devtools((set) => ({
+    profile: null,
+    isLoading: false,
+    async fetchProfile() {
+      set({ isLoading: true });
+      const data = await ProfileService.getProfile(); // ❌ Não fazer isso
+      set({ profile: data, isLoading: false });
+    },
+  }))
+);
+```
+
+## Estrutura de Diretórios
+
+```
+domains/[domain]/[subdomain]/
+├── components/
+├── hooks/
+│   ├── use-[entity].hook.ts          # React Query hooks
+│   ├── use-update-[entity].hook.ts
+│   └── index.ts
+├── services/
+│   └── [entity].service.ts          # Funções puras (apenas API calls)
+├── stores/
+│   └── [entity]-ui.store.ts         # Zustand apenas para UI state
+├── types/
+└── validations/
+```
+
+## React Query Hooks
+
+### Padrão de Query Hook
+
+```ts
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ProfileService } from '../services/profile.service';
+
+export function useProfile() {
+  return useQuery({
+    queryKey: ['profile'],
+    queryFn: () => ProfileService.getProfile(),
+    staleTime: 5 * 60 * 1000, // Dados frescos por 5 minutos
+    gcTime: 10 * 60 * 1000, // Cache por 10 minutos
+    retry: 1,
+  });
+}
+```
+
+### Padrão de Mutation Hook
+
+```ts
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { ProfileService } from '../services/profile.service';
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (data: UpdateProfileRequest) => ProfileService.updateProfile(data),
+    onSuccess: (data) => {
+      // Invalidar cache para refetch automático
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      // Atualizar cache otimisticamente
+      queryClient.setQueryData(['profile'], data);
+      toast.success('Perfil atualizado com sucesso!');
+    },
+    onError: (error) => {
+      toast.error('Erro ao atualizar perfil');
+    },
+  });
+}
+```
+
+## Services (Funções Puras)
+
+```ts
+// ✅ DO: Service apenas retorna Promise
+export class ProfileService {
+  static async getProfile(): Promise<ProfileData | null> {
+    const response = await api.get<GetProfileResponse>(ROUTES.API.PROFILE);
+    if (!response.data.success || !response.data.data) {
+      throw new Error(response.data.message || 'Erro ao buscar perfil');
+    }
+    return response.data.data;
+  }
+  
+  static async updateProfile(data: UpdateProfileRequest): Promise<ProfileData> {
+    const response = await api.put<UpdateProfileResponse>(ROUTES.API.PROFILE, data);
+    if (!response.data.success || !response.data.data) {
+      throw new Error(response.data.message || 'Erro ao atualizar perfil');
+    }
+    return response.data.data;
+  }
+}
+```
+
+## Quando Usar Cada Um
+
+### Use Zustand para
+
+- ✅ Estado de UI (modais abertos, tabs ativas, filtros locais)
+- ✅ Preferências do usuário (tema, idioma, layout)
+- ✅ Estado de formulários não relacionados ao servidor
+- ✅ Estado temporário que não precisa persistir
+
+### Use React Query para
+
+- ✅ Dados do servidor (perfil, listas, dashboards)
+- ✅ Cache e sincronização automática
+- ✅ Background refetch
+- ✅ Paginação e infinite scroll
+- ✅ Otimistic updates
+- ✅ Deduplicação de requisições
+
+## Migração Gradual
+
+1. **Fase 1**: Novos módulos usam React Query desde o início
+2. **Fase 2**: Migrar stores existentes gradualmente, mantendo compatibilidade
+3. **Fase 3**: Remover requisições HTTP dos stores Zustand
+
+## Configuração do QueryClient
+
+```ts
+// src/core/providers/query.provider.tsx
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutos
+      gcTime: 10 * 60 * 1000, // 10 minutos
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+    mutations: {
+      retry: false,
+    },
+  },
+});
+
+export function QueryProvider({ children }: { children: ReactNode }) {
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
+  );
+}
+```
+
+## Integração com Error Handling
+
+```ts
+export function useProfile() {
+  return useQuery({
+    queryKey: ['profile'],
+    queryFn: async () => {
+      try {
+        return await ProfileService.getProfile();
+      } catch (error) {
+        ErrorHandlingUtils.handleError(error, 'Erro ao carregar perfil');
+        throw error; // Re-throw para React Query tratar
+      }
+    },
+  });
+}
+```
+
+## Referências
+
+- [TanStack Query Docs](https://tanstack.com/query/latest)
+- [Zustand Best Practices](https://github.com/pmndrs/zustand/blob/main/docs/guides/practice-with-no-store-actions.md)
+- [Separating Server State from UI State](https://kentcdodds.com/blog/separation-of-concerns)

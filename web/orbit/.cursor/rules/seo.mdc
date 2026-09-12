@@ -1,0 +1,275 @@
+---
+description: SEO Guidelines - Diretrizes completas para otimização de mecanismos de busca
+globs: src/**/*.{ts,tsx,html}
+alwaysApply: true
+---
+
+# SEO Guidelines - Diretrizes de SEO
+
+## **Visão Geral**
+
+Diretrizes completas para otimização de mecanismos de busca (SEO), incluindo meta tags, estrutura HTML semântica, Open Graph, Schema.org, e otimização de imagens e links.
+
+---
+
+## 📋 Meta Tags Essenciais
+
+### **1. Title Tag**
+
+O título deve ser descritivo, único por página, e ter entre 50-60 caracteres.
+
+#### **✅ DO: Títulos Descritivos e Únicos**
+
+```tsx
+// ✅ DO: Hook reutilizável para SEO
+export function usePageTitle(title: string) {
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = `${title} - [Nome do Projeto]`;
+    return () => {
+      document.title = previousTitle;
+    };
+  }, [title]);
+}
+```
+
+### **2. Meta Description**
+
+Meta description é obrigatória e deve ter entre 120-160 caracteres.
+
+#### **✅ DO: Descriptions Descritivas**
+
+```tsx
+// ✅ DO: Hook para meta description
+export function useMetaDescription(description: string) {
+  useEffect(() => {
+    let metaDescription = document.querySelector('meta[name="description"]');
+    
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.setAttribute('name', 'description');
+      document.head.appendChild(metaDescription);
+    }
+    
+    metaDescription.setAttribute('content', description);
+  }, [description]);
+}
+```
+
+### **3. Canonical URL**
+
+Define a URL canônica para evitar conteúdo duplicado.
+
+#### **✅ DO: Canonical URL Definida**
+
+```tsx
+// ✅ DO: Hook para canonical URL
+export function useCanonicalUrl(url: string) {
+  useEffect(() => {
+    let linkCanonical = document.querySelector('link[rel="canonical"]');
+    
+    if (!linkCanonical) {
+      linkCanonical = document.createElement('link');
+      linkCanonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(linkCanonical);
+    }
+    
+    linkCanonical.setAttribute('href', url);
+  }, [url]);
+}
+```
+
+---
+
+## 🌐 Open Graph (Facebook) e Twitter Cards
+
+### **Open Graph Tags**
+
+#### **✅ DO: Open Graph Completo**
+
+```tsx
+// ✅ DO: Hook completo para Open Graph
+export function useOpenGraph(og: {
+  title: string;
+  description: string;
+  image: string;
+  url: string;
+  type?: string;
+  siteName?: string;
+}) {
+  useEffect(() => {
+    const ogTags = [
+      { property: 'og:title', content: og.title },
+      { property: 'og:description', content: og.description },
+      { property: 'og:image', content: og.image },
+      { property: 'og:url', content: og.url },
+      { property: 'og:type', content: og.type || 'website' },
+      { property: 'og:site_name', content: og.siteName || '[Nome do Projeto]' },
+      { property: 'og:locale', content: 'pt_BR' },
+    ];
+
+    ogTags.forEach(({ property, content }) => {
+      let meta = document.querySelector(`meta[property="${property}"]`);
+      
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('property', property);
+        document.head.appendChild(meta);
+      }
+      
+      meta.setAttribute('content', content);
+    });
+  }, [og]);
+}
+```
+
+---
+
+## 🖼️ Otimização de Imagens
+
+### **1. Alt Text Obrigatório**
+
+Todas as imagens devem ter `alt` descritivo.
+
+#### **✅ DO: Alt Text Descritivo**
+
+```tsx
+// ✅ DO: Alt text descritivo e contextual
+<img
+  src="/assets/icons/logo.svg"
+  alt="Logo do [Nome do Projeto] - [Descrição]"
+  title="Logo do [Nome do Projeto]"
+  loading="lazy"
+/>
+```
+
+### **2. Title Attribute para Imagens**
+
+Todas as imagens devem ter `title` attribute.
+
+#### **✅ DO: Title Attribute em Imagens**
+
+```tsx
+// ✅ DO: Title attribute descritivo
+<img
+  src="/assets/icons/logo.svg"
+  alt="Logo do [Nome do Projeto]"
+  title="Logo do [Nome do Projeto] - [Descrição completa]"
+  loading="lazy"
+/>
+```
+
+---
+
+## 🔗 Otimização de Links
+
+### **1. Title Attribute em Links**
+
+Todos os links devem ter `title` attribute descritivo.
+
+#### **✅ DO: Title em Links**
+
+```tsx
+// ✅ DO: Title attribute descritivo
+<a
+  href="/dashboard/settings"
+  title="Acessar página de configurações"
+  aria-label="Ir para configurações"
+>
+  Configurações
+</a>
+```
+
+---
+
+## 📐 Estrutura de Headers (H1-H6)
+
+### **Hierarquia Semântica**
+
+#### **✅ DO: Estrutura Hierárquica Correta**
+
+```tsx
+// ✅ DO: Hierarquia clara e semântica
+export function SettingsPage() {
+  return (
+    <main>
+      <h1>Configurações</h1>
+      
+      <section>
+        <h2>Meu Perfil</h2>
+        
+        <div>
+          <h3>Informações Pessoais</h3>
+        </div>
+      </section>
+    </main>
+  );
+}
+```
+
+### **Regras de Headers**
+
+1. **Um único H1 por página** - Define o tópico principal
+2. **H2 para seções principais** - Subsections do H1
+3. **H3-H6 para subseções** - Hierarquia descendente
+4. **Não pular níveis** - H1 → H2 → H3 (não H1 → H3)
+
+---
+
+## 📋 Checklist de SEO por Página
+
+### **Meta Tags Essenciais**
+
+- [ ] Title tag (50-60 caracteres, único)
+- [ ] Meta description (120-160 caracteres)
+- [ ] Meta keywords (relevantes)
+- [ ] Canonical URL
+- [ ] Meta robots
+- [ ] Meta author e publisher
+
+### **Open Graph e Social**
+
+- [ ] og:title
+- [ ] og:description
+- [ ] og:image (URL completa)
+- [ ] og:url
+- [ ] og:type
+- [ ] og:site_name
+- [ ] og:locale (pt_BR)
+- [ ] twitter:card
+- [ ] twitter:title
+- [ ] twitter:description
+- [ ] twitter:image
+
+### **Imagens**
+
+- [ ] Todas as imagens têm alt text
+- [ ] Todas as imagens têm title attribute
+- [ ] Nomes de arquivo descritivos
+- [ ] Imagens otimizadas (WebP, lazy loading)
+
+### **Links**
+
+- [ ] Todos os links têm title attribute
+- [ ] Links externos têm rel="noopener noreferrer"
+
+### **Headers**
+
+- [ ] Um único H1 por página
+- [ ] Hierarquia H1 → H2 → H3 → H4 (sem pular níveis)
+
+### **HTML Base**
+
+- [ ] Lang correto no `<html>` tag (pt-BR)
+- [ ] Charset UTF-8
+- [ ] Viewport meta tag
+
+---
+
+## 📚 Referências
+
+- [Google Search Central](https://developers.google.com/search)
+- [Open Graph Protocol](https://ogp.me/)
+- [Twitter Cards](https://developer.twitter.com/en/docs/twitter-for-websites/cards)
+- [Schema.org](https://schema.org/)
+- [MDN - SEO Basics](https://developer.mozilla.org/en-US/docs/Glossary/SEO)

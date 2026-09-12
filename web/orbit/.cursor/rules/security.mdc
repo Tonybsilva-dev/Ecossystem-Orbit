@@ -1,0 +1,76 @@
+---
+description: Guidelines for security best practices and compliance
+globs: src/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# Security Guidelines
+
+## Autenticação e Tokens
+
+- Preferir cookies httpOnly (backend) para tokens. Enquanto houver localStorage, minimizar exposição:
+  - Nunca logar tokens no console/Sentry.
+  - Rotacionar tokens via refresh; não duplicar em múltiplas chaves.
+- Cookies:
+  - `secure: window.location.protocol === 'https:'` em produção.
+  - `sameSite: 'lax'` (ou `strict` para apps sem integração cross-site).
+- Interceptores de Auth:
+  - 401: tentar refresh uma vez com mutex; manter usuário na tela enquanto revalida.
+  - 404/429: nunca ejetar sessão; apenas exibir feedback.
+  - Em falha de refresh: limpar credenciais e redirecionar.
+
+## Sentry e Logs
+
+- Remover `Authorization` de headers capturados.
+- Sanitizar dados sensíveis em `beforeSend`/`beforeSendTransaction`.
+- Ativar logs verbosos apenas em `development` controlado por env.
+
+## Headers de Segurança (Nginx/Edge)
+
+- Content-Security-Policy mínima:
+  - `default-src 'self';`
+  - `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.sentry.io;`
+  - `style-src 'self' 'unsafe-inline';`
+  - `img-src 'self' data: https:; font-src 'self' data:;`
+  - `connect-src 'self' https://*.sentry.io https://*.api-domain.com;`
+  - `frame-ancestors 'none';`
+- `X-Frame-Options: DENY`
+- `X-Content-Type-Options: nosniff`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy` mínimo: `geolocation=(), microphone=(), camera=()`
+- HSTS apenas em HTTPS: `max-age=31536000; includeSubDomains; preload`
+
+## CORS/CSRF
+
+- Confiar em CORS do backend; no frontend, evitar enviar credenciais para domínios não confiáveis.
+- Para ações sensíveis, considerar token CSRF quando cookies httpOnly estiverem ativos.
+
+## UX Segura (Nielsen)
+
+- Durante revalidação/refresh, mostrar estado "Revalidando sua sessão…".
+- Erros de rede: mensagens claras; oferecer retry.
+
+## XSS
+
+- Não usar `dangerouslySetInnerHTML`. Se inevitável, sanitizar com DOMPurify.
+- Validar e normalizar inputs (trim, limites, whitelist).
+
+## Storage
+
+- Sincronizar Zustand ↔ cookies/localStorage com parcimônia; evitar múltiplas fontes de verdade.
+- Ao fazer signOut, limpar todas as chaves espelhadas.
+
+## Checklist de Pull Request
+
+- [ ] Não há logs com tokens/PII.
+- [ ] Interceptor não ejeta usuário em 404/429.
+- [ ] CSP revisada quando adicionar novas origens.
+- [ ] Schemas Zod atualizados e reusados via merge/extend.
+- [ ] Novos endpoints: tratamento de erro com mensagens amigáveis.
+
+## Referências
+
+- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
+- [CSP Evaluator](https://csp-evaluator.withgoogle.com/)
+- [Security Headers Check](https://securityheaders.com/)
+- [DOMPurify](https://github.com/cure53/DOMPurify)

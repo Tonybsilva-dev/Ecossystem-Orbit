@@ -1,0 +1,531 @@
+---
+description: AI-AIO Guidelines - AI Integration Optimization - Diretrizes para otimização de integrações com IA
+globs: src/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# AI-AIO Guidelines - AI Integration Optimization
+
+## **Visão Geral**
+
+Diretrizes para otimização de integrações com modelos de IA, incluindo APIs de linguagem, processamento de dados, e implementação de funcionalidades baseadas em IA.
+
+---
+
+## 🤖 Integração com APIs de IA
+
+### **✅ DO: Cliente Unificado para APIs de IA**
+
+```typescript
+// ✅ DO: Service centralizado para múltiplas APIs de IA
+export class AIService {
+  private static providers: AIProvider[] = [];
+
+  static registerProvider(provider: AIProvider) {
+    this.providers.push(provider);
+  }
+
+  static async generateText(
+    prompt: string,
+    options?: AIGenerateOptions
+  ): Promise<string> {
+    const provider = this.getProvider(options?.provider);
+    return provider.generateText(prompt, options);
+  }
+
+  static async analyzeSentiment(text: string): Promise<SentimentAnalysis> {
+    const provider = this.getProvider();
+    return provider.analyzeSentiment(text);
+  }
+
+  static async translate(
+    text: string,
+    targetLanguage: string
+  ): Promise<string> {
+    const provider = this.getProvider();
+    return provider.translate(text, targetLanguage);
+  }
+
+  private static getProvider(name?: string): AIProvider {
+    if (name) {
+      const provider = this.providers.find((p) => p.name === name);
+      if (!provider) {
+        throw new Error(`Provider ${name} not found`);
+      }
+      return provider;
+    }
+    return this.providers[0]; // Default provider
+  }
+}
+
+// ✅ DO: Interface para providers
+interface AIProvider {
+  name: string;
+  generateText(prompt: string, options?: AIGenerateOptions): Promise<string>;
+  analyzeSentiment(text: string): Promise<SentimentAnalysis>;
+  translate(text: string, targetLanguage: string): Promise<string>;
+}
+```
+
+### **✅ DO: Implementação de Provider (OpenAI)**
+
+```typescript
+// ✅ DO: Provider específico para OpenAI
+import OpenAI from 'openai';
+
+export class OpenAIProvider implements AIProvider {
+  name = 'openai';
+  private client: OpenAI;
+
+  constructor(apiKey: string) {
+    this.client = new OpenAI({ apiKey });
+  }
+
+  async generateText(
+    prompt: string,
+    options?: AIGenerateOptions
+  ): Promise<string> {
+    try {
+      const response = await this.client.chat.completions.create({
+        model: options?.model || 'gpt-4',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: options?.temperature || 0.7,
+        max_tokens: options?.maxTokens || 1000,
+      });
+
+      return response.choices[0]?.message?.content || '';
+    } catch (error) {
+      console.error('Erro ao gerar texto:', error);
+      throw new Error('Erro ao gerar texto com IA');
+    }
+  }
+
+  async analyzeSentiment(text: string): Promise<SentimentAnalysis> {
+    const prompt = `Analise o sentimento do seguinte texto e retorne apenas JSON com "sentiment" (positive/negative/neutral) e "score" (0-1): ${text}`;
+    
+    const response = await this.generateText(prompt, {
+      temperature: 0.3,
+      maxTokens: 100,
+    });
+
+    return JSON.parse(response);
+  }
+
+  async translate(text: string, targetLanguage: string): Promise<string> {
+    const prompt = `Traduza o seguinte texto para ${targetLanguage}: ${text}`;
+    return this.generateText(prompt, { temperature: 0.3 });
+  }
+}
+```
+
+---
+
+## 🔄 Cache e Otimização
+
+### **✅ DO: Cache de Respostas de IA**
+
+```typescript
+// ✅ DO: Cache de respostas para evitar requisições duplicadas
+export class CachedAIService {
+  private static cache = new Map<string, { response: string; expires: number }>();
+  private static ttl = 24 * 60 * 60 * 1000; // 24 horas
+
+  static async generateText(
+    prompt: string,
+    options?: AIGenerateOptions
+  ): Promise<string> {
+    const cacheKey = this.getCacheKey(prompt, options);
+
+    // Verificar cache
+    const cached = this.cache.get(cacheKey);
+    if (cached && cached.expires > Date.now()) {
+      return cached.response;
+    }
+
+    // Gerar nova resposta
+    const response = await AIService.generateText(prompt, options);
+
+    // Cachear resposta
+    this.cache.set(cacheKey, {
+      response,
+      expires: Date.now() + this.ttl,
+    });
+
+    return response;
+  }
+
+  private static getCacheKey(
+    prompt: string,
+    options?: AIGenerateOptions
+  ): string {
+    return `${prompt}-${options?.model || 'default'}-${options?.temperature || 0.7}`;
+  }
+
+  static clearCache() {
+    this.cache.clear();
+  }
+}
+```
+
+---
+
+## 🎯 Hooks para IA
+
+### **✅ DO: Hook para Geração de Texto**
+
+```typescript
+// ✅ DO: Hook React para geração de texto com IA
+import { useState, useCallback } from 'react';
+
+export function useAIGenerate() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [result, setResult] = useState<string | null>(null);
+
+  const generate = useCallback(async (
+    prompt: string,
+    options?: AIGenerateOptions
+  ) => {
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const response = await CachedAIService.generateText(prompt, options);
+      setResult(response);
+      return response;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Erro desconhecido');
+      setError(error);
+      toast.error('Erro ao gerar texto com IA');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { generate, loading, error, result };
+}
+```
+
+### **✅ DO: Hook para Análise de Sentimento**
+
+```typescript
+// ✅ DO: Hook para análise de sentimento
+export function useSentimentAnalysis() {
+  const [loading, setLoading] = useState(false);
+  const [analysis, setAnalysis] = useState<SentimentAnalysis | null>(null);
+
+  const analyze = useCallback(async (text: string) => {
+    if (text.length < 10) {
+      toast.warning('Texto muito curto para análise');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await AIService.analyzeSentiment(text);
+      setAnalysis(result);
+      return result;
+    } catch (error) {
+      console.error('Erro na análise de sentimento:', error);
+      toast.error('Erro ao analisar sentimento');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { analyze, loading, analysis };
+}
+```
+
+---
+
+## 📝 Processamento de Dados
+
+### **✅ DO: Extração de Informações**
+
+```typescript
+// ✅ DO: Service para extração estruturada de informações
+export class DataExtractionService {
+  static async extractEntities(text: string): Promise<Entity[]> {
+    const prompt = `Extraia as entidades (pessoas, lugares, organizações) do seguinte texto e retorne JSON array: ${text}`;
+    
+    const response = await AIService.generateText(prompt, {
+      temperature: 0.3,
+      maxTokens: 500,
+    });
+
+    try {
+      return JSON.parse(response);
+    } catch (error) {
+      console.error('Erro ao parsear entidades:', error);
+      return [];
+    }
+  }
+
+  static async summarize(text: string, maxLength: number = 200): Promise<string> {
+    const prompt = `Resuma o seguinte texto em no máximo ${maxLength} caracteres: ${text}`;
+    
+    return AIService.generateText(prompt, {
+      temperature: 0.5,
+      maxTokens: Math.ceil(maxLength / 4), // Aproximação
+    });
+  }
+
+  static async extractKeywords(text: string, count: number = 5): Promise<string[]> {
+    const prompt = `Extraia as ${count} palavras-chave mais importantes do seguinte texto e retorne JSON array: ${text}`;
+    
+    const response = await AIService.generateText(prompt, {
+      temperature: 0.3,
+      maxTokens: 100,
+    });
+
+    try {
+      return JSON.parse(response);
+    } catch (error) {
+      console.error('Erro ao extrair palavras-chave:', error);
+      return [];
+    }
+  }
+}
+```
+
+---
+
+## 🔍 Busca Semântica
+
+### **✅ DO: Busca com Embeddings**
+
+```typescript
+// ✅ DO: Service para busca semântica
+export class SemanticSearchService {
+  private static embeddings: Map<string, number[]> = new Map();
+
+  static async generateEmbedding(text: string): Promise<number[]> {
+    // Usar API de embeddings (ex: OpenAI embeddings)
+    const response = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'text-embedding-ada-002',
+        input: text,
+      }),
+    });
+
+    const data = await response.json();
+    return data.data[0].embedding;
+  }
+
+  static async search(
+    query: string,
+    documents: Document[]
+  ): Promise<Document[]> {
+    const queryEmbedding = await this.generateEmbedding(query);
+
+    // Calcular similaridade (cosine similarity)
+    const results = documents.map((doc) => {
+      const docEmbedding = this.embeddings.get(doc.id) || [];
+      const similarity = this.cosineSimilarity(queryEmbedding, docEmbedding);
+      return { ...doc, similarity };
+    });
+
+    // Ordenar por similaridade
+    return results
+      .sort((a, b) => b.similarity - a.similarity)
+      .filter((doc) => doc.similarity > 0.7); // Threshold
+  }
+
+  private static cosineSimilarity(a: number[], b: number[]): number {
+    if (a.length !== b.length) return 0;
+
+    let dotProduct = 0;
+    let normA = 0;
+    let normB = 0;
+
+    for (let i = 0; i < a.length; i++) {
+      dotProduct += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
+    }
+
+    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+  }
+}
+```
+
+---
+
+## 🎨 Geração de Conteúdo
+
+### **✅ DO: Geração de Conteúdo com Templates**
+
+```typescript
+// ✅ DO: Templates para geração de conteúdo
+export class ContentGenerationService {
+  static async generateEmail(
+    type: 'welcome' | 'reminder' | 'notification',
+    data: Record<string, string>
+  ): Promise<string> {
+    const templates = {
+      welcome: `Bem-vindo, ${data.name}! Estamos felizes em tê-lo conosco.`,
+      reminder: `Olá ${data.name}, este é um lembrete sobre ${data.subject}.`,
+      notification: `Notificação: ${data.message}`,
+    };
+
+    const baseTemplate = templates[type];
+    const prompt = `Gere um email profissional baseado no seguinte template: ${baseTemplate}. Dados: ${JSON.stringify(data)}`;
+
+    return AIService.generateText(prompt, {
+      temperature: 0.7,
+      maxTokens: 500,
+    });
+  }
+
+  static async generateSummary(content: string): Promise<string> {
+    const prompt = `Gere um resumo conciso e informativo do seguinte conteúdo: ${content}`;
+    
+    return AIService.generateText(prompt, {
+      temperature: 0.5,
+      maxTokens: 200,
+    });
+  }
+}
+```
+
+---
+
+## ⚡ Performance e Rate Limiting
+
+### **✅ DO: Rate Limiting e Retry**
+
+```typescript
+// ✅ DO: Rate limiter para APIs de IA
+export class RateLimitedAIService {
+  private static queue: Array<() => Promise<void>> = [];
+  private static processing = false;
+  private static requestsPerMinute = 60;
+  private static requestTimes: number[] = [];
+
+  static async generateText(
+    prompt: string,
+    options?: AIGenerateOptions
+  ): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.queue.push(async () => {
+        try {
+          // Verificar rate limit
+          await this.checkRateLimit();
+
+          // Fazer requisição
+          const result = await AIService.generateText(prompt, options);
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      });
+
+      this.processQueue();
+    });
+  }
+
+  private static async checkRateLimit() {
+    const now = Date.now();
+    const oneMinuteAgo = now - 60000;
+
+    // Remover requisições antigas
+    this.requestTimes = this.requestTimes.filter(
+      (time) => time > oneMinuteAgo
+    );
+
+    // Verificar se excedeu o limite
+    if (this.requestTimes.length >= this.requestsPerMinute) {
+      const oldestRequest = this.requestTimes[0];
+      const waitTime = 60000 - (now - oldestRequest);
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
+    }
+
+    this.requestTimes.push(Date.now());
+  }
+
+  private static async processQueue() {
+    if (this.processing || this.queue.length === 0) return;
+
+    this.processing = true;
+    while (this.queue.length > 0) {
+      const task = this.queue.shift();
+      if (task) {
+        await task();
+      }
+    }
+    this.processing = false;
+  }
+}
+```
+
+---
+
+## 🎯 Checklist de AI-AIO
+
+### **Integração com APIs**
+
+- [ ] Cliente unificado para APIs de IA configurado
+- [ ] Múltiplos providers suportados
+- [ ] Fallback entre providers implementado
+- [ ] Tratamento de erros robusto
+- [ ] Timeout configurado
+
+### **Cache e Performance**
+
+- [ ] Cache de respostas implementado
+- [ ] TTL configurado apropriadamente
+- [ ] Rate limiting implementado
+- [ ] Retry logic configurado
+- [ ] Debounce em requisições frequentes
+
+### **Hooks e Componentes**
+
+- [ ] Hooks React para funcionalidades de IA
+- [ ] Loading states implementados
+- [ ] Error handling em componentes
+- [ ] Feedback visual para usuário
+
+### **Processamento de Dados**
+
+- [ ] Extração de entidades implementada
+- [ ] Sumarização de texto
+- [ ] Extração de palavras-chave
+- [ ] Análise de sentimento
+- [ ] Tradução automática
+
+### **Busca Semântica**
+
+- [ ] Embeddings gerados e armazenados
+- [ ] Busca por similaridade implementada
+- [ ] Threshold de relevância configurado
+- [ ] Performance otimizada
+
+### **Segurança**
+
+- [ ] API keys em variáveis de ambiente
+- [ ] Validação de inputs
+- [ ] Sanitização de outputs
+- [ ] Rate limiting por usuário
+
+---
+
+## 📚 Referências
+
+- [OpenAI API Documentation](https://platform.openai.com/docs)
+- [Google Gemini API](https://ai.google.dev/docs)
+- [Anthropic Claude API](https://docs.anthropic.com/)
+- [Embeddings Guide](https://platform.openai.com/docs/guides/embeddings)
+- [Rate Limiting Best Practices](https://www.cloudflare.com/learning/bots/what-is-rate-limiting/)
+
+---
+
+**Última atualização**: 2024  
+**Versão**: 1.0.0

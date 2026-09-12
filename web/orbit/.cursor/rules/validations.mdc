@@ -1,0 +1,109 @@
+---
+description: Guidelines for using Zod + React Hook Form
+globs: src/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# Validations (Zod + React Hook Form)
+
+## Objetivo
+
+Padronizar validações com Zod, promovendo reuso por composição usando `.merge()` e `.extend()`, mensagens consistentes e integração com React Hook Form.
+
+## Princípios
+
+- Reusar schemas por domínio via composição (merge/extend), nunca duplicar.
+- Mensagens em PT-BR, curtas e orientadas à ação.
+- Validação oportuna: `mode: onChange` em formulários de edição; `onSubmit` em fluxos críticos.
+- Mapear erros para UI com `FormMessage` e atributos ARIA.
+
+## Padrões
+
+### 1) Schemas atômicos e composição
+
+```ts
+import { z } from "zod";
+
+// Átomos reutilizáveis
+export const idSchema = z.string().uuid("ID inválido");
+export const nameSchema = z
+  .string({ required_error: "Nome é obrigatório" })
+  .min(3, "Mínimo de 3 caracteres")
+  .max(120, "Máximo de 120 caracteres");
+export const descriptionSchema = z
+  .string({ required_error: "Descrição é obrigatória" })
+  .min(5, "Mínimo de 5 caracteres")
+  .max(500, "Máximo de 500 caracteres");
+export const urlSchema = z.string().url("Informe uma URL válida");
+
+// Bloco comum
+export const timestampSchema = z.object({
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+// Exemplo: base de entidade
+export const entityBaseSchema = z.object({
+  name: nameSchema,
+  description: descriptionSchema,
+});
+
+// Update = base + campos opcionais + extras
+export const entityUpdateSchema = entityBaseSchema
+  .extend({
+    logo: urlSchema.or(z.literal("")).optional().nullable(),
+    status: z.enum(["active", "inactive"], { required_error: "Status é obrigatório" }),
+  })
+  .merge(timestampSchema.partial())
+  .strict();
+```
+
+### 2) Reuso entre Create/Update
+
+```ts
+export const entityCreateSchema = entityUpdateSchema
+  .omit({ created_at: true, updated_at: true })
+  .extend({ logo: urlSchema.optional().nullable() });
+```
+
+### 3) Narrowing e transform
+
+```ts
+export const trimmedNameSchema = nameSchema.transform((s) => s.trim());
+```
+
+### 4) Tipos derivados
+
+```ts
+export type EntityUpdateInput = z.infer<typeof entityUpdateSchema>;
+```
+
+### 5) Integração com React Hook Form
+
+```ts
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const form = useForm<EntityUpdateInput>({
+  resolver: zodResolver(entityUpdateSchema),
+  mode: "onChange",
+});
+```
+
+### 6) Boas práticas
+
+- Evite mensagens técnicas; foque no "o que fazer".
+- `.strict()` para evitar campos desconhecidos quando fizer sentido.
+- Schemas expostos via `validations/index.ts` (barrel export) por domínio.
+- Validações de arquivo/upload no lado do cliente: tamanho e tipo; back-end continua autoridade final.
+
+## Anti-padrões
+
+- Duplicar schemas similares entre módulos.
+- Validar somente no submit em formulários longos (perde feedback imediato).
+- Misturar regras de negócio complexas no schema (faça no service/usecase).
+
+## Referências
+
+- [Zod Documentation](https://zod.dev/)
+- [React Hook Form](https://react-hook-form.com/)

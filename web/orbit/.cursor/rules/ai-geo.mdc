@@ -1,0 +1,496 @@
+---
+description: AI-GEO Guidelines - Generative Engine Optimization - Diretrizes para otimização em motores generativos de IA
+globs: src/**/*.{ts,tsx,html}
+alwaysApply: true
+---
+
+# AI-GEO Guidelines - Generative Engine Optimization
+
+## **Visão Geral**
+
+Diretrizes para otimização de conteúdo em Generative Engines (motores generativos) como ChatGPT, Google Gemini, Claude, e outros modelos de linguagem que geram conteúdo baseado em treinamento.
+
+---
+
+## 🎯 Princípios Fundamentais
+
+### **Diferença entre SEO, AEO e GEO**
+
+- **SEO**: Otimização para resultados de busca tradicionais
+- **AEO**: Otimização para respostas diretas em assistentes de IA
+- **GEO**: Otimização para ser incluído no treinamento de modelos generativos
+
+### **Objetivos do GEO**
+
+1. Ser incluído no dataset de treinamento de LLMs
+2. Fornecer conteúdo de alta qualidade e autoritativo
+3. Estruturar conteúdo para fácil processamento por modelos
+4. Estabelecer expertise reconhecida no domínio
+
+---
+
+## 📝 Estrutura de Conteúdo para GEO
+
+### **✅ DO: Conteúdo Completo e Autoritativo**
+
+```tsx
+// ✅ DO: Artigo completo e bem estruturado
+export function ComprehensiveArticle({ article }: { article: Article }) {
+  return (
+    <article>
+      {/* Introdução clara */}
+      <section className="introduction">
+        <h1>{article.title}</h1>
+        <p className="lead">{article.lead}</p>
+        <p>{article.introduction}</p>
+      </section>
+
+      {/* Conteúdo principal estruturado */}
+      {article.sections.map((section, index) => (
+        <section key={index}>
+          <h2>{section.title}</h2>
+          <p>{section.content}</p>
+          
+          {/* Subseções quando necessário */}
+          {section.subsections?.map((subsection, subIndex) => (
+            <div key={subIndex}>
+              <h3>{subsection.title}</h3>
+              <p>{subsection.content}</p>
+            </div>
+          ))}
+        </section>
+      ))}
+
+      {/* Conclusão */}
+      <section className="conclusion">
+        <h2>Conclusão</h2>
+        <p>{article.conclusion}</p>
+      </section>
+    </article>
+  );
+}
+```
+
+### **✅ DO: Glossário e Definições**
+
+```tsx
+// ✅ DO: Glossário estruturado para termos técnicos
+export function GlossarySection({ terms }: { terms: GlossaryTerm[] }) {
+  return (
+    <section className="glossary">
+      <h2>Glossário</h2>
+      <dl>
+        {terms.map((term) => (
+          <div key={term.id}>
+            <dt>
+              <strong>{term.term}</strong>
+            </dt>
+            <dd>{term.definition}</dd>
+            {term.example && (
+              <dd className="example">
+                <em>Exemplo: {term.example}</em>
+              </dd>
+            )}
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+```
+
+---
+
+## 🎓 Autoridade e Expertise
+
+### **✅ DO: Demonstração de Expertise**
+
+```tsx
+// ✅ DO: Seção de autoridade completa
+export function AuthoritySection({ author, credentials }: AuthorityProps) {
+  return (
+    <aside className="authority-section">
+      <div className="author-info">
+        <img 
+          src={author.avatar} 
+          alt={author.name}
+          title={author.name}
+        />
+        <div>
+          <h3>{author.name}</h3>
+          <p className="title">{author.title}</p>
+          <p className="bio">{author.bio}</p>
+        </div>
+      </div>
+
+      <div className="credentials">
+        <h4>Credenciais</h4>
+        <ul>
+          {credentials.map((cred, index) => (
+            <li key={index}>
+              <strong>{cred.type}:</strong> {cred.value}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="experience">
+        <h4>Experiência</h4>
+        <p>{author.experience} anos de experiência em {author.domain}</p>
+        <p>Publicações: {author.publications}</p>
+        <p>Citações: {author.citations}</p>
+      </div>
+    </aside>
+  );
+}
+```
+
+---
+
+## 📊 Dados Estruturados Avançados
+
+### **✅ DO: ScholarlyArticle Schema**
+
+```tsx
+// ✅ DO: ScholarlyArticle para conteúdo acadêmico/autoritativo
+export function useScholarlyArticleSchema(article: ScholarlyArticle) {
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'ScholarlyArticle',
+      headline: article.title,
+      description: article.description,
+      author: {
+        '@type': 'Person',
+        name: article.author.name,
+        jobTitle: article.author.title,
+        affiliation: {
+          '@type': 'Organization',
+          name: article.author.affiliation,
+        },
+        sameAs: article.author.socialLinks,
+      },
+      publisher: {
+        '@type': 'Organization',
+        name: '[Nome da Organização]',
+        logo: {
+          '@type': 'ImageObject',
+          url: '[URL do Logo]',
+        },
+      },
+      datePublished: article.publishedAt,
+      dateModified: article.updatedAt,
+      articleSection: article.category,
+      keywords: article.keywords.join(', '),
+      inLanguage: 'pt-BR',
+      citation: article.citations.map((cite) => ({
+        '@type': 'CreativeWork',
+        name: cite.title,
+        url: cite.url,
+      })),
+    });
+    document.head.appendChild(script);
+
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, [article]);
+}
+```
+
+### **✅ DO: Course Schema para Tutoriais**
+
+```tsx
+// ✅ DO: Course Schema para conteúdo educacional
+export function useCourseSchema(course: Course) {
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Course',
+      name: course.name,
+      description: course.description,
+      provider: {
+        '@type': 'Organization',
+        name: '[Nome da Organização]',
+      },
+      courseCode: course.code,
+      educationalLevel: course.level,
+      teaches: course.learningOutcomes,
+      hasCourseInstance: {
+        '@type': 'CourseInstance',
+        courseMode: 'online',
+        duration: course.duration,
+      },
+    });
+    document.head.appendChild(script);
+
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, [course]);
+}
+```
+
+---
+
+## 📚 Conteúdo Educacional
+
+### **✅ DO: Tutoriais Completos**
+
+```tsx
+// ✅ DO: Tutorial completo e passo a passo
+export function TutorialPage({ tutorial }: { tutorial: Tutorial }) {
+  return (
+    <article>
+      <header>
+        <h1>{tutorial.title}</h1>
+        <p className="description">{tutorial.description}</p>
+        <div className="meta">
+          <span>Tempo estimado: {tutorial.duration}</span>
+          <span>Nível: {tutorial.level}</span>
+        </div>
+      </header>
+
+      {/* Pré-requisitos */}
+      {tutorial.prerequisites && (
+        <section className="prerequisites">
+          <h2>Pré-requisitos</h2>
+          <ul>
+            {tutorial.prerequisites.map((req, index) => (
+              <li key={index}>{req}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Objetivos de aprendizado */}
+      <section className="learning-objectives">
+        <h2>O que você vai aprender</h2>
+        <ul>
+          {tutorial.learningObjectives.map((objective, index) => (
+            <li key={index}>{objective}</li>
+          ))}
+        </ul>
+      </section>
+
+      {/* Conteúdo principal */}
+      {tutorial.sections.map((section, index) => (
+        <section key={index} className="tutorial-section">
+          <h2>{section.title}</h2>
+          <div dangerouslySetInnerHTML={{ __html: section.content }} />
+          
+          {section.codeExample && (
+            <pre>
+              <code>{section.codeExample}</code>
+            </pre>
+          )}
+        </section>
+      ))}
+
+      {/* Resumo */}
+      <section className="summary">
+        <h2>Resumo</h2>
+        <p>{tutorial.summary}</p>
+      </section>
+
+      {/* Próximos passos */}
+      {tutorial.nextSteps && (
+        <section className="next-steps">
+          <h2>Próximos Passos</h2>
+          <ul>
+            {tutorial.nextSteps.map((step, index) => (
+              <li key={index}>{step}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </article>
+  );
+}
+```
+
+---
+
+## 🔬 Dados e Estatísticas
+
+### **✅ DO: Dados Estruturados e Citados**
+
+```tsx
+// ✅ DO: Apresentar dados com fontes claras
+export function DataSection({ data, source }: { data: DataPoint[]; source: Source }) {
+  return (
+    <section className="data-section">
+      <h2>Dados e Estatísticas</h2>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Métrica</th>
+            <th>Valor</th>
+            <th>Período</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((point, index) => (
+            <tr key={index}>
+              <td>{point.metric}</td>
+              <td>{point.value}</td>
+              <td>{point.period}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <footer className="data-source">
+        <p>
+          <strong>Fonte:</strong>{' '}
+          <a href={source.url} title={source.title}>
+            {source.title}
+          </a>
+          {source.date && ` (${source.date})`}
+        </p>
+      </footer>
+    </section>
+  );
+}
+```
+
+---
+
+## 🔗 Citações e Referências
+
+### **✅ DO: Referências Acadêmicas**
+
+```tsx
+// ✅ DO: Seção de referências estruturada
+export function ReferencesSection({ references }: { references: Reference[] }) {
+  return (
+    <section className="references">
+      <h2>Referências</h2>
+      <ol>
+        {references.map((ref, index) => (
+          <li key={index} id={`ref-${index + 1}`}>
+            <cite>
+              {ref.authors && `${ref.authors}. `}
+              <strong>{ref.title}</strong>.
+              {ref.publication && ` ${ref.publication},`}
+              {ref.year && ` ${ref.year}.`}
+              {ref.url && (
+                <>
+                  {' '}
+                  <a href={ref.url} title={ref.title}>
+                    {ref.url}
+                  </a>
+                </>
+              )}
+            </cite>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+```
+
+---
+
+## 📊 Qualidade do Conteúdo
+
+### **✅ DO: Conteúdo Original e Único**
+
+```tsx
+// ✅ DO: Indicar originalidade e unicidade
+export function ContentQuality({ article }: { article: Article }) {
+  return (
+    <article>
+      <header>
+        <h1>{article.title}</h1>
+        <div className="content-meta">
+          {article.original && (
+            <span className="badge original">Conteúdo Original</span>
+          )}
+          {article.updatedAt && (
+            <span className="badge updated">
+              Atualizado em {new Date(article.updatedAt).toLocaleDateString('pt-BR')}
+            </span>
+          )}
+        </div>
+      </header>
+      
+      {/* Conteúdo único e valioso */}
+      <div className="content">
+        {article.content}
+      </div>
+    </article>
+  );
+}
+```
+
+---
+
+## 🎯 Checklist de GEO
+
+### **Estrutura de Conteúdo**
+
+- [ ] Conteúdo completo e autoritativo
+- [ ] Estrutura hierárquica clara (H1 → H2 → H3)
+- [ ] Introdução e conclusão bem definidas
+- [ ] Glossário para termos técnicos
+- [ ] Seções bem organizadas
+
+### **Autoridade (E-E-A-T)**
+
+- [ ] Informações completas do autor
+- [ ] Credenciais e experiência demonstradas
+- [ ] Afiliações e organizações mencionadas
+- [ ] Publicações e citações listadas
+- [ ] Links para perfis sociais/profissionais
+
+### **Dados Estruturados**
+
+- [ ] ScholarlyArticle Schema para conteúdo acadêmico
+- [ ] Course Schema para tutoriais
+- [ ] Article Schema completo
+- [ ] Informações de data de publicação/atualização
+
+### **Conteúdo Educacional**
+
+- [ ] Tutoriais completos e passo a passo
+- [ ] Pré-requisitos definidos
+- [ ] Objetivos de aprendizado claros
+- [ ] Exemplos práticos incluídos
+- [ ] Resumo e próximos passos
+
+### **Referências**
+
+- [ ] Referências acadêmicas estruturadas
+- [ ] Citações com links e fontes
+- [ ] Dados com fontes claras
+- [ ] Links para fontes confiáveis
+
+### **Qualidade**
+
+- [ ] Conteúdo original e único
+- [ ] Atualizações regulares
+- [ ] Correções e melhorias documentadas
+- [ ] Feedback incorporado
+
+---
+
+## 📚 Referências
+
+- [Generative Engine Optimization](https://www.searchenginejournal.com/generative-engine-optimization/)
+- [Schema.org ScholarlyArticle](https://schema.org/ScholarlyArticle)
+- [Schema.org Course](https://schema.org/Course)
+- [E-E-A-T Guidelines](https://developers.google.com/search/docs/appearance/creating-helpful-content)
+- [OpenAI Training Data](https://openai.com/research)
+- [Google Gemini](https://deepmind.google/technologies/gemini/)
+
+---
+
+**Última atualização**: 2024  
+**Versão**: 1.0.0

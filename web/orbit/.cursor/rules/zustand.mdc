@@ -1,0 +1,152 @@
+---
+description: Guidelines for using Zustand for global state management
+globs: src/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# Zustand State Management
+
+## **Visão Geral**
+
+Zustand é o padrão obrigatório para gerenciamento de estado global. Use Zustand para qualquer estado que precise ser compartilhado entre componentes ou persistido.
+
+## **Padrões Obrigatórios**
+
+### **✅ DO: Usar Zustand para Estado Global**
+
+```typescript
+// ✅ DO: Store Zustand para estado global
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  setUser: (user: User | null) => void;
+}
+
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      isAuthenticated: false,
+      setUser: (user) => set({ user, isAuthenticated: !!user }),
+    }),
+    { name: 'auth-storage' }
+  )
+);
+```
+
+### **❌ DON'T: useState para Estado Global**
+
+```typescript
+// ❌ DON'T: useState para estado compartilhado
+const [user, setUser] = useState(null); // Não use para estado global
+```
+
+## **Estrutura de Stores**
+
+### **Organização por Domínio**
+
+```typescript
+// ✅ DO: Um store por domínio
+src/lib/stores/
+├── auth.store.ts      // Autenticação e usuário
+├── ui.store.ts        // Estado de UI global
+├── [domain].store.ts  // Stores específicos por domínio
+└── index.ts          // Barrel exports
+```
+
+### **Interface e Tipos**
+
+```typescript
+// ✅ DO: Interfaces bem definidas
+interface User {
+  id: string;
+  email: string;
+  name?: string | null;
+  image?: string | null;
+}
+
+interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  // Actions
+  setUser: (user: User | null) => void;
+  setLoading: (loading: boolean) => void;
+  reset: () => void;
+}
+```
+
+## **Uso em Componentes**
+
+### **✅ DO: Usar Store Hooks**
+
+```typescript
+// ✅ DO: Usar hooks do store
+import { useAuthStore } from '@/lib/stores/auth.store';
+
+export function UserProfile() {
+  const { user, isAuthenticated, setUser } = useAuthStore();
+  
+  if (!isAuthenticated) return <LoginButton />;
+  
+  return <div>Welcome, {user?.name}!</div>;
+}
+```
+
+## **Persistência e Middleware**
+
+### **Persistência com localStorage**
+
+```typescript
+// ✅ DO: Usar persist middleware para dados importantes
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      // state and actions
+    }),
+    {
+      name: 'auth-storage',
+      getStorage: () => localStorage,
+    }
+  )
+);
+```
+
+### **Selectors para Performance**
+
+```typescript
+// ✅ DO: Usar selectors para evitar re-renders
+const user = useAuthStore((state) => state.user);
+const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+// ❌ DON'T: Usar todo o store
+const { user, isAuthenticated } = useAuthStore(); // Pode causar re-renders desnecessários
+```
+
+## **Testes e Debugging**
+
+### **DevTools Integration**
+
+```typescript
+// ✅ DO: Adicionar DevTools em desenvolvimento
+import { devtools } from 'zustand/middleware';
+
+export const useAuthStore = create<AuthState>()(
+  devtools(
+    persist(
+      (set) => ({
+        // state and actions
+      }),
+      { name: 'auth-storage' }
+    ),
+    { name: 'auth-store' }
+  )
+);
+```
+
+## **Referências**
+
+- [Zustand Documentation](https://zustand-demo.pmnd.rs/)

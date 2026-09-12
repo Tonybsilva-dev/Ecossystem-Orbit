@@ -1,0 +1,261 @@
+---
+description: Performance Guidelines - Diretrizes para otimização de desempenho e métricas Core Web Vitals
+globs: src/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# Performance Guidelines - Diretrizes de Desempenho
+
+## **Visão Geral**
+
+Diretrizes completas para otimização de desempenho web, incluindo Core Web Vitals, otimização de imagens, code splitting, cache eficiente, e prevenção de problemas de performance comuns.
+
+---
+
+## 📊 Core Web Vitals
+
+### **Métricas Essenciais**
+
+As métricas Core Web Vitals são indicadores críticos de experiência do usuário e são utilizadas pelo Google para ranking:
+
+#### **1. Largest Contentful Paint (LCP)**
+
+Tempo até o maior elemento visível ser renderizado. Meta: **< 2.5 segundos**.
+
+#### **✅ DO: Otimizar LCP**
+
+```typescript
+// ✅ DO: Lazy loading de imagens grandes
+<img
+  src="/hero-image.webp"
+  alt="Hero image"
+  title="Hero image"
+  loading="lazy"
+  decoding="async"
+  fetchpriority="high" // Apenas para imagem hero acima da dobra
+/>
+
+// ✅ DO: Preload de recursos críticos
+<link rel="preload" href="/fonts/main-font.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+<link rel="preload" href="/critical.css" as="style" />
+
+// ✅ DO: Otimizar fontes
+<link
+  rel="preconnect"
+  href="https://fonts.googleapis.com"
+  crossOrigin="anonymous"
+/>
+```
+
+#### **2. First Contentful Paint (FCP)**
+
+Tempo até o primeiro pixel de conteúdo ser renderizado. Meta: **< 1.8 segundos**.
+
+#### **✅ DO: Otimizar FCP**
+
+```typescript
+// ✅ DO: CSS crítico inline ou preload
+<style dangerouslySetInnerHTML={{ __html: criticalCSS }} />
+
+// ✅ DO: Remover render-blocking JavaScript
+<script src="analytics.js" async />
+
+// ✅ DO: Minimizar JavaScript inicial
+const HeavyComponent = lazy(() => import('./HeavyComponent'));
+```
+
+#### **3. Cumulative Layout Shift (CLS)**
+
+Estabilidade visual - mudanças inesperadas de layout. Meta: **< 0.1**.
+
+#### **✅ DO: Prevenir Layout Shift**
+
+```typescript
+// ✅ DO: Definir dimensões de imagens
+<img
+  src="/image.webp"
+  alt="Image"
+  title="Image"
+  width={800}
+  height={600}
+  loading="lazy"
+/>
+
+// ✅ DO: Reservar espaço para elementos dinâmicos
+<div className="h-64 w-full bg-gray-100 animate-pulse">
+  {/* Skeleton loader mantém espaço */}
+</div>
+
+// ✅ DO: Usar aspect-ratio para containers
+<div className="aspect-video w-full">
+  <img src="/video-thumbnail.webp" alt="Thumbnail" />
+</div>
+```
+
+#### **4. Interaction to Next Paint (INP)**
+
+Tempo de resposta a interações do usuário. Meta: **< 200 milissegundos**.
+
+#### **✅ DO: Otimizar Interatividade**
+
+```typescript
+// ✅ DO: Debounce em inputs pesados
+import { useDebouncedCallback } from 'use-debounce';
+
+function SearchInput() {
+  const [search, setSearch] = useState('');
+  
+  const debouncedSearch = useDebouncedCallback(
+    (value: string) => {
+      performSearch(value);
+    },
+    300
+  );
+  
+  return (
+    <input
+      value={search}
+      onChange={(e) => {
+        setSearch(e.target.value);
+        debouncedSearch(e.target.value);
+      }}
+    />
+  );
+}
+```
+
+---
+
+## 🖼️ Otimização de Imagens
+
+### **✅ DO: Boas Práticas de Imagens**
+
+```typescript
+// ✅ DO: Formatos modernos (WebP, AVIF)
+<picture>
+  <source srcSet="/image.avif" type="image/avif" />
+  <source srcSet="/image.webp" type="image/webp" />
+  <img src="/image.jpg" alt="Image" title="Image" loading="lazy" />
+</picture>
+
+// ✅ DO: Responsive images com srcSet
+<img
+  srcSet="/image-320w.webp 320w,
+          /image-640w.webp 640w,
+          /image-1280w.webp 1280w"
+  sizes="(max-width: 640px) 320px,
+         (max-width: 1280px) 640px,
+         1280px"
+  src="/image-1280w.webp"
+  alt="Image"
+  title="Image"
+  loading="lazy"
+/>
+
+// ✅ DO: Dimensões explícitas para prevenir CLS
+<img
+  src="/image.webp"
+  alt="Image"
+  title="Image"
+  width={800}
+  height={600}
+  loading="lazy"
+/>
+```
+
+---
+
+## 📦 Code Splitting e Lazy Loading
+
+### **✅ DO: Code Splitting Inteligente**
+
+```typescript
+// ✅ DO: Lazy loading de rotas
+import { lazy, Suspense } from 'react';
+
+const Dashboard = lazy(() => import('./Dashboard'));
+const Settings = lazy(() => import('./Settings'));
+
+function App() {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <Routes>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/settings" element={<Settings />} />
+      </Routes>
+    </Suspense>
+  );
+}
+```
+
+---
+
+## 💾 Cache Eficiente
+
+### **✅ DO: Estratégias de Cache**
+
+```typescript
+// ✅ DO: React Query com staleTime apropriado
+export function useDashboardData() {
+  return useQuery({
+    queryKey: ['dashboard'],
+    queryFn: fetchDashboardData,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
+    refetchOnWindowFocus: false,
+  });
+}
+
+// ✅ DO: Memoização de cálculos pesados
+import { useMemo } from 'react';
+
+function ExpensiveComponent({ data }) {
+  const processedData = useMemo(() => {
+    return heavyProcessing(data);
+  }, [data]);
+  
+  return <div>{processedData}</div>;
+}
+```
+
+---
+
+## 🎯 Checklist de Performance
+
+### **Core Web Vitals**
+
+- [ ] LCP < 2.5 segundos
+- [ ] FCP < 1.8 segundos
+- [ ] CLS < 0.1
+- [ ] INP < 200 milissegundos
+- [ ] TBT < 200 milissegundos
+- [ ] Speed Index < 3.4 segundos
+
+### **Otimizações de Imagens**
+
+- [ ] Todas as imagens têm `alt` e `title`
+- [ ] Imagens usam formatos modernos (WebP, AVIF)
+- [ ] Lazy loading em imagens abaixo da dobra
+- [ ] Dimensões explícitas para prevenir CLS
+
+### **Code Splitting**
+
+- [ ] Rotas com lazy loading
+- [ ] Componentes pesados com lazy loading
+- [ ] Suspense boundaries apropriados
+
+### **Cache**
+
+- [ ] React Query configurado com `staleTime` apropriado
+- [ ] Memoização de cálculos pesados
+- [ ] React.memo para componentes que recebem props estáveis
+
+---
+
+## 📚 Referências
+
+- [Web Vitals](https://web.dev/vitals/)
+- [Core Web Vitals](https://web.dev/vitals/)
+- [Lighthouse](https://developers.google.com/web/tools/lighthouse)
+- [React Performance Optimization](https://react.dev/learn/render-and-commit)
+- [Vite Performance Guide](https://vitejs.dev/guide/performance.html)
