@@ -1,0 +1,157 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+      POSTGRES_MULTIPLE_DATABASES: ${POSTGRES_ORBIT_DB},${POSTGRES_BARBERFLOW_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init-multiple-databases.sh:/docker-entrypoint-initdb.d/init-multiple-databases.sh:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    networks:
+      - ecossystem
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---- api-orbit: control plane real (tenants, planos, assinaturas, kill switch, IA) ----
+
+  api-orbit-migrate:
+    build:
+      context: ../api/api-orbit
+      dockerfile: Dockerfile
+      target: development-dependencies-env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_ORBIT_DB}
+    command: ["pnpm", "exec", "prisma", "migrate", "deploy"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ecossystem
+
+  api-orbit:
+    build:
+      context: ../api/api-orbit
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_ORBIT_DB}
+      ORBIT_API_SECRET: ${ORBIT_API_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      GOOGLE_GEMINI_API_KEY: ${GOOGLE_GEMINI_API_KEY}
+      NODE_ENV: production
+      PORT: ${API_ORBIT_PORT:-4001}
+      HOST: 0.0.0.0
+    ports:
+      - "${API_ORBIT_PORT:-4001}:4001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api-orbit-migrate:
+        condition: service_completed_successfully
+    networks:
+      - ecossystem
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4001/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ---- orbit: UI admin (consome api-orbit, não acessa banco) ----
+
+  orbit:
+    build:
+      context: ../web/orbit
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SESSION_SECRET: ${SESSION_SECRET}
+      # Server-to-server: resolve pelo nome do serviço na rede interna do compose.
+      ORBIT_API_URL: http://api-orbit:${API_ORBIT_PORT:-4001}
+      ORBIT_API_SECRET: ${ORBIT_API_SECRET}
+      NODE_ENV: production
+      PORT: ${ORBIT_PORT:-5179}
+    ports:
+      - "${ORBIT_PORT:-5179}:5179"
+    depends_on:
+      api-orbit:
+        condition: service_healthy
+    networks:
+      - ecossystem
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:5179/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ---- barber-flow: tenant app (dono da própria operação — barbearia, agenda, loja) ----
+
+  barberflow-migrate:
+    build:
+      context: ../web/barber-flow
+      dockerfile: Dockerfile
+      target: development-dependencies-env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_BARBERFLOW_DB}
+    # barber-flow não versiona migrations (prisma/migrations não existe) — usa
+    # o mesmo fluxo "db push" do script db:push do projeto. Sem --accept-data-loss
+    # de propósito: se houver risco de perda de dado, falha em vez de aplicar sozinho.
+    command: ["pnpm", "exec", "prisma", "db", "push", "--skip-generate"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ecossystem
+
+  barber-flow:
+    build:
+      context: ../web/barber-flow
+      dockerfile: Dockerfile
+      args:
+        VITE_ORBIT_API_URL: ${PUBLIC_API_ORBIT_URL}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_BARBERFLOW_DB}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${PUBLIC_BARBERFLOW_URL}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      # Server-to-server: resolve pelo nome do serviço na rede interna do compose,
+      # não pela URL pública (que só faz sentido para o browser).
+      ORBIT_API_URL: http://api-orbit:${API_ORBIT_PORT:-4001}
+      ORBIT_API_SECRET: ${ORBIT_API_SECRET}
+      SERVER_PORT: ${BARBERFLOW_PORT:-3333}
+      NODE_ENV: production
+    ports:
+      - "${BARBERFLOW_PORT:-3333}:3333"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api-orbit:
+        condition: service_healthy
+      barberflow-migrate:
+        condition: service_completed_successfully
+    networks:
+      - ecossystem
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3333/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  postgres_data:
+
+networks:
+  ecossystem:
+    driver: bridge
