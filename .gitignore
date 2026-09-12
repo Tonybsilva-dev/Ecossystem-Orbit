@@ -1,0 +1,14 @@
+node_modules
+dist
+build
+.react-router
+coverage
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+._*
+
+# Referência arquitetural, mantém git próprio separado — não faz parte deste monorepo.
+templates/
