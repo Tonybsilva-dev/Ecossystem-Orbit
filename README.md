@@ -101,6 +101,12 @@ Extração da lógica de negócio do Orbit pra uma API dedicada, sem UI, com um 
 - **AI SDK**: Vercel AI SDK
 - **Providers**: OpenAI (GPT-4o) e Google Gemini (1.5 Flash)
 
+### Qualidade de Código
+
+- **Linter/Formatter**: Biome
+- **Testes**: Vitest (unitários, use-cases com repositórios mockados)
+- **Git Hooks**: Husky + Commitlint (Conventional Commits)
+
 ---
 
 ## 📦 Instalação e Desenvolvimento
@@ -147,6 +153,16 @@ pnpm dev
 
 API disponível em `http://localhost:4001`
 
+### Testes e Qualidade
+
+```bash
+pnpm test              # watch mode
+pnpm run test:run      # uma vez
+pnpm run test:coverage # com relatório de cobertura
+pnpm run check         # lint + format (Biome)
+pnpm run qa            # pipeline completo: check + test + typecheck
+```
+
 ### Build para Produção
 
 ```bash
@@ -160,25 +176,35 @@ pnpm start
 
 ```
 src/
-├── modules/
-│   ├── tenant/          # Tenant CRUD, busca, kill switch
-│   ├── product/         # Produtos, planos, features, analytics
-│   ├── subscription/    # Assinaturas (self-service + gestão)
-│   ├── license/         # Engine de validação de licença
-│   ├── ai/              # AI Client Gateway
-│   └── auth/            # Login do operador, hash de senha
-├── plugins/
-│   └── auth.ts          # Gate do secret compartilhado (requireOperator)
+├── core/
+│   ├── domain/              # Entities, repository interfaces, schemas Zod
+│   │   ├── tenant/ product/ plan/ feature/ subscription/ user/
+│   │   └── value-objects/   # Password
+│   ├── application/
+│   │   └── use-cases/       # Regra de negócio, testável com repos mockados
+│   └── infra/
+│       ├── persistence/     # Implementações Prisma dos repositórios
+│       ├── auth/            # BcryptPasswordHasher
+│       └── ai/              # AI Client Gateway
+├── app/
+│   └── http/
+│       ├── server.ts        # Bootstrap Fastify (helmet, cors, rate-limit)
+│       ├── container.ts     # DI: repositório -> use-case
+│       ├── routes/          # tenant, product, subscription, license, auth, ai
+│       ├── middlewares/     # requireOperator, errorHandler
+│       └── errors/          # AppError e subclasses (404/400/401/409)
 ├── shared/
-│   ├── env.ts           # Validação de env vars (Zod)
-│   ├── db.ts            # Prisma Client singleton
-│   └── errors.ts        # AppError e subclasses (404/400/401/409)
-└── server.ts            # Bootstrap Fastify (helmet, cors, rate-limit, rotas)
+│   ├── env.ts               # Validação de env vars (Zod)
+│   └── db.ts                # Prisma Client singleton
+└── index.ts                 # Entry point
+tests/unit/                  # Testes dos use-cases (repositórios mockados)
 prisma/
 ├── schema.prisma
 ├── migrations/
 └── seed.ts
 ```
+
+Camadas: `core/domain` não depende de nada (regra pura); `core/application` depende só de `domain` (via interface de repositório); `core/infra` implementa as interfaces de `domain` com Prisma; `app/http` conecta tudo (container faz o wiring, rotas chamam use-cases).
 
 ---
 
