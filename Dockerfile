@@ -33,4 +33,4 @@ EXPOSE 4001
 
 USER appuser
 
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/index.js"]
