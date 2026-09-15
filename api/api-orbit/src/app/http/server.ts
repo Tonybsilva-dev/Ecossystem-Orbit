@@ -9,6 +9,7 @@ import type { AppError } from './errors/app-error.js';
 import { errorHandler } from './middlewares/error-handler.js';
 import { aiRoutes } from './routes/ai.routes.js';
 import { authRoutes } from './routes/auth.routes.js';
+import { bannerRoutes } from './routes/banner.routes.js';
 import { licenseRoutes } from './routes/license.routes.js';
 import { productRoutes } from './routes/product.routes.js';
 import { subscriptionRoutes } from './routes/subscription.routes.js';
@@ -33,6 +34,7 @@ export async function build() {
 	await app.register(tenantRoutes, { container });
 	await app.register(aiRoutes, { container });
 	await app.register(authRoutes, { container });
+	await app.register(bannerRoutes, { container });
 
 	app.setErrorHandler((error: FastifyError | AppError, request, reply) =>
 		errorHandler(error, request, reply),

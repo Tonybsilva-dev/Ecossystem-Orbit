@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react';
-import { OrbitService, type Product } from '../../shared/services/orbit.service';
-import { Check, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { OrbitService, type Product, type Plan } from '../../shared/services/orbit.service';
+import { Check, ShieldCheck, ShieldAlert, Loader2 } from 'lucide-react';
 import { cn } from '@/shared/utils/cn';
+import { toast } from 'sonner';
+import { useBarbershopStore } from '../shop-management/barbershop.store';
+import { useLicenseStatusStore } from '../shop-management/licenseStatus.store';
 
 export const SubscriptionPage = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [billingInterval, setBillingInterval] = useState<'MONTHLY' | 'YEARLY'>('MONTHLY');
+  const [choosingPlanId, setChoosingPlanId] = useState<string | null>(null);
+
+  const { updateBarbershop } = useBarbershopStore();
+  const refreshLicenseStatus = useLicenseStatusStore((s) => s.refresh);
 
   useEffect(() => {
     const loadPlans = async () => {
@@ -22,6 +29,28 @@ export const SubscriptionPage = () => {
     };
     loadPlans();
   }, []);
+
+  const handleChoosePlan = async (plan: Plan) => {
+    setChoosingPlanId(plan.id);
+    try {
+      // planId/interval são sinais consumidos pelo backend pra criar a
+      // subscription no Orbit — não são colunas persistidas do Barbershop,
+      // por isso não aparecem no tipo de BarbershopState (mesmo padrão do onboarding).
+      const payload = {
+        licenseKey: 'NEW_SUBSCRIPTION',
+        planId: plan.id,
+        interval: plan.interval,
+      };
+      await updateBarbershop(payload);
+      await refreshLicenseStatus();
+      toast.success(`Plano ${plan.name} ativado com sucesso.`);
+    } catch (error) {
+      console.error('Failed to choose plan', error);
+      toast.error('Não foi possível ativar o plano agora. Tente novamente.');
+    } finally {
+      setChoosingPlanId(null);
+    }
+  };
 
   if (loading)
     return (
@@ -147,15 +176,19 @@ export const SubscriptionPage = () => {
 
             {/* Action */}
             <button
+              onClick={() => handleChoosePlan(plan)}
+              disabled={choosingPlanId !== null}
               className={cn(
                 'w-full py-4 rounded-sm font-bold uppercase tracking-wider text-sm transition-all relative z-10',
-                'border border-white/5 shadow-lg active:translate-y-[1px]',
+                'border border-white/5 shadow-lg active:translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed',
+                'flex items-center justify-center gap-2',
                 plan.name.toLowerCase().includes('pro')
                   ? 'bg-leather-700 text-white hover:bg-leather-600 shadow-leather-900/50'
                   : 'bg-shop-700 text-chrome-200 hover:bg-shop-600 hover:text-white',
               )}
             >
-              Escolher Plano
+              {choosingPlanId === plan.id && <Loader2 className="w-4 h-4 animate-spin" />}
+              {choosingPlanId === plan.id ? 'Ativando...' : 'Escolher Plano'}
             </button>
           </div>
         ))}

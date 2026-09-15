@@ -32,3 +32,30 @@ export interface TenantWithRelations extends Tenant {
 	users: TenantOwner[];
 	subscriptions: TenantSubscriptionSummary[];
 }
+
+export interface TenantSubscriptionDetail {
+	id: string;
+	status: string;
+	licenseKey: string;
+	expiresAt: Date | null;
+	canceledAt: Date | null;
+	createdAt: Date;
+	plan: {
+		id: string;
+		name: string;
+		price: unknown;
+		interval: string;
+		product: { id: string; name: string };
+	};
+}
+
+/**
+ * Shape completo pra página de detalhe do tenant: TODOS os usuários (não só
+ * o owner) e TODAS as assinaturas (histórico completo, não só a ativa) —
+ * é o que permite o operador ver de cara se o tenant está com identidade
+ * quebrada (ex: sem usuário nenhum, ou sem assinatura ativa nenhuma).
+ */
+export interface TenantDetail extends Tenant {
+	users: TenantOwner[];
+	subscriptions: TenantSubscriptionDetail[];
+}

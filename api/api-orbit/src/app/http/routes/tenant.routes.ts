@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import {
 	AddTenantSubscriptionUseCase,
 	CreateTenantUseCase,
-	GetTenantUseCase,
+	GetTenantDetailUseCase,
 	ListTenantsUseCase,
 	SearchTenantsUseCase,
 	SetTenantStatusUseCase,
@@ -10,6 +10,7 @@ import {
 	UpdateTenantUseCase,
 } from '../../../core/application/use-cases/tenant.use-cases.js';
 import { updateTenantSchema } from '../../../core/domain/tenant/tenant.schema.js';
+import { generateTenantsReportPdf } from '../../../core/infra/pdf/tenants-report.pdf.js';
 import type { AppContainer } from '../container.js';
 import { NotFoundError } from '../errors/not-found-error.js';
 import { ValidationError } from '../errors/validation-error.js';
@@ -53,9 +54,59 @@ export async function tenantRoutes(
 	app.register(async (operatorApp) => {
 		operatorApp.addHook('preHandler', requireOperator);
 
-		operatorApp.get('/tenants', async () =>
-			new ListTenantsUseCase(container.tenantRepository).execute(),
-		);
+		operatorApp.get('/tenants', async (request) => {
+			const { productId, planId, search } = request.query as {
+				productId?: string;
+				planId?: string;
+				search?: string;
+			};
+			return new ListTenantsUseCase(container.tenantRepository).execute({
+				productId,
+				planId,
+				search,
+			});
+		});
+
+		// Relatório em PDF por tenant (agrupa todos os produtos/planos daquele
+		// tenant numa linha) — mesmos filtros da listagem, sem paginação.
+		operatorApp.get('/tenants/export.pdf', async (request, reply) => {
+			const query = request.query as {
+				productId?: string;
+				planId?: string;
+				search?: string;
+			};
+
+			const tenants = await new ListTenantsUseCase(
+				container.tenantRepository,
+			).execute(query);
+
+			let productName: string | undefined;
+			let planName: string | undefined;
+			if (query.productId) {
+				const product = await container.productRepository.findById(
+					query.productId,
+				);
+				productName = product?.name;
+			}
+			if (query.planId) {
+				const plan = await container.planRepository.findById(query.planId);
+				planName = plan?.name;
+			}
+
+			const pdf = await generateTenantsReportPdf(tenants, {
+				search: query.search,
+				productName,
+				planName,
+			});
+
+			return reply
+				.header('Content-Type', 'application/pdf')
+				.header(
+					'Content-Disposition',
+					`attachment; filename="tenants-${new Date().toISOString().slice(0, 10)}.pdf"`,
+				)
+				.send(pdf);
+		});
 
 		operatorApp.get('/tenants/search', async (request) => {
 			const { query } = request.query as { query?: string };
@@ -64,9 +115,12 @@ export async function tenantRoutes(
 			);
 		});
 
+		// Página de detalhe do tenant no admin: usuários + histórico completo
+		// de assinaturas (não só a ativa) — usado pra decidir todas as ações
+		// (trocar plano, cancelar, kill switch) num lugar só.
 		operatorApp.get('/tenants/:id', async (request) => {
 			const { id } = request.params as { id: string };
-			const tenant = await new GetTenantUseCase(
+			const tenant = await new GetTenantDetailUseCase(
 				container.tenantRepository,
 			).execute(id);
 			if (!tenant) throw new NotFoundError('Tenant not found');

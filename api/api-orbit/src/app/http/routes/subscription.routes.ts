@@ -3,9 +3,11 @@ import {
 	CancelSubscriptionUseCase,
 	DeleteSubscriptionUseCase,
 	GetSubscriptionUseCase,
+	ListSubscriptionsForExportUseCase,
 	ListSubscriptionsUseCase,
 	SelfServiceSignupUseCase,
 } from '../../../core/application/use-cases/subscription.use-cases.js';
+import { generateSubscriptionsReportPdf } from '../../../core/infra/pdf/subscriptions-report.pdf.js';
 import type { AppContainer } from '../container.js';
 import { NotFoundError } from '../errors/not-found-error.js';
 import { requireOperator } from '../middlewares/require-operator.js';
@@ -48,6 +50,46 @@ export async function subscriptionRoutes(
 				productId: query.productId,
 				status: query.status,
 			});
+		});
+
+		// Relatório em PDF, gerado no backend (mesmos filtros da listagem, sem
+		// paginação) — o frontend só recebe o binário pronto pra download.
+		operatorApp.get('/subscriptions/export.pdf', async (request, reply) => {
+			const query = request.query as {
+				search?: string;
+				productId?: string;
+				status?: string;
+			};
+
+			const subscriptions = await new ListSubscriptionsForExportUseCase(
+				container.subscriptionRepository,
+			).execute({
+				search: query.search,
+				productId: query.productId,
+				status: query.status,
+			});
+
+			let productName: string | undefined;
+			if (query.productId) {
+				const product = await container.productRepository.findById(
+					query.productId,
+				);
+				productName = product?.name;
+			}
+
+			const pdf = await generateSubscriptionsReportPdf(subscriptions, {
+				search: query.search,
+				productName,
+				status: query.status,
+			});
+
+			return reply
+				.header('Content-Type', 'application/pdf')
+				.header(
+					'Content-Disposition',
+					`attachment; filename="subscriptions-${new Date().toISOString().slice(0, 10)}.pdf"`,
+				)
+				.send(pdf);
 		});
 
 		operatorApp.get('/subscriptions/:id', async (request) => {

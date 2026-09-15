@@ -68,8 +68,8 @@ export default function AdminProducts() {
       {/* Header & Controls */}
       <div className="flex flex-col md:flex-row justify-between items-end border-b border-panel pb-6 gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-text-primary tracking-tight font-mono mb-2">
-            Products_Registry
+          <h1 className="text-3xl font-bold text-text-primary tracking-tight mb-2">
+            Products Registry
           </h1>
           <p className="text-text-secondary max-w-xl">
             Configure available software modules and pricing tiers.
@@ -81,16 +81,16 @@ export default function AdminProducts() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim w-4 h-4 group-focus-within:text-quantum transition-colors" />
             <input
               type="text"
-              placeholder="SEARCH_MODULES..."
-              className="bg-orbital border border-panel rounded-btn py-2 pl-9 pr-4 text-xs font-mono text-text-primary focus:outline-none focus:border-quantum focus:ring-1 focus:ring-quantum transition-all w-64 uppercase"
+              placeholder="Search modules..."
+              className="bg-orbital border border-panel rounded-btn py-2 pl-9 pr-4 text-xs text-text-primary focus:outline-none focus:border-quantum focus:ring-1 focus:ring-quantum transition-all w-64"
             />
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-quantum text-white px-5 py-2.5 rounded-btn text-sm font-semibold hover:bg-quantum-hover hover:shadow-[0_0_15px_rgba(124,58,237,0.4)] transition-all font-mono tracking-wide"
+            className="flex items-center gap-2 bg-quantum text-void px-5 py-2.5 rounded-btn text-sm font-semibold hover:bg-quantum-hover hover:shadow-[0_0_15px_rgba(238,240,242,0.3)] transition-all tracking-wide"
           >
             <Plus size={16} />
-            <span>NEW_MODULE</span>
+            <span>New Module</span>
           </button>
         </div>
       </div>
@@ -100,21 +100,21 @@ export default function AdminProducts() {
           <div
             key={product.id}
             onClick={() => navigate(`/admin/products/${product.id}`)}
-            className="group bg-orbital border border-panel rounded-card p-0 overflow-hidden cursor-pointer hover:border-quantum/50 hover:shadow-[0_0_20px_rgba(124,58,237,0.1)] transition-all duration-300 flex flex-col h-full"
+            className="group bg-orbital border border-panel rounded-card p-0 overflow-hidden cursor-pointer hover:border-quantum/50 hover:shadow-[0_0_20px_rgba(238,240,242,0.08)] transition-all duration-300 flex flex-col h-full"
           >
             {/* Tech Header */}
             <div className="h-1 bg-gradient-to-r from-panel via-panel to-panel group-hover:from-quantum group-hover:to-data-blue transition-all duration-500"></div>
 
             <div className="p-6 flex-1 flex flex-col">
               <div className="flex justify-between items-start mb-6">
-                <div className="w-14 h-14 rounded-lg bg-void border border-panel flex items-center justify-center overflow-hidden group-hover:border-quantum/30 transition-colors">
+                <div className="w-14 h-14 rounded-none bg-void border border-panel flex items-center justify-center overflow-hidden group-hover:border-quantum/30 transition-colors">
                   {product.logo ? (
                     <img src={product.logo} alt={product.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
                   ) : (
                     <Box className="text-text-dim w-6 h-6 group-hover:text-quantum transition-colors" />
                   )}
                 </div>
-                <div className="px-2 py-0.5 rounded bg-panel/30 border border-panel text-[10px] font-mono text-text-dim uppercase tracking-wider">
+                <div className="px-2 py-0.5 rounded bg-panel/30 border border-panel text-[10px] text-text-dim">
                   Running
                 </div>
               </div>
@@ -126,14 +126,14 @@ export default function AdminProducts() {
                 <div className="bg-void/50 rounded p-2 border border-panel flex items-center gap-3">
                   <Users className="w-4 h-4 text-text-dim" />
                   <div className="flex flex-col">
-                    <span className="text-[10px] text-text-dim uppercase font-mono">Clients</span>
+                    <span className="text-[10px] text-text-dim">Clients</span>
                     <span className="text-sm font-bold text-text-primary font-mono">{product.analytics.activeSubscribers}</span>
                   </div>
                 </div>
                 <div className="bg-void/50 rounded p-2 border border-panel flex items-center gap-3">
                   <Activity className="w-4 h-4 text-text-dim" />
                   <div className="flex flex-col">
-                    <span className="text-[10px] text-text-dim uppercase font-mono">Churn</span>
+                    <span className="text-[10px] text-text-dim">Churn</span>
                     <span className="text-sm font-bold text-text-primary font-mono">{product.analytics.churnRate}%</span>
                   </div>
                 </div>
@@ -148,7 +148,7 @@ export default function AdminProducts() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-orbital border border-panel rounded-dock shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-panel flex justify-between items-center bg-void/30">
-              <h2 className="text-lg font-bold text-text-primary font-mono flex items-center gap-2">
+              <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
                 <Box size={18} className="text-quantum" />
                 Initialize New Module
               </h2>
@@ -160,27 +160,27 @@ export default function AdminProducts() {
               <input type="hidden" name="intent" value="create_product" />
 
               <div>
-                <label className="block text-xs font-mono font-bold text-text-secondary mb-1.5 uppercase tracking-wider">Module Name</label>
+                <label className="block text-xs font-bold text-text-secondary mb-1.5">Module Name</label>
                 <input name="name" required placeholder="e.g. BarberFlow" className="w-full bg-void border border-panel rounded-btn px-4 py-2.5 outline-none text-text-primary focus:border-quantum focus:ring-1 focus:ring-quantum transition-all placeholder:text-text-dim/50" />
               </div>
 
               <div>
-                <label className="block text-xs font-mono font-bold text-text-secondary mb-1.5 uppercase tracking-wider">Slug ID</label>
+                <label className="block text-xs font-bold text-text-secondary mb-1.5">Slug ID</label>
                 <input name="slug" required placeholder="e.g. barber-flow" className="w-full bg-void border border-panel rounded-btn px-4 py-2.5 outline-none text-text-primary focus:border-quantum focus:ring-1 focus:ring-quantum transition-all placeholder:text-text-dim/50 font-mono" />
               </div>
 
               <div>
-                <label className="block text-xs font-mono font-bold text-text-secondary mb-1.5 uppercase tracking-wider">Description</label>
+                <label className="block text-xs font-bold text-text-secondary mb-1.5">Description</label>
                 <textarea name="description" rows={3} placeholder="Brief summary of capabilities..." className="w-full bg-void border border-panel rounded-btn px-4 py-2.5 outline-none text-text-primary focus:border-quantum focus:ring-1 focus:ring-quantum transition-all placeholder:text-text-dim/50 resize-none" />
               </div>
 
               <div>
-                <label className="block text-xs font-mono font-bold text-text-secondary mb-1.5 uppercase tracking-wider">Icon URL (Optional)</label>
+                <label className="block text-xs font-bold text-text-secondary mb-1.5">Icon URL (Optional)</label>
                 <input name="logo" placeholder="https://..." className="w-full bg-void border border-panel rounded-btn px-4 py-2.5 outline-none text-text-primary focus:border-quantum focus:ring-1 focus:ring-quantum transition-all placeholder:text-text-dim/50 font-mono text-xs" />
               </div>
 
               <div className="flex justify-end pt-4 border-t border-panel mt-6">
-                <button type="submit" className="bg-quantum text-white px-6 py-2.5 rounded-btn text-sm font-bold hover:bg-quantum-hover hover:shadow-[0_0_15px_rgba(124,58,237,0.3)] transition-all font-mono uppercase tracking-wide">
+                <button type="submit" className="bg-quantum text-void px-6 py-2.5 rounded-btn text-sm font-bold hover:bg-quantum-hover hover:shadow-[0_0_15px_rgba(238,240,242,0.25)] transition-all tracking-wide">
                   {fetcher.state !== 'idle' ? 'Deploying...' : 'Deploy Module'}
                 </button>
               </div>

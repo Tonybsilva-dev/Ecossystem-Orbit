@@ -9,6 +9,8 @@ export default [
     route("products", "routes/admin.products._index.tsx"),
     route("products/:productId", "routes/admin.products.$productId.tsx"),
     route("tenants", "routes/admin.tenants.tsx"),
-    route("subscriptions", "routes/admin.subscriptions.tsx"),
+    route("tenants/export", "routes/admin.tenants.export.tsx"),
+    route("subscriptions/export", "routes/admin.subscriptions.export.tsx"),
+    route("banners", "routes/admin.banners.tsx"),
   ]),
 ] satisfies RouteConfig;

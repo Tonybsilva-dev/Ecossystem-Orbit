@@ -1,4 +1,5 @@
 import { PassThrough } from "node:stream";
+import { randomBytes } from "node:crypto";
 
 import type { AppLoadContext, EntryContext } from "react-router";
 import { createReadableStreamFromReadable } from "@react-router/node";
@@ -7,6 +8,7 @@ import { isbot } from "isbot";
 import type { RenderToPipeableStreamOptions } from "react-dom/server";
 import { renderToPipeableStream } from "react-dom/server";
 import { applySecurityHeaders } from "./core/security/security.server";
+import { NonceContext } from "./core/security/nonce-context";
 
 export const streamTimeout = 5_000;
 
@@ -27,6 +29,8 @@ export default function handleRequest(
     });
   }
 
+  const nonce = randomBytes(16).toString("base64");
+
   return new Promise((resolve, reject) => {
     let shellRendered = false;
     let userAgent = request.headers.get("user-agent");
@@ -46,8 +50,15 @@ export default function handleRequest(
     );
 
     const { pipe, abort } = renderToPipeableStream(
-      <ServerRouter context={routerContext} url={request.url} />,
+      <NonceContext.Provider value={nonce}>
+        <ServerRouter context={routerContext} url={request.url} nonce={nonce} />
+      </NonceContext.Provider>,
       {
+        // Aplica o nonce também aos scripts que o React injeta direto no
+        // stream (ex: window.__reactRouterContext.streamController.enqueue),
+        // que não passam pelo componente <Scripts> e por isso não herdam o
+        // nonce setado ali.
+        nonce,
         [readyOption]() {
           shellRendered = true;
           const body = new PassThrough({
@@ -61,7 +72,7 @@ export default function handleRequest(
           const stream = createReadableStreamFromReadable(body);
 
           // Apply security headers
-          applySecurityHeaders(responseHeaders);
+          applySecurityHeaders(responseHeaders, nonce);
 
           responseHeaders.set("Content-Type", "text/html");
 

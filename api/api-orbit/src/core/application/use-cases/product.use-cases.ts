@@ -101,6 +101,7 @@ export class GetProductAnalyticsUseCase {
 
 		return {
 			activeSubscribers: activeSubs,
+			churnedSubscribers: churnedSubs,
 			churnRate:
 				activeSubs + churnedSubs > 0
 					? (churnedSubs / (activeSubs + churnedSubs)) * 100

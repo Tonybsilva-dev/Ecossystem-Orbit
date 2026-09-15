@@ -51,21 +51,32 @@ export class SelfServiceSignupUseCase {
 		const plan = await this.planRepository.findById(input.planId);
 		if (!plan?.isActive) throw new ValidationError('Invalid or inactive plan');
 
-		const baseSlug =
-			input.slug ||
-			input.tenantName
-				.toLowerCase()
-				.replace(/[^a-z0-9]+/g, '-')
-				.replace(/^-+|-+$/g, '');
-		const uniqueSlug = `${baseSlug}-${crypto.randomBytes(2).toString('hex')}`;
-
-		const tenant = await this.tenantRepository.create({
-			name: input.tenantName,
-			slug: uniqueSlug,
-			status: 'ACTIVE',
-		});
-
+		// Se esse email já tem tenant (ex: criado por /tenants/sync no signup do
+		// produto), a assinatura tem que cair NELE — nunca criar um segundo
+		// tenant pro mesmo usuário. Caso contrário o tenant com o subscription
+		// fica órfão (sem user) e o tenant com o user fica sem plano: a conta
+		// "aparece" quebrada pro operador e o kill switch nela não afeta nada.
 		const existingUser = await this.userRepository.findByEmail(input.email);
+		let tenant = existingUser
+			? await this.tenantRepository.findById(existingUser.tenantId)
+			: null;
+
+		if (!tenant) {
+			const baseSlug =
+				input.slug ||
+				input.tenantName
+					.toLowerCase()
+					.replace(/[^a-z0-9]+/g, '-')
+					.replace(/^-+|-+$/g, '');
+			const uniqueSlug = `${baseSlug}-${crypto.randomBytes(2).toString('hex')}`;
+
+			tenant = await this.tenantRepository.create({
+				name: input.tenantName,
+				slug: uniqueSlug,
+				status: 'ACTIVE',
+			});
+		}
+
 		if (!existingUser) {
 			await this.userRepository.create({
 				email: input.email,
@@ -117,6 +128,19 @@ export class ListSubscriptionsUseCase {
 		params: ListSubscriptionsParams,
 	): Promise<ListSubscriptionsResult> {
 		return this.subscriptionRepository.list(params);
+	}
+}
+
+/** Mesmos filtros da listagem paginada, mas devolve tudo — usado pra exportar o PDF. */
+export class ListSubscriptionsForExportUseCase {
+	constructor(
+		private readonly subscriptionRepository: SubscriptionRepository,
+	) {}
+
+	async execute(
+		params: Omit<ListSubscriptionsParams, 'page' | 'limit'>,
+	): Promise<SubscriptionWithRelations[]> {
+		return this.subscriptionRepository.listAllForExport(params);
 	}
 }
 

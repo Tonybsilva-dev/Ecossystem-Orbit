@@ -31,6 +31,7 @@ model Product {
 
   plans    Plan[]
   features Feature[]
+  banners  Banner[]
 
   @@map("products")
 }
@@ -65,6 +66,9 @@ model Feature {
   key         String
   name        String
   description String?
+  /// Kill switch global: quando false, a feature é removida das capabilities
+  /// de TODOS os tenants no /validate, independente de plano ou override.
+  isEnabled   Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -111,6 +115,7 @@ model Tenant {
   subscriptions Subscription[]
   users         User[]
   features      TenantFeature[]
+  banners       Banner[]
 
   @@index([name])
   @@index([slug])
@@ -127,6 +132,43 @@ model TenantFeature {
 
   @@unique([tenantId, feature])
   @@map("tenant_features")
+}
+
+enum BannerType {
+  INFO
+  WARNING
+  ERROR
+  SUCCESS
+  UPDATE
+}
+
+/**
+ * Aviso exibido pelos produtos consumidores (barra de notificação no topo,
+ * ex: "Nos ajude a melhorar: <link>"). productId nulo = todos os produtos;
+ * tenantId nulo = todos os tenants daquele produto (ou globais, se productId
+ * também for nulo). Entregue via GET /validate — cada produto estiliza o
+ * componente com a própria identidade visual, mas o dado (type/message/link)
+ * é padronizado aqui.
+ */
+model Banner {
+  id        String     @id @default(uuid())
+  productId String?
+  tenantId  String?
+  type      BannerType @default(INFO)
+  message   String
+  link      String?
+  isActive  Boolean    @default(true)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  product Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tenant  Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([tenantId])
+  @@map("banners")
 }
 
 model User {

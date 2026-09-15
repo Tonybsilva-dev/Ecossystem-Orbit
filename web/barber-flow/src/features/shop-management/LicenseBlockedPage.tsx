@@ -1,7 +1,7 @@
 import { Lock, ShieldAlert } from 'lucide-react';
 import { Button } from '@/shared/ui/Button';
 
-export function LicenseBlockedPage() {
+export function LicenseBlockedPage({ reason }: { reason?: string | null }) {
   return (
     <div className="flex flex-col items-center justify-center flex-1 -m-8 text-center p-8">
       <div className="bg-red-500/10 p-6 rounded-full mb-6 border border-red-500/20">
@@ -11,9 +11,15 @@ export function LicenseBlockedPage() {
       <h1 className="text-3xl font-display text-chrome-100 mb-4">Funcionalidade Bloqueada</h1>
 
       <p className="text-chrome-400 max-w-lg mb-8 text-lg">
-        Sua licença de uso está <span className="text-red-400 font-bold">Inativa</span> ou{' '}
-        <span className="text-red-400 font-bold">Pendente</span>. Para acessar módulos avançados
-        como este, você precisa regularizar sua assinatura.
+        {reason ? (
+          <span className="text-red-400 font-bold">{reason}</span>
+        ) : (
+          <>
+            Sua licença de uso está <span className="text-red-400 font-bold">Inativa</span> ou{' '}
+            <span className="text-red-400 font-bold">Pendente</span>.
+          </>
+        )}{' '}
+        Para acessar módulos avançados como este, você precisa regularizar sua assinatura.
       </p>
 
       <div className="flex gap-4">

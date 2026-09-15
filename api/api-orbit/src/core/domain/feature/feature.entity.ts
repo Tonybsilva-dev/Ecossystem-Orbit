@@ -4,6 +4,7 @@ export interface Feature {
 	key: string;
 	name: string;
 	description: string | null;
+	isEnabled: boolean;
 	createdAt: Date;
 	updatedAt: Date;
 }

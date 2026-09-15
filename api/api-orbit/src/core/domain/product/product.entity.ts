@@ -11,6 +11,7 @@ export interface Product {
 
 export interface ProductAnalytics {
 	activeSubscribers: number;
+	churnedSubscribers: number;
 	churnRate: number;
 	mrr: string;
 }

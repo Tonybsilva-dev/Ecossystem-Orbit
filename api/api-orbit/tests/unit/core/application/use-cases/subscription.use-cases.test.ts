@@ -16,13 +16,20 @@ const activePlan = {
 	limits: {},
 };
 
-function setup(overrides: { plan?: unknown; existingUser?: unknown } = {}) {
+function setup(
+	overrides: {
+		plan?: unknown;
+		existingUser?: unknown;
+		existingTenant?: unknown;
+	} = {},
+) {
 	const tenantRepo = {
 		create: vi.fn().mockResolvedValue({
 			id: 'tenant-1',
 			name: 'Nova Barbearia',
 			slug: 'nova-barbearia-abcd',
 		}),
+		findById: vi.fn().mockResolvedValue(overrides.existingTenant ?? null),
 	} as unknown as TenantRepository;
 
 	const userRepo = {
@@ -110,7 +117,8 @@ describe('SelfServiceSignupUseCase', () => {
 
 	it('não recria o usuário se o email já existe em outro tenant', async () => {
 		const { tenantRepo, userRepo, planRepo, subscriptionRepo } = setup({
-			existingUser: { id: 'user-existing' },
+			existingUser: { id: 'user-existing', tenantId: 'tenant-existing' },
+			existingTenant: { id: 'tenant-existing', name: 'Já Existe' },
 		});
 		const useCase = new SelfServiceSignupUseCase(
 			tenantRepo,
@@ -126,5 +134,51 @@ describe('SelfServiceSignupUseCase', () => {
 		});
 
 		expect(userRepo.create).not.toHaveBeenCalled();
+	});
+
+	it('reaproveita o tenant existente do usuário em vez de criar um segundo tenant (bug: identidade duplicada)', async () => {
+		const { tenantRepo, userRepo, planRepo, subscriptionRepo } = setup({
+			existingUser: { id: 'user-existing', tenantId: 'tenant-existing' },
+			existingTenant: { id: 'tenant-existing', name: 'Já Existe' },
+		});
+		const useCase = new SelfServiceSignupUseCase(
+			tenantRepo,
+			userRepo,
+			planRepo,
+			subscriptionRepo,
+		);
+
+		await useCase.execute({
+			tenantName: 'Barbearia Onboarding',
+			email: 'ja-existe@nova.com',
+			planId: 'plan-1',
+		});
+
+		expect(tenantRepo.findById).toHaveBeenCalledWith('tenant-existing');
+		expect(tenantRepo.create).not.toHaveBeenCalled();
+		expect(subscriptionRepo.create).toHaveBeenCalledWith(
+			expect.objectContaining({ tenantId: 'tenant-existing' }),
+		);
+	});
+
+	it('cria um tenant novo quando o usuário existe mas o tenant dele não é encontrado (dado inconsistente)', async () => {
+		const { tenantRepo, userRepo, planRepo, subscriptionRepo } = setup({
+			existingUser: { id: 'user-existing', tenantId: 'tenant-orfao' },
+			existingTenant: null,
+		});
+		const useCase = new SelfServiceSignupUseCase(
+			tenantRepo,
+			userRepo,
+			planRepo,
+			subscriptionRepo,
+		);
+
+		await useCase.execute({
+			tenantName: 'Barbearia Onboarding',
+			email: 'ja-existe@nova.com',
+			planId: 'plan-1',
+		});
+
+		expect(tenantRepo.create).toHaveBeenCalled();
 	});
 });

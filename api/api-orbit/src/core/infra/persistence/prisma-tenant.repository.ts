@@ -1,11 +1,13 @@
-import type { PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient } from '@prisma/client';
 import type {
 	Tenant,
+	TenantDetail,
 	TenantStatus,
 	TenantWithRelations,
 } from '../../domain/tenant/tenant.entity.js';
 import type {
 	CreateTenantData,
+	ListTenantsFilters,
 	TenantRepository,
 	UpdateTenantData,
 } from '../../domain/tenant/tenant.repository.js';
@@ -21,8 +23,46 @@ export class PrismaTenantRepository implements TenantRepository {
 		return this.prisma.tenant.findUnique({ where: { slug } });
 	}
 
-	async list(): Promise<TenantWithRelations[]> {
+	async findByIdWithRelations(id: string): Promise<TenantDetail | null> {
+		return this.prisma.tenant.findUnique({
+			where: { id },
+			include: {
+				users: { orderBy: { createdAt: 'asc' } },
+				subscriptions: {
+					include: { plan: { include: { product: true } } },
+					orderBy: { createdAt: 'desc' },
+				},
+			},
+		}) as unknown as Promise<TenantDetail | null>;
+	}
+
+	async list(filters?: ListTenantsFilters): Promise<TenantWithRelations[]> {
+		const hasSubscriptionFilter = filters?.productId || filters?.planId;
+		const and: Prisma.TenantWhereInput[] = [];
+
+		if (hasSubscriptionFilter) {
+			and.push({
+				subscriptions: {
+					some: {
+						...(filters?.planId ? { planId: filters.planId } : {}),
+						...(filters?.productId
+							? { plan: { productId: filters.productId } }
+							: {}),
+					},
+				},
+			});
+		}
+		if (filters?.search) {
+			and.push({
+				OR: [
+					{ name: { contains: filters.search, mode: 'insensitive' } },
+					{ slug: { contains: filters.search, mode: 'insensitive' } },
+				],
+			});
+		}
+
 		return this.prisma.tenant.findMany({
+			where: and.length > 0 ? { AND: and } : undefined,
 			include: {
 				users: { take: 1, where: { role: 'OWNER' } },
 				subscriptions: { include: { plan: { include: { product: true } } } },

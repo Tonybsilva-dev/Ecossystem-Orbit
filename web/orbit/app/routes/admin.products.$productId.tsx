@@ -121,6 +121,35 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       await orbitApi.delete(`/features/${id}`);
     }
 
+    // Kill switch global de feature — ver ValidateAccessUseCase no api-orbit:
+    // remove a capability de TODOS os tenants no /validate, independente de
+    // plano ou override, até ser reativada.
+    if (intent === "toggle_feature_kill_switch") {
+      const id = String(formData.get("id"));
+      const isEnabled = formData.get("isEnabled") === "true";
+      await orbitApi.patch(`/features/${id}`, { isEnabled: !isEnabled });
+
+      const bannerMessage = formData.get("bannerMessage");
+      if (isEnabled && bannerMessage && String(bannerMessage).trim()) {
+        // isEnabled=true significa que estava ligada e agora está sendo desligada.
+        const productId = String(formData.get("productId"));
+        await orbitApi.post("/banners", {
+          productId,
+          type: "WARNING",
+          message: String(bannerMessage).trim(),
+        });
+      }
+    }
+
+    // Toggle de uma célula da matriz features x planos — substitui o set
+    // completo de includedFeatures do plano (mesma semântica do modal de
+    // edição de plano, só que acionado direto da matriz).
+    if (intent === "toggle_plan_feature") {
+      const planId = String(formData.get("planId"));
+      const featureIds = formData.getAll("featureIds").map(String);
+      await orbitApi.patch(`/plans/${planId}`, { featureIds });
+    }
+
     if (intent === "update_plan") {
       const id = String(formData.get("id"));
       const name = String(formData.get("name"));
@@ -171,6 +200,9 @@ export default function ProductDetails() {
 
   const [editingItem, setEditingItem] = useState<any>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ type: 'PLAN' | 'PRODUCT', id: string } | null>(null);
+  const [killSwitchTarget, setKillSwitchTarget] = useState<any>(null);
+  const [killSwitchBannerMessage, setKillSwitchBannerMessage] = useState("");
+  const [publishKillSwitchBanner, setPublishKillSwitchBanner] = useState(true);
 
   // Feature Management State (Combobox)
   const [currentFeatures, setCurrentFeatures] = useState<string[]>([]);
@@ -218,6 +250,56 @@ export default function ProductDetails() {
     setEditingItem(feature || null);
     setActiveModal('FEATURE');
   }
+
+  // Planos (de qualquer intervalo) que hoje concedem essa feature — usado
+  // pro "usada em N planos" e pra avisar o raio de impacto antes de desligar.
+  const plansUsingFeature = (featureId: string) =>
+    product.plans.filter((p: any) => p.includedFeatures?.some((inf: any) => inf.id === featureId));
+
+  const featureStatus = (feature: any): 'ENABLED' | 'ORPHAN' | 'DISABLED' => {
+    if (!feature.isEnabled) return 'DISABLED';
+    if (plansUsingFeature(feature.id).length === 0) return 'ORPHAN';
+    return 'ENABLED';
+  };
+
+  const openKillSwitchModal = (feature: any) => {
+    setKillSwitchTarget(feature);
+    setPublishKillSwitchBanner(true);
+    setKillSwitchBannerMessage(`A funcionalidade "${feature.name}" está temporariamente indisponível.`);
+  };
+
+  const confirmDisableFeature = () => {
+    if (!killSwitchTarget) return;
+    fetcher.submit(
+      {
+        intent: "toggle_feature_kill_switch",
+        id: killSwitchTarget.id,
+        productId: product.id,
+        isEnabled: "true", // estado atual (ligada) — action inverte
+        bannerMessage: publishKillSwitchBanner ? killSwitchBannerMessage : "",
+      },
+      { method: "post" },
+    );
+    setKillSwitchTarget(null);
+  };
+
+  const enableFeature = (feature: any) => {
+    fetcher.submit(
+      { intent: "toggle_feature_kill_switch", id: feature.id, productId: product.id, isEnabled: "false" },
+      { method: "post" },
+    );
+  };
+
+  const togglePlanFeature = (plan: any, featureId: string, checked: boolean) => {
+    const currentIds: string[] = (plan.includedFeatures ?? []).map((f: any) => f.id);
+    const nextIds = checked ? [...currentIds, featureId] : currentIds.filter((id) => id !== featureId);
+
+    const fd = new FormData();
+    fd.set("intent", "toggle_plan_feature");
+    fd.set("planId", plan.id);
+    nextIds.forEach((id) => fd.append("featureIds", id));
+    fetcher.submit(fd, { method: "post" });
+  };
 
 
   const addFeature = (feature: string) => {
@@ -273,9 +355,9 @@ export default function ProductDetails() {
         {/* Tech Decorator */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-quantum/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-quantum/10 transition-colors"></div>
 
-        <div className="w-24 h-24 rounded-md bg-void border border-panel flex items-center justify-center shrink-0 relative z-10">
+        <div className="w-24 h-24 rounded-none bg-void border border-panel flex items-center justify-center shrink-0 relative z-10">
           {product.logo ? (
-            <img src={product.logo} alt={product.name} className="w-full h-full object-cover rounded-md opacity-80" />
+            <img src={product.logo} alt={product.name} className="w-full h-full object-cover rounded-none opacity-80" />
           ) : (
             <span className="text-3xl font-bold font-mono text-text-dim">{product.name.charAt(0)}</span>
           )}
@@ -290,30 +372,30 @@ export default function ProductDetails() {
             <div className="flex flex-col gap-2">
               <button
                 onClick={openProductModal}
-                className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-btn bg-panel hover:bg-panel/80 text-xs text-text-secondary hover:text-white border border-transparent hover:border-quantum/30 transition-all font-mono"
+                className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-btn bg-panel hover:bg-panel/80 text-xs text-text-secondary hover:text-white border border-transparent hover:border-quantum/30 transition-all"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                EDIT_CONFIG
+                Edit Config
               </button>
               <button
                 onClick={() => setDeleteConfirmation({ type: 'PRODUCT', id: product.id })}
-                className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-btn bg-panel hover:bg-error/10 text-xs text-error/80 hover:text-error border border-transparent hover:border-error/30 transition-all font-mono"
+                className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-btn bg-panel hover:bg-error/10 text-xs text-error/80 hover:text-error border border-transparent hover:border-error/30 transition-all"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-                DELETE_PRODUCT
+                Delete Product
               </button>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 mt-4">
             <div className="flex items-center gap-2 px-2 py-1 bg-void rounded border border-panel text-xs font-mono text-text-dim">
-              <span className="text-quantum">SLUG:</span>
+              <span className="text-quantum">Slug:</span>
               <span className="text-text-secondary">{product.slug}</span>
             </div>
             <div className="flex items-center gap-2 px-2 py-1 bg-void rounded border border-panel text-xs font-mono text-text-dim">
-              <span className="text-quantum">KEY:</span>
+              <span className="text-quantum">Key:</span>
               <span className="text-text-secondary">{product.apiKey}</span>
             </div>
           </div>
@@ -322,15 +404,15 @@ export default function ProductDetails() {
         {/* Analytics (Data Block) */}
         <div className="flex gap-2 relative z-10">
           <div className="bg-void bordered border-panel rounded p-3 min-w-[100px] flex flex-col items-center justify-center">
-            <span className="text-[10px] text-text-dim uppercase tracking-widest font-mono mb-1">MRR</span>
+            <span className="text-[10px] text-text-dim mb-1">MRR</span>
             <span className="text-lg font-bold text-white font-mono">R${product.analytics.mrr}</span>
           </div>
           <div className="bg-void bordered border-panel rounded p-3 min-w-[100px] flex flex-col items-center justify-center">
-            <span className="text-[10px] text-text-dim uppercase tracking-widest font-mono mb-1">USERS</span>
+            <span className="text-[10px] text-text-dim mb-1">Users</span>
             <span className="text-lg font-bold text-data-blue font-mono">{product.analytics.activeSubscribers}</span>
           </div>
           <div className="bg-void bordered border-panel rounded p-3 min-w-[100px] flex flex-col items-center justify-center">
-            <span className="text-[10px] text-text-dim uppercase tracking-widest font-mono mb-1">CHURN</span>
+            <span className="text-[10px] text-text-dim mb-1">Churn</span>
             <span className="text-lg font-bold text-error font-mono">{product.analytics.churnRate.toFixed(1)}%</span>
           </div>
         </div>
@@ -340,35 +422,134 @@ export default function ProductDetails() {
       <div className="space-y-4">
         <div className="flex justify-between items-center p-1">
           <h2 className="text-lg font-bold text-text-primary px-2 border-l-2 border-quantum">Feature Catalog</h2>
-          <button onClick={() => openFeatureModal()} className="px-3 py-1.5 rounded-btn bg-panel hover:bg-panel/80 text-xs text-text-secondary hover:text-white border border-transparent hover:border-quantum/30 transition-all font-mono">
-            + NEW FEATURE
+          <button onClick={() => openFeatureModal()} className="px-3 py-1.5 rounded-btn bg-panel hover:bg-panel/80 text-xs text-text-secondary hover:text-white border border-transparent hover:border-quantum/30 transition-all">
+            + New Feature
           </button>
         </div>
 
         <div className="max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {features.length === 0 && (
-              <div className="col-span-full text-center py-8 text-text-dim text-xs font-mono border border-dashed border-panel rounded">
-                NO_FEATURES_DEFINED
+              <div className="col-span-full text-center py-8 text-text-dim text-xs border border-dashed border-panel rounded">
+                No features defined
               </div>
             )}
-            {features.map((feat: any) => (
-              <div key={feat.id} className="bg-orbital border border-panel p-4 rounded-card flex flex-col group hover:border-quantum/30 transition-colors relative">
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-bold text-text-primary text-sm">{feat.name}</h4>
-                  <div className="flex gap-2">
+            {features.map((feat: any) => {
+              const status = featureStatus(feat);
+              const usedIn = plansUsingFeature(feat.id);
+              const statusMeta = {
+                ENABLED: { label: 'Ativa', className: 'bg-success/10 text-success border-success/20' },
+                ORPHAN: { label: 'Órfã', className: 'bg-warning/10 text-warning border-warning/20' },
+                DISABLED: { label: 'Desligada', className: 'bg-error/10 text-error border-error/20' },
+              }[status];
+
+              return (
+                <div
+                  key={feat.id}
+                  className={`bg-orbital border p-4 rounded-card flex flex-col group transition-colors relative ${feat.isEnabled ? 'border-panel hover:border-quantum/30' : 'border-error/30'
+                    }`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-bold text-text-primary text-sm">{feat.name}</h4>
+                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold border shrink-0 ${statusMeta.className}`}>
+                      {statusMeta.label}
+                    </span>
+                  </div>
+
+                  <div className="text-xs font-mono text-quantum mb-2 bg-void inline-block px-1.5 py-0.5 rounded self-start">{feat.key}</div>
+                  <p className="text-xs text-text-secondary mb-3 flex-grow truncate">{feat.description || 'No description'}</p>
+
+                  <div className="text-[10px] text-text-dim mb-3">
+                    {usedIn.length > 0
+                      ? `Usada em: ${usedIn.map((p: any) => p.name).join(', ')}`
+                      : 'Não usada em nenhum plano'}
+                  </div>
+
+                  <div className="flex gap-2 mt-auto">
                     <button
                       onClick={() => openFeatureModal(feat)}
-                      className="text-[10px] bg-panel hover:bg-quantum hover:text-white text-text-secondary px-2 py-1 rounded transition-colors font-mono uppercase"
+                      className="flex-1 text-[10px] bg-panel hover:bg-quantum hover:text-void text-text-secondary px-2 py-1.5 rounded transition-colors"
                     >
-                      EDIT
+                      Edit
                     </button>
+                    {feat.isEnabled ? (
+                      <button
+                        onClick={() => openKillSwitchModal(feat)}
+                        title="Kill switch: desliga essa feature pra todos os tenants, independente de plano"
+                        className="flex-1 text-[10px] bg-error/10 hover:bg-error/20 text-error px-2 py-1.5 rounded transition-colors border border-error/20"
+                      >
+                        Desligar
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => enableFeature(feat)}
+                        className="flex-1 text-[10px] bg-success/10 hover:bg-success/20 text-success px-2 py-1.5 rounded transition-colors border border-success/20"
+                      >
+                        Religar
+                      </button>
+                    )}
                   </div>
                 </div>
-                <div className="text-xs font-mono text-quantum mb-2 bg-void inline-block px-1.5 py-0.5 rounded self-start">{feat.key}</div>
-                <p className="text-xs text-text-secondary mb-4 flex-grow truncate">{feat.description || 'No description'}</p>
-              </div>
-            ))}
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Feature Matrix — comparação instantânea de quais planos concedem quais features,
+          sem precisar abrir modal por modal. Toggle na célula = auto-save. */}
+      <div className="space-y-4">
+        <div className="flex justify-between items-center p-1">
+          <h2 className="text-lg font-bold text-text-primary px-2 border-l-2 border-quantum">Feature Matrix</h2>
+          <span className="text-[10px] text-text-dim">{billingInterval === 'MONTHLY' ? 'Monthly Plans' : 'Yearly Plans'}</span>
+        </div>
+
+        <div className="bg-orbital border border-panel rounded-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[500px]">
+              <thead>
+                <tr className="border-b border-panel bg-void/50">
+                  <th className="p-3 pl-4 text-xs font-bold text-text-dim">Feature</th>
+                  {product.plans.filter((p: any) => p.interval === billingInterval).map((plan: any) => (
+                    <th key={plan.id} className="p-3 text-xs font-bold text-text-dim text-center">
+                      {plan.name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-panel">
+                {features.map((feat: any) => (
+                  <tr key={feat.id} className={!feat.isEnabled ? 'opacity-40' : ''}>
+                    <td className="p-3 pl-4">
+                      <div className="text-sm text-text-primary font-medium">{feat.name}</div>
+                      <div className="text-[10px] text-text-dim font-mono">{feat.key}</div>
+                    </td>
+                    {product.plans.filter((p: any) => p.interval === billingInterval).map((plan: any) => {
+                      const checked = plan.includedFeatures?.some((inf: any) => inf.id === feat.id) ?? false;
+                      return (
+                        <td key={plan.id} className="p-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={!feat.isEnabled}
+                            onChange={(e) => togglePlanFeature(plan, feat.id, e.target.checked)}
+                            title={!feat.isEnabled ? 'Feature desligada globalmente — religue antes de atribuir a um plano' : undefined}
+                            className="w-4 h-4 accent-quantum cursor-pointer disabled:cursor-not-allowed"
+                          />
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+                {features.length === 0 && (
+                  <tr>
+                    <td colSpan={product.plans.filter((p: any) => p.interval === billingInterval).length + 1} className="p-6 text-center text-text-dim text-xs">
+                      No features defined
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -385,14 +566,14 @@ export default function ProductDetails() {
                 onClick={() => setBillingInterval('MONTHLY')}
                 className={`px-3 py-1 text-xs font-bold rounded transition-all ${billingInterval === 'MONTHLY' ? 'bg-panel text-white shadow-sm' : 'text-text-dim hover:text-text-secondary'}`}
               >
-                MONTHLY
+                Monthly
               </button>
               <div className="w-[1px] h-4 bg-panel mx-1"></div>
               <button
                 onClick={() => setBillingInterval('YEARLY')}
                 className={`px-3 py-1 text-xs font-bold rounded transition-all ${billingInterval === 'YEARLY' ? 'bg-panel text-white shadow-sm' : 'text-text-dim hover:text-text-secondary'}`}
               >
-                YEARLY
+                Yearly
               </button>
             </div>
           </div>
@@ -408,12 +589,12 @@ export default function ProductDetails() {
                     <h4 className="font-bold text-text-primary text-base mb-1">{plan.name}</h4>
                     <div className="flex items-center gap-1.5">
                       <div className={`w-1.5 h-1.5 rounded-full ${plan.isActive ? 'bg-success animate-pulse' : 'bg-error'}`}></div>
-                      <span className="text-[10px] text-text-dim uppercase tracking-wider font-mono">{plan.isActive ? 'ACTIVE' : 'INACTIVE'}</span>
+                      <span className="text-[10px] text-text-dim">{plan.isActive ? 'Active' : 'Inactive'}</span>
                     </div>
                   </div>
                   {product.analytics.activeSubscribers > 0 && (
-                    <span className="text-[9px] font-bold bg-data-blue/10 text-data-blue px-1.5 py-0.5 rounded border border-data-blue/20 font-mono">
-                      POPULAR
+                    <span className="text-[9px] font-bold bg-data-blue/10 text-data-blue px-1.5 py-0.5 rounded border border-data-blue/20">
+                      Popular
                     </span>
                   )}
                 </div>
@@ -425,24 +606,34 @@ export default function ProductDetails() {
                   </span>
                   <span className="text-text-dim text-xs ml-1">/{plan.interval === 'MONTHLY' ? 'mo' : 'yr'}</span>
                   {plan.interval === 'YEARLY' && (
-                    <div className="mt-1 text-[10px] font-bold text-success font-mono">SAVE_ENABLED</div>
+                    <div className="mt-1 text-[10px] font-bold text-success">Savings applied</div>
                   )}
                 </div>
 
                 <ul className="space-y-2 mb-6 flex-grow">
-                  {plan.features.map((feature: string, idx: number) => (
-                    <li key={idx} className="text-xs text-text-secondary flex items-start gap-2">
-                      <div className="mt-0.5 w-3 h-3 rounded bg-quantum/10 flex items-center justify-center shrink-0">
-                        <div className="w-1.5 h-1.5 bg-quantum rounded-[1px]"></div>
-                      </div>
-                      <span className="leading-snug">{feature}</span>
+                  {(plan.includedFeatures ?? []).length === 0 ? (
+                    <li className="text-xs text-text-dim italic">
+                      Nenhuma feature atribuída — use a Feature Matrix acima.
                     </li>
-                  ))}
+                  ) : (
+                    plan.includedFeatures.map((feat: any) => {
+                      const isKilled = !feat.isEnabled;
+                      return (
+                        <li key={feat.id} className={`text-xs flex items-start gap-2 ${isKilled ? 'text-text-dim' : 'text-text-secondary'}`}>
+                          <div className={`mt-0.5 w-3 h-3 rounded flex items-center justify-center shrink-0 ${isKilled ? 'bg-error/10' : 'bg-quantum/10'}`}>
+                            <div className={`w-1.5 h-1.5 rounded-[1px] ${isKilled ? 'bg-error' : 'bg-quantum'}`}></div>
+                          </div>
+                          <span className={`leading-snug ${isKilled ? 'line-through' : ''}`}>{feat.name}</span>
+                          {isKilled && <span className="text-[9px] text-error shrink-0">Off</span>}
+                        </li>
+                      );
+                    })
+                  )}
                 </ul>
 
                 <button
                   onClick={() => openPlanModal(plan)}
-                  className="w-full py-2 rounded border border-panel bg-void text-xs font-bold text-text-secondary hover:text-white hover:border-quantum/50 hover:bg-panel transition-all uppercase tracking-wider font-mono"
+                  className="w-full py-2 rounded border border-panel bg-void text-xs font-bold text-text-secondary hover:text-white hover:border-quantum/50 hover:bg-panel transition-all"
                 >
                   Configure
                 </button>
@@ -457,7 +648,7 @@ export default function ProductDetails() {
             <span className="w-10 h-10 rounded bg-orbital border border-panel flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             </span>
-            <span className="text-xs font-bold font-mono">NEW_PLAN_{billingInterval}</span>
+            <span className="text-xs font-bold">{billingInterval === 'MONTHLY' ? 'New Monthly Plan' : 'New Yearly Plan'}</span>
           </button>
         </div>
       </div>
@@ -469,7 +660,7 @@ export default function ProductDetails() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-orbital border border-panel rounded-card shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="p-4 border-b border-panel flex justify-between items-center bg-void/50">
-              <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider font-mono">CONFIG_PRODUCT</h2>
+              <h2 className="text-sm font-bold text-text-primary">Configure Product</h2>
               <button onClick={() => setActiveModal(null)} className="text-text-dim hover:text-white">✕</button>
             </div>
             <fetcher.Form method="post" className="p-6 space-y-4">
@@ -477,22 +668,22 @@ export default function ProductDetails() {
               <input type="hidden" name="id" value={product.id} />
 
               <div>
-                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Name</label>
+                <label className="block text-xs font-bold text-text-secondary mb-1.5">Name</label>
                 <input name="name" defaultValue={product.name} required className="w-full bg-void border border-panel rounded px-3 py-2 text-sm text-white outline-none focus:border-quantum transition-colors" />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Slug</label>
+                <label className="block text-xs font-bold text-text-secondary mb-1.5">Slug</label>
                 <input name="slug" defaultValue={product.slug} required className="w-full bg-void border border-panel rounded px-3 py-2 text-sm text-white outline-none focus:border-quantum transition-colors font-mono" />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Logo URL</label>
+                <label className="block text-xs font-bold text-text-secondary mb-1.5">Logo URL</label>
                 <input name="logo" defaultValue={product.logo || ''} className="w-full bg-void border border-panel rounded px-3 py-2 text-sm text-white outline-none focus:border-quantum transition-colors font-mono" />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Description</label>
+                <label className="block text-xs font-bold text-text-secondary mb-1.5">Description</label>
                 <textarea name="description" defaultValue={product.description || ''} rows={3} className="w-full bg-void border border-panel rounded px-3 py-2 text-sm text-white outline-none focus:border-quantum transition-colors resize-none" />
               </div>
 
@@ -500,12 +691,12 @@ export default function ProductDetails() {
                 <button
                   type="button"
                   onClick={() => setDeleteConfirmation({ type: 'PRODUCT', id: product.id })}
-                  className="text-xs text-error/80 hover:text-error hover:underline font-mono"
+                  className="text-xs text-error/80 hover:text-error hover:underline"
                 >
-                  DELETE_PERMANENTLY
+                  Delete Permanently
                 </button>
-                <button type="submit" className="bg-quantum hover:bg-quantum-hover text-white px-5 py-2 rounded font-bold text-sm shadow-lg shadow-quantum/20 transition-all font-mono">
-                  {fetcher.state !== 'idle' ? 'SAVING...' : 'SAVE_CHANGES'}
+                <button type="submit" className="bg-quantum hover:bg-quantum-hover text-void px-5 py-2 rounded font-bold text-sm shadow-lg shadow-quantum/20 transition-all">
+                  {fetcher.state !== 'idle' ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </fetcher.Form>
@@ -518,7 +709,7 @@ export default function ProductDetails() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-orbital border border-panel rounded-card shadow-2xl w-full max-w-lg overflow-visible animate-in fade-in zoom-in-95 duration-200 flex flex-col">
             <div className="p-4 border-b border-panel flex justify-between items-center bg-void/50 rounded-t-card">
-              <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider font-mono">{editingItem ? 'EDIT_PLAN_CONFIG' : 'NEW_PLAN_INIT'}</h2>
+              <h2 className="text-sm font-bold text-text-primary">{editingItem ? 'Edit Plan' : 'New Plan'}</h2>
               <button onClick={() => setActiveModal(null)} className="text-text-dim hover:text-white">✕</button>
             </div>
 
@@ -529,17 +720,17 @@ export default function ProductDetails() {
               <textarea hidden name="features" value={currentFeatures.join('\n')} readOnly />
 
               <div>
-                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Plan Name</label>
+                <label className="block text-xs font-bold text-text-secondary mb-1.5">Plan Name</label>
                 <input name="name" defaultValue={editingItem?.name} required placeholder="Ex: Basic, Pro..." className="w-full bg-void border border-panel rounded px-3 py-2 text-sm text-white outline-none focus:border-quantum transition-colors" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Price</label>
+                  <label className="block text-xs font-bold text-text-secondary mb-1.5">Price</label>
                   <input type="number" step="0.01" min="0" name="price" defaultValue={editingItem ? Number(editingItem.price) : 0} required className="w-full bg-void border border-panel rounded px-3 py-2 text-sm text-white outline-none focus:border-quantum transition-colors font-mono" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Interval</label>
+                  <label className="block text-xs font-bold text-text-secondary mb-1.5">Interval</label>
                   <select name="interval" defaultValue={editingItem?.interval || billingInterval} className="w-full bg-void border border-panel rounded px-3 py-2 text-sm text-white outline-none focus:border-quantum transition-colors font-mono">
                     <option value="MONTHLY">Monthly</option>
                     <option value="YEARLY">Yearly</option>
@@ -549,7 +740,7 @@ export default function ProductDetails() {
 
               {/* NEW FEATURES SELECTION */}
               <div className="border-t border-panel pt-4 mt-4">
-                <label className="block text-xs font-bold text-text-secondary uppercase mb-3">Enabled Modules (Catalog)</label>
+                <label className="block text-xs font-bold text-text-secondary mb-3">Enabled Modules (Catalog)</label>
                 <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border border-panel rounded bg-void/30">
                   {features.map((f: any) => {
                     const isChecked = editingItem?.includedFeatures?.some((inf: any) => inf.id === f.id)
@@ -567,7 +758,7 @@ export default function ProductDetails() {
 
               {/* LIMITS JSON */}
               <div className="mt-4">
-                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Quotas / Limits (JSON)</label>
+                <label className="block text-xs font-bold text-text-secondary mb-1.5">Quotas / Limits (JSON)</label>
                 <textarea
                   name="limits"
                   defaultValue={JSON.stringify(editingItem?.limits || { max_appointments: -1 }, null, 2)}
@@ -580,7 +771,7 @@ export default function ProductDetails() {
               {editingItem && (
                 <div className="flex items-center gap-3 bg-void p-3 rounded border border-panel mt-4">
                   <input type="checkbox" name="isActive" defaultChecked={editingItem.isActive} id="isActive" className="w-4 h-4 accent-quantum bg-orbital border-panel rounded" />
-                  <label htmlFor="isActive" className="text-xs font-bold text-text-secondary cursor-pointer uppercase">Active for Sales</label>
+                  <label htmlFor="isActive" className="text-xs font-bold text-text-secondary cursor-pointer">Active for Sales</label>
                 </div>
               )}
 
@@ -589,14 +780,14 @@ export default function ProductDetails() {
                   <button
                     type="button"
                     onClick={() => setDeleteConfirmation({ type: 'PLAN', id: editingItem.id })}
-                    className="text-xs text-error/80 hover:text-error hover:underline font-mono"
+                    className="text-xs text-error/80 hover:text-error hover:underline"
                   >
-                    DELETE
+                    Delete
                   </button>
                 ) : <span></span>}
 
-                <button type="submit" className="bg-quantum hover:bg-quantum-hover text-white px-5 py-2 rounded font-bold text-sm shadow-lg shadow-quantum/20 transition-all font-mono">
-                  {fetcher.state !== 'idle' ? 'SAVING...' : 'SAVE_PLAN'}
+                <button type="submit" className="bg-quantum hover:bg-quantum-hover text-void px-5 py-2 rounded font-bold text-sm shadow-lg shadow-quantum/20 transition-all">
+                  {fetcher.state !== 'idle' ? 'Saving...' : 'Save Plan'}
                 </button>
               </div>
             </fetcher.Form>
@@ -609,7 +800,7 @@ export default function ProductDetails() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-orbital border border-panel rounded-card shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="p-4 border-b border-panel flex justify-between items-center bg-void/50">
-              <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider font-mono">{editingItem ? 'EDIT_FEATURE' : 'NEW_FEATURE'}</h2>
+              <h2 className="text-sm font-bold text-text-primary">{editingItem ? 'Edit Feature' : 'New Feature'}</h2>
               <button onClick={() => setActiveModal(null)} className="text-text-dim hover:text-white">✕</button>
             </div>
             <fetcher.Form method="post" className="p-6 space-y-4">
@@ -618,17 +809,17 @@ export default function ProductDetails() {
               {editingItem && <input type="hidden" name="id" value={editingItem.id} />}
 
               <div>
-                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Name</label>
+                <label className="block text-xs font-bold text-text-secondary mb-1.5">Name</label>
                 <input name="name" defaultValue={editingItem?.name} required className="w-full bg-void border border-panel rounded px-3 py-2 text-sm text-white outline-none focus:border-quantum transition-colors" />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Key (Code)</label>
+                <label className="block text-xs font-bold text-text-secondary mb-1.5">Key (Code)</label>
                 <input name="key" defaultValue={editingItem?.key} required className="w-full bg-void border border-panel rounded px-3 py-2 text-sm text-white outline-none focus:border-quantum transition-colors font-mono" placeholder="e.g. appointments_module" />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Description</label>
+                <label className="block text-xs font-bold text-text-secondary mb-1.5">Description</label>
                 <textarea name="description" defaultValue={editingItem?.description || ''} rows={3} className="w-full bg-void border border-panel rounded px-3 py-2 text-sm text-white outline-none focus:border-quantum transition-colors resize-none" />
               </div>
 
@@ -641,17 +832,84 @@ export default function ProductDetails() {
                     onClick={(e) => {
                       if (!confirm('Delete this feature? It may affect plans.')) e.preventDefault();
                     }}
-                    className="text-xs text-error/80 hover:text-error hover:underline font-mono"
+                    className="text-xs text-error/80 hover:text-error hover:underline"
                   >
-                    DELETE
+                    Delete
                   </button>
                 ) : <span></span>}
 
-                <button type="submit" className="bg-quantum hover:bg-quantum-hover text-white px-5 py-2 rounded font-bold text-sm shadow-lg shadow-quantum/20 transition-all font-mono">
-                  {fetcher.state !== 'idle' ? 'SAVING...' : 'SAVE_FEATURE'}
+                <button type="submit" className="bg-quantum hover:bg-quantum-hover text-void px-5 py-2 rounded font-bold text-sm shadow-lg shadow-quantum/20 transition-all">
+                  {fetcher.state !== 'idle' ? 'Saving...' : 'Save Feature'}
                 </button>
               </div>
             </fetcher.Form>
+          </div>
+        </div>
+      )}
+
+      {/* KILL SWITCH CONFIRMATION — desligar uma feature é global, afeta todos
+          os tenants de todos os planos que a incluem, então mostra o raio de
+          impacto e oferece publicar um banner explicando o motivo. */}
+      {killSwitchTarget && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-orbital border border-error/30 rounded-card shadow-[0_0_50px_rgba(239,68,68,0.2)] w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 relative">
+            <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-error/50 via-error to-error/50"></div>
+            <div className="p-6">
+              <div className="w-14 h-14 rounded-full bg-error/10 flex items-center justify-center mx-auto mb-4 border border-error/20">
+                <svg className="w-7 h-7 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+              </div>
+              <h3 className="text-lg font-bold text-white text-center mb-2">Desligar "{killSwitchTarget.name}"?</h3>
+              <p className="text-sm text-text-secondary text-center mb-4">
+                Isso remove essa feature de <strong className="text-error">todos os tenants</strong>, independente de plano — kill switch global, não afeta apenas um cliente.
+              </p>
+
+              {(() => {
+                const affectedPlans = plansUsingFeature(killSwitchTarget.id);
+                return affectedPlans.length > 0 ? (
+                  <div className="bg-void border border-panel rounded p-3 mb-4 text-xs text-text-secondary">
+                    <span className="text-text-dim">Impacto: </span>
+                    {affectedPlans.length} plano(s) — {affectedPlans.map((p: any) => p.name).join(', ')}
+                  </div>
+                ) : (
+                  <div className="bg-void border border-panel rounded p-3 mb-4 text-xs text-text-dim">
+                    Não usada em nenhum plano hoje — desligar não afeta assinantes atuais.
+                  </div>
+                );
+              })()}
+
+              <label className="flex items-center gap-2 mb-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={publishKillSwitchBanner}
+                  onChange={(e) => setPublishKillSwitchBanner(e.target.checked)}
+                  className="w-4 h-4 accent-quantum"
+                />
+                <span className="text-xs font-bold text-text-secondary">Publicar banner explicando</span>
+              </label>
+              {publishKillSwitchBanner && (
+                <textarea
+                  value={killSwitchBannerMessage}
+                  onChange={(e) => setKillSwitchBannerMessage(e.target.value)}
+                  rows={2}
+                  className="w-full bg-void border border-panel rounded px-3 py-2 text-xs text-white outline-none focus:border-quantum transition-colors resize-none mb-2"
+                />
+              )}
+
+              <div className="flex gap-3 justify-center mt-4">
+                <button
+                  onClick={() => setKillSwitchTarget(null)}
+                  className="px-4 py-2 rounded bg-void border border-panel text-text-secondary hover:text-white hover:border-white/30 transition-all text-xs font-bold"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDisableFeature}
+                  className="px-4 py-2 rounded bg-error/90 hover:bg-error text-white shadow-lg transition-all text-xs font-bold"
+                >
+                  Confirmar Desligamento
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -676,15 +934,15 @@ export default function ProductDetails() {
                 <div className="flex gap-3 justify-center">
                   <button
                     onClick={() => setDeleteConfirmation(null)}
-                    className="px-4 py-2 rounded bg-void border border-panel text-text-secondary hover:text-white hover:border-white/30 transition-all font-mono text-xs font-bold"
+                    className="px-4 py-2 rounded bg-void border border-panel text-text-secondary hover:text-white hover:border-white/30 transition-all text-xs font-bold"
                   >
-                    CANCEL
+                    Cancel
                   </button>
                   <button
                     onClick={handleDelete}
-                    className="px-4 py-2 rounded bg-error/90 hover:bg-error text-white shadow-lg transition-all font-mono text-xs font-bold"
+                    className="px-4 py-2 rounded bg-error/90 hover:bg-error text-white shadow-lg transition-all text-xs font-bold"
                   >
-                    CONFIRM_DELETE
+                    Confirm Delete
                   </button>
                 </div>
               </div>

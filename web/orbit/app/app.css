@@ -1,37 +1,37 @@
 @import "tailwindcss";
 
 @theme {
-  /* Orbit 3.0 - Command Center Tokens (Void/Violet) */
-  --color-void: #020617;
-  /* Slate 950 */
-  --color-orbital: #0f172a;
-  /* Slate 900 */
-  --color-panel: #1e293b;
-  /* Slate 800 */
+  /* Orbit 4.0 - Neutral Slate Identity */
+  --color-void: #2b2f36;
+  /* Base background */
+  --color-orbital: #404754;
+  /* Raised surface (sidebar/header) */
+  --color-panel: #5d6675;
+  /* Card/border surface */
 
-  --color-quantum: #7c3aed;
-  /* Violet 600 */
-  --color-quantum-hover: #6d28d9;
-  /* Violet 700 */
+  --color-quantum: #eef0f2;
+  /* Accent (near-white, replaces violet) */
+  --color-quantum-hover: #cfd3d8;
+  /* Accent hover/pressed */
 
   --color-data-blue: #3b82f6;
   --color-success: #10b981;
   --color-error: #f43f5e;
+  --color-warning: #f59e0b;
+  /* Amber 500 */
 
-  --color-text-primary: #f8fafc;
-  /* Slate 50 */
-  --color-text-secondary: #94a3b8;
-  /* Slate 400 */
-  --color-text-dim: #475569;
-  /* Slate 600 */
+  --color-text-primary: #eef0f2;
+  /* Near-white, slightly brighter than the lightest palette step for headings */
+  --color-text-secondary: #cfd3d8;
+  /* Lightest palette step */
+  --color-text-dim: #8a919c;
 
   --bg-void: var(--color-void);
   --bg-orbital: var(--color-orbital);
 
-  --radius-dock: 12px;
-  --radius-card: 8px;
-  /* Compact */
-  --radius-btn: 6px;
+  --radius-dock: 0px;
+  --radius-card: 0px;
+  --radius-btn: 0px;
 
   --font-sans: "Aileron", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
@@ -86,4 +86,21 @@
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* Browser autofill forces its own light background, washing out dark-theme
+   inputs (and anything, like a focus icon, styled to read against that dark
+   background). Deliberately left OUTSIDE any @layer: Tailwind's utility
+   classes (e.g. bg-void/50 on the input) live in the "utilities" cascade
+   layer, which always wins over a layered rule regardless of specificity —
+   only an unlayered rule like this one can override them. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:autofill {
+  -webkit-text-fill-color: var(--color-text-primary) !important;
+  caret-color: var(--color-text-primary) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--color-void) inset !important;
+  box-shadow: 0 0 0px 1000px var(--color-void) inset !important;
+  transition: background-color 9999s ease-in-out 0s !important;
 }

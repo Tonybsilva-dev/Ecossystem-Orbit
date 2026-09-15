@@ -22,11 +22,13 @@ model Barbershop {
   zipCode       String?
   latitude      Float?
   longitude     Float?
-  licenseKey    String?
-  licenseStatus LicenseStatus @default(PENDING)
-  planType      PlanType      @default(BASIC)
-  modules       String[]
-  limits        Json?         // Synced from Orbit
+  licenseKey        String?
+  licenseStatus     LicenseStatus @default(PENDING)
+  licenseBlockReason String?      // Motivo textual quando licenseStatus != ACTIVE (vindo do Orbit)
+  planType          PlanType      @default(BASIC)
+  modules           String[]
+  limits            Json?         // Synced from Orbit
+  licenseCheckedAt  DateTime?     // Último GET /validate bem-sucedido contra o Orbit
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   appointments  Appointment[]
@@ -50,6 +52,7 @@ model User {
   role          Role          @default(USER)
   phone         String?
   barbershopId  String?
+  orbitTenantId String?       // tenantId retornado por POST /tenants/sync no Orbit
   appointments  Appointment[]
   orders        Order[]
   accounts      Account[]

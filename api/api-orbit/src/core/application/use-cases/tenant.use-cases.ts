@@ -5,6 +5,7 @@ import type { PlanRepository } from '../../domain/plan/plan.repository.js';
 import type { SubscriptionRepository } from '../../domain/subscription/subscription.repository.js';
 import type {
 	Tenant,
+	TenantDetail,
 	TenantStatus,
 	TenantWithRelations,
 } from '../../domain/tenant/tenant.entity.js';
@@ -118,8 +119,12 @@ export class SetTenantStatusUseCase {
 export class ListTenantsUseCase {
 	constructor(private readonly tenantRepository: TenantRepository) {}
 
-	async execute(): Promise<TenantWithRelations[]> {
-		return this.tenantRepository.list();
+	async execute(filters?: {
+		productId?: string;
+		planId?: string;
+		search?: string;
+	}): Promise<TenantWithRelations[]> {
+		return this.tenantRepository.list(filters);
 	}
 }
 
@@ -142,6 +147,15 @@ export class GetTenantUseCase {
 
 	async execute(id: string): Promise<Tenant | null> {
 		return this.tenantRepository.findById(id);
+	}
+}
+
+/** Página de detalhe do tenant: todos os usuários + histórico completo de assinaturas. */
+export class GetTenantDetailUseCase {
+	constructor(private readonly tenantRepository: TenantRepository) {}
+
+	async execute(id: string): Promise<TenantDetail | null> {
+		return this.tenantRepository.findByIdWithRelations(id);
 	}
 }
 

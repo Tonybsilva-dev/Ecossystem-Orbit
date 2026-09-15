@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { signOut, useSession } from '@/features/auth/client';
 import { cn } from '@/shared/utils/cn';
 import {
@@ -9,31 +10,62 @@ import {
   Settings,
   LogOut,
   ShieldAlert,
+  Info,
+  AlertTriangle,
+  XCircle,
+  CheckCircle2,
+  Sparkles,
 } from 'lucide-react';
 import { useLocation, useNavigate, Link, Outlet } from 'react-router';
 import { Toaster } from 'sonner';
+import { useLicenseStatusStore, type BannerType } from './licenseStatus.store';
+
+const LICENSE_REVALIDATE_INTERVAL_MS = 5 * 60 * 1000; // alinhado ao Cache-Control (max-age=600) do /validate
+
+const BANNER_STYLES: Record<BannerType, { icon: typeof Info; className: string }> = {
+  INFO: { icon: Info, className: 'bg-blue-500/10 border-blue-500/20 text-blue-400' },
+  WARNING: { icon: AlertTriangle, className: 'bg-amber-500/10 border-amber-500/20 text-amber-400' },
+  ERROR: { icon: XCircle, className: 'bg-red-500/10 border-red-500/20 text-red-400' },
+  SUCCESS: { icon: CheckCircle2, className: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
+  UPDATE: { icon: Sparkles, className: 'bg-purple-500/10 border-purple-500/20 text-purple-400' },
+};
 
 export function DashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { data: session } = useSession();
+  const { licenseStatus, licenseBlockReason, banners, lastCheckedAt, hasModule, refresh } =
+    useLicenseStatusStore();
+
+  useEffect(() => {
+    refresh();
+    const interval = setInterval(refresh, LICENSE_REVALIDATE_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [refresh]);
 
   // @ts-expect-error - extended session type
-  const licenseStatus = session?.user?.barbershop?.licenseStatus;
-  const isLicenseInactive = licenseStatus && licenseStatus !== 'ACTIVE';
+  const sessionLicenseStatus = session?.user?.barbershop?.licenseStatus;
+  const effectiveStatus = lastCheckedAt ? licenseStatus : sessionLicenseStatus;
+  const isLicenseInactive = effectiveStatus && effectiveStatus !== 'ACTIVE';
 
   const handleLogout = async () => {
     await signOut();
     navigate('/login');
   };
 
-  const navItems = [
-    { icon: LayoutDashboard, label: 'Visão Geral', href: '/dashboard' },
-    { icon: CalendarDays, label: 'Agendamentos', href: '/dashboard/appointments' },
-    { icon: Users, label: 'Barbeiros', href: '/dashboard/barbers' },
-    { icon: Scissors, label: 'Serviços', href: '/dashboard/services' },
-    { icon: ShoppingBag, label: 'Produtos', href: '/dashboard/products' },
+  const allNavItems = [
+    { icon: LayoutDashboard, label: 'Visão Geral', href: '/dashboard', module: null },
+    { icon: CalendarDays, label: 'Agendamentos', href: '/dashboard/appointments', module: 'appointments' },
+    { icon: Users, label: 'Barbeiros', href: '/dashboard/barbers', module: 'barbers' },
+    { icon: Scissors, label: 'Serviços', href: '/dashboard/services', module: 'services' },
+    { icon: ShoppingBag, label: 'Produtos', href: '/dashboard/products', module: 'products' },
   ];
+
+  // Antes do primeiro refresh não sabemos os módulos ao vivo — mostra tudo
+  // pra não esconder navegação por um falso negativo enquanto carrega.
+  const navItems = lastCheckedAt
+    ? allNavItems.filter((item) => !item.module || hasModule(item.module))
+    : allNavItems;
 
   return (
     <div className="flex h-screen bg-shop-900 text-chrome-200 font-sans bg-noise">
@@ -88,18 +120,51 @@ export function DashboardLayout() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto flex flex-col">
-        {/* Warning Banner */}
+        {/* License gate banner */}
         {isLicenseInactive && (
           <div className="bg-red-500/10 border-b border-red-500/20 px-8 py-2 flex items-center justify-between">
             <div className="flex items-center gap-2 text-red-500">
               <ShieldAlert size={18} />
-              <span className="text-sm font-bold">Licença Inativa ou Expirada</span>
+              <span className="text-sm font-bold">
+                {licenseBlockReason || 'Licença Inativa ou Expirada'}
+              </span>
             </div>
-            <button className="text-xs bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-colors">
+            <button
+              onClick={() => navigate('/dashboard/subscription')}
+              className="text-xs bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-colors"
+            >
               Regularizar Agora
             </button>
           </div>
         )}
+
+        {/* Broadcast banners vindos do Orbit — cada produto estiliza com a própria
+            identidade, mas o dado (tipo/mensagem/link) vem padronizado do control plane. */}
+        {banners.map((banner) => {
+          const style = BANNER_STYLES[banner.type];
+          const Icon = style.icon;
+          return (
+            <div
+              key={banner.id}
+              className={cn('border-b px-8 py-2 flex items-center justify-between', style.className)}
+            >
+              <div className="flex items-center gap-2">
+                <Icon size={18} />
+                <span className="text-sm font-medium">{banner.message}</span>
+              </div>
+              {banner.link && (
+                <a
+                  href={banner.link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs underline hover:no-underline shrink-0 ml-4"
+                >
+                  Saiba mais
+                </a>
+              )}
+            </div>
+          );
+        })}
 
         <header className="h-16 min-h-[4rem] border-b border-leather-800/30 bg-shop-900/50 backdrop-blur-sm sticky top-0 z-10 flex items-center justify-between px-8">
           <h2 className="font-serif text-lg text-chrome-100">

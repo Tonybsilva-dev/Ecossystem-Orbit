@@ -47,26 +47,37 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
-          // Sync with Orbit Control Plane
+          // Sync with Orbit Control Plane — guarda o tenantId retornado no
+          // próprio User, senão não há como referenciar esse tenant depois
+          // (ex: pra futuramente checar status/kill-switch por usuário).
           try {
             const orbitApi = process.env.ORBIT_API_URL || 'http://localhost:4001';
             const orbitSecret = process.env.ORBIT_API_SECRET; // Ensure this is set in .env
 
             if (orbitSecret && user.email) {
-              // Fire and forget - or await if critical
-              await fetch(`${orbitApi}/tenants/sync`, {
+              const response = await fetch(`${orbitApi}/tenants/sync`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
                   Authorization: `Bearer ${orbitSecret}`,
-                  'X-Tenant-Id': user.id, // Context isolation
                 },
                 body: JSON.stringify({
                   name: user.name || user.email.split('@')[0], // Default name
                   email: user.email,
-                  externalId: user.id,
                 }),
               });
+
+              if (response.ok) {
+                const data = (await response.json()) as { tenantId?: string };
+                if (data.tenantId) {
+                  await prisma.user.update({
+                    where: { id: user.id },
+                    data: { orbitTenantId: data.tenantId },
+                  });
+                }
+              } else {
+                console.error('Failed to sync with Orbit:', response.status, await response.text());
+              }
             }
           } catch (e) {
             console.error('Failed to sync with Orbit:', e);
@@ -108,6 +119,7 @@ export const auth = betterAuth({
                     where: { id: dbUser.barbershopId },
                     select: {
                       licenseStatus: true,
+                      licenseBlockReason: true,
                       name: true,
                       id: true,
                       planType: true,

@@ -26,19 +26,12 @@ export async function licenseRoutes(
 
 		const result = await new ValidateAccessUseCase(
 			container.subscriptionRepository,
+			container.bannerRepository,
 		).execute({ licenseKey });
 
-		if (result.valid) {
-			return reply
-				.header('Cache-Control', LICENSE_VALIDATION_CACHE_CONTROL)
-				.status(200)
-				.send({
-					valid: true,
-					capabilities: result.capabilities,
-					limits: result.limits,
-				});
-		}
+		const status = result.valid ? 200 : 403;
+		if (result.valid) reply.header('Cache-Control', LICENSE_VALIDATION_CACHE_CONTROL);
 
-		return reply.status(403).send({ valid: false, capabilities: [] });
+		return reply.status(status).send(result);
 	});
 }

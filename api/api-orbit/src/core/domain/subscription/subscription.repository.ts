@@ -45,6 +45,10 @@ export interface SubscriptionRepository {
 		productId: string,
 	): Promise<Subscription | null>;
 	list(params: ListSubscriptionsParams): Promise<ListSubscriptionsResult>;
+	/** Mesmos filtros de `list`, sem paginação — usado pra exportar o relatório em PDF. */
+	listAllForExport(
+		params: Omit<ListSubscriptionsParams, 'page' | 'limit'>,
+	): Promise<SubscriptionWithRelations[]>;
 	create(data: CreateSubscriptionData): Promise<Subscription>;
 	updateStatus(
 		id: string,

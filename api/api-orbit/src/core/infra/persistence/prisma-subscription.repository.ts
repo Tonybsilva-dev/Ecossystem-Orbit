@@ -37,7 +37,12 @@ export class PrismaSubscriptionRepository implements SubscriptionRepository {
 			where: { licenseKey },
 			include: {
 				tenant: { include: { features: true } },
-				plan: { include: { product: true } },
+				plan: {
+					include: {
+						product: { include: { features: true } },
+						includedFeatures: true,
+					},
+				},
 			},
 		}) as unknown as Promise<SubscriptionWithRelations | null>;
 	}
@@ -51,10 +56,9 @@ export class PrismaSubscriptionRepository implements SubscriptionRepository {
 		});
 	}
 
-	async list(
-		params: ListSubscriptionsParams,
-	): Promise<ListSubscriptionsResult> {
-		const skip = (params.page - 1) * params.limit;
+	private buildListWhere(
+		params: Omit<ListSubscriptionsParams, 'page' | 'limit'>,
+	): Prisma.SubscriptionWhereInput {
 		const where: Prisma.SubscriptionWhereInput = { AND: [] };
 		const and = where.AND as Prisma.SubscriptionWhereInput[];
 
@@ -78,6 +82,15 @@ export class PrismaSubscriptionRepository implements SubscriptionRepository {
 		if (params.productId) and.push({ plan: { productId: params.productId } });
 		if (params.status) and.push({ status: params.status as SubStatus });
 
+		return where;
+	}
+
+	async list(
+		params: ListSubscriptionsParams,
+	): Promise<ListSubscriptionsResult> {
+		const skip = (params.page - 1) * params.limit;
+		const where = this.buildListWhere(params);
+
 		const [subscriptions, total] = await Promise.all([
 			this.prisma.subscription.findMany({
 				where,
@@ -98,6 +111,18 @@ export class PrismaSubscriptionRepository implements SubscriptionRepository {
 				totalPages: Math.ceil(total / params.limit),
 			},
 		};
+	}
+
+	async listAllForExport(
+		params: Omit<ListSubscriptionsParams, 'page' | 'limit'>,
+	): Promise<SubscriptionWithRelations[]> {
+		const where = this.buildListWhere(params);
+		const subscriptions = await this.prisma.subscription.findMany({
+			where,
+			orderBy: { createdAt: 'desc' },
+			include: { tenant: true, plan: { include: { product: true } } },
+		});
+		return subscriptions as unknown as SubscriptionWithRelations[];
 	}
 
 	async create(data: CreateSubscriptionData): Promise<Subscription> {

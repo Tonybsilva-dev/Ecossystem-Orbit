@@ -1,6 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import { getAiClient } from '../../core/infra/ai/ai.client.js';
 import { BcryptPasswordHasher } from '../../core/infra/auth/bcrypt-password-hasher.js';
+import { PrismaBannerRepository } from '../../core/infra/persistence/prisma-banner.repository.js';
 import { PrismaFeatureRepository } from '../../core/infra/persistence/prisma-feature.repository.js';
 import { PrismaPlanRepository } from '../../core/infra/persistence/prisma-plan.repository.js';
 import { PrismaProductRepository } from '../../core/infra/persistence/prisma-product.repository.js';
@@ -24,6 +25,7 @@ export class AppContainer {
 	public readonly planRepository: PrismaPlanRepository;
 	public readonly featureRepository: PrismaFeatureRepository;
 	public readonly subscriptionRepository: PrismaSubscriptionRepository;
+	public readonly bannerRepository: PrismaBannerRepository;
 
 	constructor(prisma: PrismaClient) {
 		this.prisma = prisma;
@@ -33,5 +35,6 @@ export class AppContainer {
 		this.planRepository = new PrismaPlanRepository(prisma);
 		this.featureRepository = new PrismaFeatureRepository(prisma);
 		this.subscriptionRepository = new PrismaSubscriptionRepository(prisma);
+		this.bannerRepository = new PrismaBannerRepository(prisma);
 	}
 }

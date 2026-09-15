@@ -5,6 +5,7 @@ export interface CreateFeatureData {
 	key: string;
 	name: string;
 	description?: string;
+	isEnabled?: boolean;
 }
 
 export interface FeatureRepository {

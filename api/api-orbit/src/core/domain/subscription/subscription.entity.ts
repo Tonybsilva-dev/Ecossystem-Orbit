@@ -31,6 +31,11 @@ export interface SubscriptionWithRelations extends Subscription {
 		limits: unknown;
 		interval: string;
 		features: string[];
-		product: { id: string; name: string };
+		product: {
+			id: string;
+			name: string;
+			features?: { key: string; isEnabled: boolean }[];
+		};
+		includedFeatures?: { key: string }[];
 	};
 }

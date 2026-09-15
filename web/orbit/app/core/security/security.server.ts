@@ -11,12 +11,19 @@ const isDevelopment = process.env.NODE_ENV === "development";
 
 /**
  * Content Security Policy (CSP)
- * 
+ *
  * Strict CSP configuration that allows necessary resources while blocking
  * potentially dangerous content. In development, we allow 'unsafe-inline'
  * and 'unsafe-eval' for hot module replacement and debugging.
+ *
+ * Em produção, o React Router injeta um <script> inline pra hidratar a
+ * página (window.__reactRouterContext) — sem 'unsafe-inline' isso é
+ * bloqueado pelo browser e a app inteira perde interatividade (nenhum
+ * onClick funciona, só <Form> continua indo por ser submit nativo). Por
+ * isso o nonce por requisição: libera só esse script específico, sem abrir
+ * mão da proteção contra scripts injetados por XSS.
  */
-function getContentSecurityPolicy(): string {
+function getContentSecurityPolicy(nonce: string): string {
   if (isDevelopment) {
     // Development: More permissive for HMR and debugging
     return [
@@ -30,10 +37,10 @@ function getContentSecurityPolicy(): string {
     ].join("; ");
   }
 
-  // Production: Strict CSP
+  // Production: Strict CSP, script-src liberado só via nonce por requisição
   return [
     "default-src 'self'",
-    "script-src 'self'",
+    `script-src 'self' 'nonce-${nonce}'`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: https:",
     "font-src 'self' data: https://fonts.gstatic.com",
@@ -66,9 +73,9 @@ export function getSecurityHeaders(): Record<string, string> {
 /**
  * Content Security Policy Header
  */
-export function getContentSecurityPolicyHeader(): Record<string, string> {
+export function getContentSecurityPolicyHeader(nonce: string): Record<string, string> {
   return {
-    "Content-Security-Policy": getContentSecurityPolicy(),
+    "Content-Security-Policy": getContentSecurityPolicy(nonce),
   };
 }
 
@@ -96,10 +103,10 @@ export function getHSTSHeader(): Record<string, string> {
  * Combines all security headers into a single object.
  * This is the main function to use when setting security headers.
  */
-export function getCompositeSecurityHeaders(): Record<string, string> {
+export function getCompositeSecurityHeaders(nonce: string): Record<string, string> {
   return {
     ...getSecurityHeaders(),
-    ...getContentSecurityPolicyHeader(),
+    ...getContentSecurityPolicyHeader(nonce),
     ...getHSTSHeader(),
   };
 }
@@ -111,9 +118,9 @@ export function getCompositeSecurityHeaders(): Record<string, string> {
  * 
  * @param headers - The Headers object to apply security headers to
  */
-export function applySecurityHeaders(headers: Headers): void {
-  const securityHeaders = getCompositeSecurityHeaders();
-  
+export function applySecurityHeaders(headers: Headers, nonce: string): void {
+  const securityHeaders = getCompositeSecurityHeaders(nonce);
+
   Object.entries(securityHeaders).forEach(([key, value]) => {
     headers.set(key, value);
   });

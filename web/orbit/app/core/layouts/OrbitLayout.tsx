@@ -6,8 +6,8 @@ import {
   Settings,
   LogOut,
   Layers,
-  CreditCard,
-  Activity
+  Activity,
+  Megaphone
 } from "lucide-react";
 import React from "react";
 
@@ -19,12 +19,12 @@ export function OrbitLayout({ children }: { children: React.ReactNode }) {
     { icon: LayoutDashboard, label: 'Overview', href: '/admin' },
     { icon: Box, label: 'Products', href: '/admin/products' },
     { icon: Users, label: 'Tenants', href: '/admin/tenants' },
-    { icon: CreditCard, label: 'Subscriptions', href: '/admin/subscriptions' },
+    { icon: Megaphone, label: 'Banners', href: '/admin/banners' },
     { icon: Activity, label: 'Analytics', href: '/admin/analytics' },
   ];
 
   return (
-    <div className="flex h-screen bg-void text-text-primary font-sans antialiased overflow-hidden selection:bg-quantum selection:text-white">
+    <div className="flex h-screen bg-void text-text-primary font-sans antialiased overflow-hidden selection:bg-quantum selection:text-void">
       {/* Sidebar - Compact & Dense */}
       <aside className="w-56 border-r border-panel bg-orbital flex flex-col shrink-0">
         <div className="h-12 border-b border-panel flex items-center px-4">
@@ -35,7 +35,7 @@ export function OrbitLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto no-scrollbar">
-          <p className="px-3 py-2 text-[10px] uppercase tracking-widest text-text-dim font-bold mt-2 mb-1">Modules</p>
+          <p className="px-3 py-2 text-[10px] text-text-dim font-bold mt-2 mb-1">Modules</p>
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href || (item.href !== '/admin' && location.pathname.startsWith(item.href));
@@ -130,7 +130,7 @@ export function OrbitLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex items-center gap-3">
             <div className="h-2 w-2 rounded-full bg-success animate-pulse"></div>
-            <span className="text-xs font-mono text-text-dim">SYSTEM_ONLINE</span>
+            <span className="text-xs text-text-dim">System Online</span>
           </div>
         </header>
 

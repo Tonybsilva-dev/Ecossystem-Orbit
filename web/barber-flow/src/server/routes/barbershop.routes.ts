@@ -2,6 +2,8 @@ import { Hono } from 'hono';
 import { prisma } from '../db';
 import { generateSlug } from '../../shared/utils/string.utils';
 import { auth } from '../../features/auth/auth';
+import { validateLicense } from '../orbit/orbit-client';
+import { syncLicenseStatus } from '../orbit/license-sync';
 
 export const barbershopRouter = new Hono()
   .get('/', async (c) => {
@@ -113,30 +115,18 @@ export const barbershopRouter = new Hono()
         }
       } else if (!isTrial && body.licenseKey) {
         // Validate Existing License
-        try {
-          const orbitUrl = process.env.ORBIT_API_URL || 'http://localhost:4001';
-          const response = await fetch(`${orbitUrl}/validate?licenseKey=${body.licenseKey}`, {
-            headers: { Origin: 'http://localhost:3333' },
-          });
+        const result = await validateLicense(body.licenseKey);
 
-          if (response.ok) {
-            const data = (await response.json()) as { valid: boolean; capabilities: string[] };
-            if (data.valid) {
-              licenseStatus = 'ACTIVE';
-              modules = data.capabilities;
-              // Validation endpoint currently returns capabilities (features).
-              // We might need to update validate endpoint to return limits too.
-              // For now, limits will be empty on validation if not updated.
-            } else {
-              return c.json({ error: 'Licença inválida ou inativa.' }, 400);
-            }
-          } else {
-            return c.json({ error: 'Erro ao validar licença no servidor central.' }, 400);
-          }
-        } catch (err) {
-          console.error('Orbit Validation Error:', err);
+        if (!result) {
           return c.json({ error: 'Falha na comunicação com servidor de licenças.' }, 500);
         }
+        if (!result.valid) {
+          return c.json({ error: 'Licença inválida ou inativa.' }, 400);
+        }
+
+        licenseStatus = 'ACTIVE';
+        modules = result.capabilities;
+        limits = result.limits ?? {};
       } else if (!isTrial) {
         return c.json({ error: 'Chave de licença obrigatória.' }, 400);
       }
@@ -197,6 +187,29 @@ export const barbershopRouter = new Hono()
     } catch (error) {
       console.error(error);
       return c.json({ error: 'Failed to save barbershop config' }, 500);
+    }
+  })
+  // Revalida a licença contra o Orbit (kill switch, billing, banners) em vez de
+  // confiar na foto congelada salva no onboarding. O frontend consulta essa
+  // rota periodicamente (ver useLicenseStatus) — é o padrão que qualquer
+  // produto do Ecossystem deve seguir para reagir ao control plane em tempo real.
+  .get('/license-status', async (c) => {
+    try {
+      const session = await auth.api.getSession({
+        headers: c.req.raw.headers,
+      });
+
+      if (!session || !session.user.barbershopId) {
+        return c.json({ error: 'Unauthorized' }, 401);
+      }
+
+      const status = await syncLicenseStatus(session.user.barbershopId);
+      if (!status) return c.json({ error: 'Barbershop not found' }, 404);
+
+      return c.json(status);
+    } catch (error) {
+      console.error('License Status Error:', error);
+      return c.json({ error: 'Failed to check license status' }, 500);
     }
   })
   .get('/dashboard', async (c) => {
