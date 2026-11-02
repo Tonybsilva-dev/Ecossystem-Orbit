@@ -13,7 +13,7 @@ importers:
         version: 1.15.0(react@19.2.1)
       '@conform-to/zod':
         specifier: ^1.13.3
-        version: 1.15.0(zod@3.25.76)
+        version: 1.15.0(zod@4.6.6)
       '@react-router/node':
         specifier: ^7.10.0
         version: 7.10.1(react-router@7.10.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(typescript@5.9.3)
@@ -42,11 +42,11 @@ importers:
         specifier: ^7.10.0
         version: 7.10.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       zod:
-        specifier: ^3.24.0
-        version: 3.25.76
+        specifier: ^4.6.6
+        version: 4.6.6
       zod-i18n-map:
         specifier: ^2.27.0
-        version: 2.27.0(i18next@25.7.2(typescript@5.9.3))(zod@3.25.76)
+        version: 2.27.0(i18next@25.7.2(typescript@5.9.3))(zod@4.6.6)
     devDependencies:
       '@react-router/dev':
         specifier: ^7.10.0
@@ -1833,8 +1833,8 @@ packages:
       i18next: '>=21.3.0'
       zod: '>=3.17.0'
 
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+  zod@4.6.6:
+    resolution: {integrity: sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA==}
 
 snapshots:
 
@@ -2035,10 +2035,10 @@ snapshots:
       '@conform-to/dom': 1.15.0
       react: 19.2.1
 
-  '@conform-to/zod@1.15.0(zod@3.25.76)':
+  '@conform-to/zod@1.15.0(zod@4.6.6)':
     dependencies:
       '@conform-to/dom': 1.15.0
-      zod: 3.25.76
+      zod: 4.6.6
 
   '@esbuild/aix-ppc64@0.25.12':
     optional: true
@@ -3565,9 +3565,9 @@ snapshots:
 
   yallist@3.1.1: {}
 
-  zod-i18n-map@2.27.0(i18next@25.7.2(typescript@5.9.3))(zod@3.25.76):
+  zod-i18n-map@2.27.0(i18next@25.7.2(typescript@5.9.3))(zod@4.6.6):
     dependencies:
       i18next: 25.7.2(typescript@5.9.3)
-      zod: 3.25.76
+      zod: 4.6.6
 
-  zod@3.25.76: {}
+  zod@4.6.6: {}
