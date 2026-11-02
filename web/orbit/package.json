@@ -45,7 +45,7 @@
     "supertest": "^7.1.4",
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.2",
-    "vite": "^7.1.7",
+    "vite": "^7.3.7",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
   }
