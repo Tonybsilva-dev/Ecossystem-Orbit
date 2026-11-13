@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^1.19.7
-        version: 1.19.7(hono@4.10.8)
+        version: 1.19.7(hono@4.13.16)
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.68.0(react@19.2.1))
@@ -48,8 +48,8 @@ importers:
         specifier: ^11.0.0
         version: 11.18.2(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       hono:
-        specifier: ^4.10.8
-        version: 4.10.8
+        specifier: ^4.13.16
+        version: 4.13.16
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
@@ -1643,8 +1643,8 @@ packages:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
 
-  hono@4.10.8:
-    resolution: {integrity: sha512-DDT0A0r6wzhe8zCGoYOmMeuGu3dyTAE40HHjwUsWFTEy5WxK1x2WDSsBPlEXgPbRIFY6miDualuUDbasPogIww==}
+  hono@4.13.16:
+    resolution: {integrity: sha512-AOLOEhvrV+iH92xXCnFr/5+3KjPKcI3xP63XJtX5spAnkznPdHijlIsUTpi7/9EhWqrTCekw5c5zh1K+YsVw7A==}
     engines: {node: '>=16.9.0'}
 
   husky@9.1.7:
@@ -2802,9 +2802,9 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@hono/node-server@1.19.7(hono@4.10.8)':
+  '@hono/node-server@1.19.7(hono@4.13.16)':
     dependencies:
-      hono: 4.10.8
+      hono: 4.13.16
 
   '@hookform/resolvers@5.2.2(react-hook-form@7.68.0(react@19.2.1))':
     dependencies:
@@ -3806,7 +3806,7 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
-  hono@4.10.8: {}
+  hono@4.13.16: {}
 
   husky@9.1.7: {}
 
