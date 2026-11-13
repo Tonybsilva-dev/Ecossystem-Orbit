@@ -40,7 +40,7 @@
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "framer-motion": "^11.0.0",
-    "hono": "^4.10.8",
+    "hono": "^4.13.16",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.460.0",
     "react": "^19.0.0",
